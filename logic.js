@@ -9,15 +9,15 @@ class LogicEngine {
         this.methods = methods
     }
 
-    evaluate(func, data, context, above) {
+    parse(func, data, context, above) {
         if (this.methods[func]) {
             if (typeof this.methods[func] === "function") {
-                return this.methods[func](this.traverse(data, context, { proxy: false, above }), context, above, this)
+                return this.methods[func](this.run(data, context, { proxy: false, above }), context, above, this)
             }
             
             if (typeof this.methods[func] === "object") {
                 const { method, traverse: shouldTraverse } = this.methods[func]
-                const parsedData = shouldTraverse ? this.traverse(data, context, { proxy: false, above }) : data
+                const parsedData = shouldTraverse ? this.run(data, context, { proxy: false, above }) : data
                 return method(parsedData, context, above, this)
             }
     
@@ -28,7 +28,7 @@ class LogicEngine {
         this.methods[name] = method
     }
 
-    traverse(logic, data = {}, options = {
+    run(logic, data = {}, options = {
         proxy: true
     }) {
         if (options.proxy) {
@@ -37,12 +37,12 @@ class LogicEngine {
         const { above } = options
         
         if (Array.isArray(logic)) {
-            return logic.map(i => this.traverse(i, data, { proxy: false, above }))
+            return logic.map(i => this.run(i, data, { proxy: false, above }))
         }
     
         if (logic && typeof logic === "object" && !logic['&preserve']) {
             const [func] = Object.keys(logic)
-            return this.evaluate(func, logic[func], data, above)
+            return this.parse(func, logic[func], data, above)
         }
         
         return logic

@@ -1,4 +1,4 @@
-
+const { createProxy } = require('./proxy')
 
 const defaultMethods = {
     '+': data => data.reduce((a, b) => a + b, 0),
@@ -11,10 +11,14 @@ const defaultMethods = {
     'in': ([item, array]) => array.includes(item), 
     '>': ([a, b]) => a > b,
     '<': ([a, b]) => a < b,
+    'preserve': {
+        traverse: false,
+        method: i => i
+    },
     'if': { 
         method: ([check, onTrue, onFalse], context, above, engine) => {
-            const test = engine.traverse(check, context, { proxy: false, above })
-            return engine.traverse(test ? onTrue : onFalse, context, { proxy: false, above })
+            const test = engine.run(check, context, { proxy: false, above })
+            return engine.run(test ? onTrue : onFalse, context, { proxy: false, above })
         },
         traverse: false
     },
@@ -56,12 +60,11 @@ const defaultMethods = {
     'filter': createArrayIterativeMethod('filter'),
     'reduce': {
         method: ([selector, mapper, defaultValue], context, above, engine) => {
-            if(selector.var) {
-                const data = context[selector.var]
-                return data.reduce((accumulator, current) => {
-                    return engine.traverse(mapper, { accumulator, current }, { proxy: false, above: data })
-                }, defaultValue)
-            }
+            defaultValue = engine.run(defaultValue, context, { proxy: false, above }) 
+            selector = engine.run(selector, context, { proxy: false, above }) 
+            return selector.reduce((accumulator, current) => {
+                return engine.run(mapper, createProxy({ accumulator, current }, selector), { proxy: false, above: selector })
+            }, defaultValue)
         },
         traverse: false
     },
@@ -74,12 +77,10 @@ const defaultMethods = {
 function createArrayIterativeMethod(name) {
     return {
         method: ([selector, mapper], context, above, engine) => {
-            if(selector.var) {
-                const data = context[selector.var]
-                return data[name](i => {
-                    return engine.traverse(mapper, i, { proxy: false, above: data })
-                })
-            }
+            selector = engine.run(selector, context, { proxy: false, above }) 
+            return selector[name](i => {
+                return engine.run(mapper, i, { proxy: false, above: selector })
+            })
         },
         traverse: false
     }

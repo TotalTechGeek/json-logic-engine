@@ -9,16 +9,16 @@ class AsyncLogicEngine {
         this.methods = methods
     }
 
-    async evaluate(func, data, context, above) {
+    async parse(func, data, context, above) {
         if (this.methods[func]) {
             if (typeof this.methods[func] === "function") {
-                const result = await this.methods[func](await this.traverse(data, context, { proxy: false, above }), context, above, this)
+                const result = await this.methods[func](await this.run(data, context, { proxy: false, above }), context, above, this)
                 return Array.isArray(result) ? Promise.all(result) : result
             }
             
             if (typeof this.methods[func] === "object") {
                 const { method, traverse: shouldTraverse } = this.methods[func]
-                const parsedData = shouldTraverse ? await this.traverse(data, context, { proxy: false, above }) : data
+                const parsedData = shouldTraverse ? await this.run(data, context, { proxy: false, above }) : data
                 const result = await method(parsedData, context, above, this)
                 return Array.isArray(result) ? Promise.all(result) : result
             }
@@ -31,7 +31,7 @@ class AsyncLogicEngine {
         console.log(name, method)
     }
 
-    async traverse(logic, data = {}, options = {
+    async run(logic, data = {}, options = {
         proxy: true
     }) {
         if (options.proxy) {
@@ -40,12 +40,12 @@ class AsyncLogicEngine {
         const { above } = options
         
         if (Array.isArray(logic)) {
-            return Promise.all(logic.map(i => this.traverse(i, data, { proxy: false, above })))
+            return Promise.all(logic.map(i => this.run(i, data, { proxy: false, above })))
         }
     
         if (logic && typeof logic === "object" && !logic['&preserve']) {
             const [func] = Object.keys(logic)
-            return this.evaluate(func, logic[func], data, above)
+            return this.parse(func, logic[func], data, above)
         }
         
         return logic
