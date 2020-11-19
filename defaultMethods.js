@@ -61,7 +61,12 @@ const defaultMethods = {
     'reduce': {
         method: ([selector, mapper, defaultValue], context, above, engine) => {
             defaultValue = engine.run(defaultValue, context, { proxy: false, above }) 
+            const needsProxy = !selector.var
             selector = engine.run(selector, context, { proxy: false, above }) 
+            if(needsProxy) {
+                selector = createProxy(selector, above)
+            }
+
             return selector.reduce((accumulator, current) => {
                 return engine.run(mapper, createProxy({ accumulator, current }, selector), { proxy: false, above: selector })
             }, defaultValue)
@@ -77,7 +82,11 @@ const defaultMethods = {
 function createArrayIterativeMethod(name) {
     return {
         method: ([selector, mapper], context, above, engine) => {
+            const needsProxy = !selector.var
             selector = engine.run(selector, context, { proxy: false, above }) 
+            if(needsProxy) {
+                selector = createProxy(selector, above)
+            }
             return selector[name](i => {
                 return engine.run(mapper, i, { proxy: false, above: selector })
             })
