@@ -28,7 +28,6 @@ class AsyncLogicEngine {
 
     addMethod(name, method) {
         this.methods[name] = method
-        console.log(name, method)
     }
 
     async run(logic, data = {}, options = {
