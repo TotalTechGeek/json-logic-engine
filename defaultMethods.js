@@ -1,4 +1,5 @@
 const { createProxy } = require('./proxy')
+const async_iterators = require('./async_iterators')
 
 const defaultMethods = {
     '+': data => data.reduce((a, b) => a + b, 0),
@@ -63,7 +64,6 @@ const defaultMethods = {
     'every': createArrayIterativeMethod('every'),
     'filter': createArrayIterativeMethod('filter'),
     'reduce': {
-        // todo: fix for async
         method: ([selector, mapper, defaultValue], context, above, engine) => {
             defaultValue = engine.run(defaultValue, context, { proxy: false, above }) 
             const needsProxy = !selector.var
@@ -76,15 +76,26 @@ const defaultMethods = {
                 return engine.run(mapper, createProxy({ accumulator, current }, selector), { proxy: false, above: selector })
             }, defaultValue)
         },
+        asyncMethod: async ([selector, mapper, defaultValue], context, above, engine) => {
+            defaultValue = await engine.run(defaultValue, context, { proxy: false, above }) 
+            const needsProxy = !selector.var
+            selector = await engine.run(selector, context, { proxy: false, above }) 
+            if(needsProxy) {
+                selector = createProxy(selector, above)
+            }
+
+            return async_iterators.reduce(selector, (accumulator, current) => {
+                return engine.run(mapper, createProxy({ accumulator, current }, selector), { proxy: false, above: selector })
+            }, defaultValue)
+        },
         traverse: false
     },
     'not': value => !value,
     '!': value => !value,
-    '!!': value => Boolean(value)
+    '!!': value => Boolean(value),
+    'concat': arr => arr.join('')
 }
 
-
-// todo: fix for async
 function createArrayIterativeMethod(name) {
     return {
         method: ([selector, mapper], context, above, engine) => {
@@ -94,6 +105,16 @@ function createArrayIterativeMethod(name) {
                 selector = createProxy(selector, above)
             }
             return selector[name](i => {
+                return engine.run(mapper, i, { proxy: false, above: selector })
+            })
+        },
+        asyncMethod: async ([selector, mapper], context, above, engine) => {
+            const needsProxy = !selector.var
+            selector = await engine.run(selector, context, { proxy: false, above }) 
+            if(needsProxy) {
+                selector = createProxy(selector, above)
+            }
+            return async_iterators[name](selector, i => {
                 return engine.run(mapper, i, { proxy: false, above: selector })
             })
         },

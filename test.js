@@ -1,5 +1,5 @@
 
-const { LogicEngine } = require('./index')
+const { LogicEngine, AsyncLogicEngine } = require('./index')
 const logic = new LogicEngine()
 
 logic.run({
@@ -53,4 +53,22 @@ logic.run({
 {
     'x': [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }],
     'adder':  7
+}) //?
+
+
+const asyncEngine = new AsyncLogicEngine()
+
+
+asyncEngine.run({ 
+    'some': [[0,0,0], { var: '' }]
+}) //?
+
+asyncEngine.run({
+    'reduce': [[1,2,3,4,5], {
+        '+': [{var: 'current'}, {var: 'accumulator'}]
+    }, 10]
+}) //?
+
+asyncEngine.run({
+    concat: ['a', 'b', 'c']
 }) //?
