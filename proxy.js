@@ -1,7 +1,6 @@
 function createProxy(obj, above) {
     const proxy = new Proxy(obj, {
         set: (target, prop, receiver) => {
-            throw new Error('Not supported')
         },
         get: (target, prop, receiver) => {
             if(prop === '../') return above || proxy
