@@ -37,11 +37,11 @@ async function reduce (arr, iter, defaultValue) {
     if (arr.length === 0) {
         throw new Error('Array has no elements.')      
     }
-   
-    const array = [...arr]
-    let data = typeof defaultValue === "undefined" ? array.pop() : defaultValue
-    for (const item of array) {
-        data = await iter(data, item)
+
+    const start = typeof defaultValue === "undefined" ? 1 : 0
+    let data = start ? arr[0] : defaultValue
+    for (let i = start; i < arr.length; i++) {
+        data = await iter(data, arr[i])
     }
 
     return data

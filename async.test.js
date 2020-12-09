@@ -316,7 +316,7 @@ describe('reduce',  () => {
 
     test('it should be possible to access data from an above layer in a reduce', async () => {
         const answer = await logic.run({
-            reduce: [{var: 'a'}, {
+            reduce: [{var : 'a'}, {
                 '+': [{var: 'accumulator'}, { var: 'current' }, { var: '../../adder' }]
             }]
         }, {

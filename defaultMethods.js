@@ -92,7 +92,7 @@ const defaultMethods = {
             })
 
             if (needsProxy) {
-                selector = createProxy(selector, above)
+                selector = createProxy(selector, context)
             }
 
             const func = (accumulator, current) => {
@@ -123,7 +123,7 @@ const defaultMethods = {
             })
 
             if (needsProxy) {
-                selector = createProxy(selector, above)
+                selector = createProxy(selector, context)
             }
 
             return async_iterators.reduce(selector, (accumulator, current) => {
@@ -153,7 +153,7 @@ function createArrayIterativeMethod(name) {
                 above
             })
             if (needsProxy) {
-                selector = createProxy(selector, above)
+                selector = createProxy(selector, context)
             }
             return selector[name](i => {
                 return engine.run(mapper, i, {
@@ -169,7 +169,7 @@ function createArrayIterativeMethod(name) {
                 above
             })
             if (needsProxy) {
-                selector = createProxy(selector, above)
+                selector = createProxy(selector, context)
             }
             return async_iterators[name](selector, i => {
                 return engine.run(mapper, i, {
