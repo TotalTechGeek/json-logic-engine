@@ -20,6 +20,10 @@ const defaultMethods = {
             const test = engine.run(check, context, { proxy: false, above })
             return engine.run(test ? onTrue : onFalse, context, { proxy: false, above })
         },
+        asyncMethod: async ([check, onTrue, onFalse], context, above, engine) => {
+            const test = await engine.run(check, context, { proxy: false, above })
+            return engine.run(test ? onTrue : onFalse, context, { proxy: false, above })
+        },
         traverse: false
     },
     '<=': ([a, b]) => a <= b,
@@ -59,6 +63,7 @@ const defaultMethods = {
     'every': createArrayIterativeMethod('every'),
     'filter': createArrayIterativeMethod('filter'),
     'reduce': {
+        // todo: fix for async
         method: ([selector, mapper, defaultValue], context, above, engine) => {
             defaultValue = engine.run(defaultValue, context, { proxy: false, above }) 
             const needsProxy = !selector.var
@@ -79,6 +84,7 @@ const defaultMethods = {
 }
 
 
+// todo: fix for async
 function createArrayIterativeMethod(name) {
     return {
         method: ([selector, mapper], context, above, engine) => {
