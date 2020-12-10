@@ -141,7 +141,27 @@ const defaultMethods = {
     'not': value => !value,
     '!': value => !value,
     '!!': value => Boolean(value),
-    'concat': arr => arr.join('')
+    'concat': arr => arr.join(''),
+    'keys': obj => Object.keys(obj),
+    'eachKey': { 
+        traverse: false,
+        method: (object, context, above, engine) => {
+            const result = Object.keys(object).reduce((accumulator, key) => {
+                const item = object[key]
+                accumulator[key] = engine.run(item, createProxy({ key }, context), { above, proxy: false })
+                return accumulator
+            }, {})
+            return result
+        },
+        asyncMethod: async (object, context, above, engine) => {
+            const result = await async_iterators.reduce(Object.keys(object), async (accumulator, key) => {
+                const item = object[key]
+                accumulator[key] = await engine.run(item, createProxy({ key }, context), { above, proxy: false })
+                return accumulator
+            }, {})
+            return result
+        },
+    }
 }
 
 function createArrayIterativeMethod(name) {

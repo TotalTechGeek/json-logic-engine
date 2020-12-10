@@ -380,3 +380,66 @@ describe('iterators', () => {
     })
 })
 
+
+describe('eachKey', () => {
+    test('object with 1 key works', () => {
+        const answer = logic.run({
+            'eachKey': {
+                a: {
+                    '+': [1,2]
+                }
+            }
+        })
+
+        expect(answer).toStrictEqual({ a: 3 })
+    })
+
+    test('object with several keys works', () => {
+        const answer = logic.run({
+            'eachKey': {
+                a: {
+                    '+': [1,2,3]
+                },
+                b: {
+                    '-': [5,1]
+                },
+                c: {
+                    '/': [1,3]
+                }
+            }
+        })
+
+        expect(answer).toStrictEqual({ a: 6, b: 4, c: 1/3 })
+    })
+
+    test('check if able to traverse up', () => {
+        const answer = logic.run({
+            'eachKey': {
+                a: {
+                    '+': [{ var: '../test' },3]
+                }
+            }
+        }, {
+            test: 7
+        })
+
+        expect(answer).toStrictEqual({ a: 10 })
+    })
+})
+
+
+describe('miscellaneous', () => {
+    test('concat', () => {
+        const answer = logic.run({
+            'concat': ['hello ', 'world']
+        })
+        expect(answer).toBe('hello world')
+    })
+
+    test('keys', () => {
+        const answer = logic.run({
+            'keys': { preserve: { a: 1, b: 2 } }
+        })
+        expect(answer).toStrictEqual(['a', 'b'])
+    })
+})
