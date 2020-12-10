@@ -57,7 +57,7 @@ Similarly, you can also do `map` operations:
 ```js
 logic.run({
     'map': [[1,2,3,4,5], { '+': [{ var: '' }, 1] }]
-}) // [1,2,3,4,5,6]
+}) // [2,3,4,5,6]
 ```
 
 If `var` is left as an empty string, it will assume you're referring to the whole variable that is accessible at the current layer it is looking at.
@@ -70,7 +70,7 @@ logic.run({
 },
 {
     'x': [{ a: 1 }, { a: 2 }, { a: 3 }, { a: 4 }]
-}) // [1,2,3,4,5,6]
+}) // [2,3,4,5]
 ```
 
 You can easily nest different operations in each other, like so:
