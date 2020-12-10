@@ -10,7 +10,7 @@
   "license": "MIT",
   "scripts": {
     "test": "nyc jest --coverage",
-    "coverage": "npm install coveralls nyc --save-dev"
+    "coverage": "coveralls < coverage/lcov.info"
   },
   "devDependencies": {
     "eslint": "^7.15.0",
