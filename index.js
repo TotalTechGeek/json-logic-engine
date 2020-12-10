@@ -1,5 +1,5 @@
 
-module.exports = { 
-    LogicEngine: require('./logic'),
-    AsyncLogicEngine: require('./asyncLogic')
+module.exports = {
+  LogicEngine: require('./logic'),
+  AsyncLogicEngine: require('./asyncLogic')
 }
