@@ -4,6 +4,9 @@
   "description": "Construct complex rules with JSON & process them.",
   "main": "index.js",
   "author": "Jesse Daniel Mitchell",
+  "repository": {
+    "url": "https://github.com/TotalTechGeek/json-logic-engine"
+  },
   "license": "MIT",
   "scripts": {
     "test": "nyc jest --coverage"
