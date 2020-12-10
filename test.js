@@ -518,3 +518,18 @@ describe('prototype pollution', () => {
     })).toThrow()
   })
 })
+
+describe('prevent access to data that should not be accessed', () => {
+  test('prevent access to functions on objects', () => {
+    expect(logic.run({
+      var: 'toString'
+    }, 'hello')).toBe(undefined)
+  })
+
+  test('allow access to functions on objects when enabled', () => {
+    logic.allowFunctions = true
+    expect(logic.run({
+      var: 'toString'
+    }, 'hello')).toBe('hello'.toString)
+  })
+})

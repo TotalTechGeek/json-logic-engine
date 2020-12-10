@@ -30,7 +30,7 @@ class LogicEngine {
   run (logic, data = {}, options = {
     proxy: true
   }) {
-    if (data && options.proxy) {
+    if (typeof data === 'object' && options.proxy) {
       data = createProxy(data)
     }
 

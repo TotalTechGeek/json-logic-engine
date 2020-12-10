@@ -61,9 +61,9 @@ const defaultMethods = {
   var: (key, context, above, engine) => {
     if (!key) return context
     if (typeof context !== 'object' && key.startsWith('../')) {
-      return engine.methods.var(key.substring(3), above)
+      return engine.methods.var(key.substring(3), above, undefined, engine)
     }
-    return context[key]
+    if (engine.allowFunctions || typeof context[key] !== 'function') { return context[key] }
   },
   missing: (checked, context, above, engine) => {
     return checked.filter(key => {
