@@ -30,16 +30,17 @@ class LogicEngine {
   run (logic, data = {}, options = {
     proxy: true
   }) {
-    if (options.proxy) {
+    if (data && options.proxy) {
       data = createProxy(data)
     }
+
     const { above } = options
 
     if (Array.isArray(logic)) {
       return logic.map(i => this.run(i, data, { proxy: false, above }))
     }
 
-    if (logic && typeof logic === 'object' && !logic['&preserve']) {
+    if (logic && typeof logic === 'object') {
       const [func] = Object.keys(logic)
       return this.parse(func, logic[func], data, above)
     }

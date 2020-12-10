@@ -149,7 +149,10 @@ const defaultMethods = {
     method: (object, context, above, engine) => {
       const result = Object.keys(object).reduce((accumulator, key) => {
         const item = object[key]
-        accumulator[key] = engine.run(item, createProxy({ key }, context), { above, proxy: false })
+        Object.defineProperty(accumulator, key, {
+          enumerable: true,
+          value: engine.run(item, createProxy({ key }, context), { above, proxy: false })
+        })
         return accumulator
       }, {})
       return result
@@ -157,7 +160,10 @@ const defaultMethods = {
     asyncMethod: async (object, context, above, engine) => {
       const result = await asyncIterators.reduce(Object.keys(object), async (accumulator, key) => {
         const item = object[key]
-        accumulator[key] = await engine.run(item, createProxy({ key }, context), { above, proxy: false })
+        Object.defineProperty(accumulator, key, {
+          enumerable: true,
+          value: await engine.run(item, createProxy({ key }, context), { above, proxy: false })
+        })
         return accumulator
       }, {})
       return result

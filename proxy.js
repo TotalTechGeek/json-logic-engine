@@ -17,11 +17,13 @@ function createProxy (obj, above) {
         const list = path.split('.')
         while (list.length) {
           const key = list.shift()
-          if (key === '__proto__') throw new Error('Attempted Prototype Pollution') // Not necessary as a read
+          if (key === '__proto__') throw new Error('Attempted Prototype Pollution')
           cur = typeof cur[key] === 'object' ? cur[key] && createProxy(cur[key], cur) : cur[key]
         }
         return cur
       }
+
+      if (prop === '__proto__') throw new Error('Attempted Prototype Pollution')
 
       return typeof target[prop] === 'object' ? target[prop] && createProxy(target[prop], proxy) : target[prop]
     }

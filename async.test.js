@@ -500,3 +500,21 @@ describe('addMethod', () => {
     expect(await logic.run({ '+1': 7 })).toBe(8)
   })
 })
+
+describe('prototype pollution', () => {
+  test('simple data prototype pollution', async () => {
+    logic.addMethod('CombineObjects', (objects) => {
+      // vulnerable code
+      const result = {}
+      for (const obj of objects) {
+        for (const key in obj) {
+          result[key] = obj[key]
+        }
+      }
+    })
+    await expect(async () => await logic.run({ CombineObjects: [{ var: 'a' }, { var: 'b' }] }, {
+      a: JSON.parse('{ "__proto__": { "wah": 1 } }'),
+      b: { a: 1 }
+    })).rejects.toThrow()
+  })
+})
