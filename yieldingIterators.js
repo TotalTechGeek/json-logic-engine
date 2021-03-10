@@ -62,7 +62,7 @@ function createYieldingControl (name, method, asyncMethod) {
 }
 
 const ifYield = createYieldingControl('ifYield', (input, context, above, engine) => (cur, item, arr, iter) => {
-  if (arr.length === 3) {
+  if (iter._position === 0) {
     const test = engine.run(item, context, {
       proxy: false,
       above
@@ -71,7 +71,7 @@ const ifYield = createYieldingControl('ifYield', (input, context, above, engine)
       iter.skip()
     }
     return test
-  } else if (arr.length === 2) {
+  } else if (iter._position === 1) {
     iter.dump()
   }
 
@@ -80,7 +80,7 @@ const ifYield = createYieldingControl('ifYield', (input, context, above, engine)
     above
   })
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
-  if (arr.length === 3) {
+  if (iter._position === 0) {
     const test = await engine.run(item, context, {
       proxy: false,
       above
@@ -89,7 +89,7 @@ const ifYield = createYieldingControl('ifYield', (input, context, above, engine)
       iter.skip()
     }
     return test
-  } else if (arr.length === 2) {
+  } else if (iter._position === 1) {
     iter.dump()
   }
 

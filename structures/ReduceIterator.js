@@ -7,31 +7,31 @@ class ReduceIterator {
     this.arr = arr
     this.cur = cur
     this.nextCall = next
+    this.position = 0
+    this._position = 0
   }
 
   next () {
-    const item = this.arr[0]
-    this._arr = [...this.arr]
-    const cur = this.nextCall(this.cur, item, this._arr, this)
+    const item = this.arr[this.position]
+    this._position = this.position
+    const cur = this.nextCall(this.cur, item, this.arr, this)
     if (cur instanceof Yield || cur instanceof EngineObject) {
       return cur
     }
 
     // commit
-    this.arr = this._arr
-    delete this._arr
-
+    this.position = this._position
     this.cur = cur
-    this.arr.shift()
+    this.position++
     return this.cur
   }
 
   skip () {
-    this._arr.shift()
+    this._position++
   }
 
   dump () {
-    this._arr = []
+    this._position = this.arr.length
   }
 
   result () {
@@ -39,31 +39,27 @@ class ReduceIterator {
   }
 
   state () {
-    return { arr: this.arr, cur: this.cur }
+    return { arr: this.arr.splice(this.position), cur: this.cur }
   }
 
   done () {
-    return !this.arr.length
+    return this.position >= this.arr.length
   }
 }
 
 class AsyncReduceIterator extends ReduceIterator {
   async next () {
-    const item = this.arr[0]
-    this._arr = [...this.arr]
+    const item = this.arr[this.position]
+    this._position = this.position
     const cur = await this.nextCall(this.cur, item, this.arr, this)
-
     if (cur instanceof Yield || cur instanceof EngineObject) {
       return cur
     }
 
     // commit
-    this.arr = this._arr
-    delete this._arr
-
-    this.arr.shift()
+    this.position = this._position
     this.cur = cur
-
+    this.position++
     return this.cur
   }
 }
