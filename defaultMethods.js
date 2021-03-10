@@ -209,4 +209,5 @@ function createArrayIterativeMethod (name) {
   }
 }
 
-module.exports = defaultMethods
+// include the yielding iterators as well
+module.exports = { ...defaultMethods, ...require('./yieldingIterators') }

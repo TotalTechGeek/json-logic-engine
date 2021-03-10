@@ -1,17 +1,10 @@
 const {
   createProxy
 } = require('./proxy')
-
+const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
-
-async function checkYield(item) {
-  if (Array.isArray(item)) {
-    return item.some(i=>i instanceof Yield || i instanceof EngineObject)
-  }
-  return item instanceof Yield || item instanceof EngineObject 
-}
 
 class AsyncLogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false }) {
@@ -71,10 +64,10 @@ class AsyncLogicEngine {
           if (!result.logic) {
             result.logic = logic
           }
-          return result
+          return new EngineObject({ result })
         }
 
-        return new EngineObject({ 
+        return new EngineObject({
           result: { [func]: result.data.result }
         })
       }

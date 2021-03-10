@@ -662,29 +662,29 @@ modes.forEach(logic => {
           if (typeof context !== 'object' && key.startsWith('../')) {
             return engine.methods.var(key.substring(3), above, undefined, engine)
           }
-          if (engine.allowFunctions || typeof context[key] !== 'function') { 
+          if (engine.allowFunctions || typeof context[key] !== 'function') {
             if (!(key in context)) {
               return new Yield({
                 message: 'Data does not exist in context.'
               })
             }
-            return context[key] 
+            return context[key]
           }
         })
 
-        const script = { 
-          '+': [1, {'+': [1,2,3]}, {yieldVar: 'a'}]
+        const script = {
+          '+': [1, { '+': [1, 2, 3] }, { yieldVar: 'a' }]
         }
 
-        let instance = await logic.run(script)
+        const instance = await logic.run(script)
 
         expect(instance instanceof EngineObject).toBe(true)
-        expect(instance.yields().map(i=>({...i}))).toStrictEqual([{
+        expect(instance.yields().map(i => ({ ...i }))).toStrictEqual([{
           message: 'Data does not exist in context.',
           logic: { yieldVar: 'a' }
         }])
         expect(instance.logic()).toStrictEqual({
-          '+': [1,6, {yieldVar: 'a'}]
+          '+': [1, 6, { yieldVar: 'a' }]
         })
 
         expect(await logic.run(instance.logic(), {
