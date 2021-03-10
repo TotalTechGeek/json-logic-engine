@@ -2,7 +2,6 @@ const Yield = require('../structures/Yield')
 const EngineObject = require('../structures/EngineObject')
 
 function checkYield (item) {
-  console.log(item)
   if (Array.isArray(item)) {
     return item.some(i => i instanceof Yield || i instanceof EngineObject)
   }

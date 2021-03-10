@@ -23,7 +23,7 @@ function createYieldingControl (name, method, asyncMethod) {
         if (checkYield(cur)) {
           return new Yield({
             yield: cur,
-            logic: {
+            _logic: {
               [name]: iter.state()
             }
           })
@@ -48,7 +48,7 @@ function createYieldingControl (name, method, asyncMethod) {
         if (checkYield(cur)) {
           return new Yield({
             yield: cur,
-            logic: {
+            _logic: {
               [name]: iter.state()
             }
           })

@@ -30,8 +30,9 @@ class EngineObject {
     return traverseCopy(this.data.result, {}, {
       mutateValue: i => {
         if (i instanceof Yield) {
-          return i.logic
+          return i.logic()
         }
+
         return i
       },
       skipCopy: i => i instanceof Yield

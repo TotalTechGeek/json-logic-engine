@@ -681,7 +681,7 @@ modes.forEach(logic => {
         expect(instance instanceof EngineObject).toBe(true)
         expect(instance.yields().map(i => ({ ...i }))).toStrictEqual([{
           message: 'Data does not exist in context.',
-          logic: { yieldVar: 'a' }
+          _logic: { yieldVar: 'a' }
         }])
         expect(instance.logic()).toStrictEqual({
           '+': [1, 6, { yieldVar: 'a' }]

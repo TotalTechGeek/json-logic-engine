@@ -61,10 +61,10 @@ class AsyncLogicEngine {
       const result = await this.parse(func, logic[func], data, above)
       if (this.options.yieldSupported && await checkYield(result)) {
         if (result instanceof Yield) {
-          if (!result.logic) {
-            result.logic = logic
+          if (!result._logic) {
+            result._logic = logic
           }
-          return new EngineObject({ result })
+          return result
         }
 
         return new EngineObject({

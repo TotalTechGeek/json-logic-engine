@@ -13,7 +13,6 @@ class ReduceIterator {
     const item = this.arr[0]
     this._arr = [...this.arr]
     const cur = this.nextCall(this.cur, item, this._arr, this)
-    console.log(cur)
     if (cur instanceof Yield || cur instanceof EngineObject) {
       return cur
     }
