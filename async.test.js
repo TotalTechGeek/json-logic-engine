@@ -567,6 +567,27 @@ modes.forEach(logic => {
       expect(answer2).toBe('hel')
     })
 
+    test('missing', async () => {
+      const answer = await logic.run({
+        missing: ['a']
+      })
+      expect(answer).toStrictEqual(['a'])
+
+      const answer2 = await logic.run({
+        missing: ['a']
+      }, {
+        a: 1
+      })
+      expect(answer2).toStrictEqual([])
+    })
+
+    test('merge', async () => {
+      const answer = await logic.run({
+        merge: [{ preserve: ['b'] }, { preserve: ['c'] }]
+      })
+      expect(answer).toStrictEqual(['b', 'c'])
+    })
+
     test('not', async () => {
       const answer = await logic.run({
         not: true

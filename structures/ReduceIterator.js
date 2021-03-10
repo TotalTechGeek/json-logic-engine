@@ -61,8 +61,9 @@ class AsyncReduceIterator extends ReduceIterator {
     this.arr = this._arr
     delete this._arr
 
-    this.cur = cur
     this.arr.shift()
+    this.cur = cur
+
     return this.cur
   }
 }

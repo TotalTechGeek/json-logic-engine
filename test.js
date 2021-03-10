@@ -567,6 +567,27 @@ modes.forEach(logic => {
       expect(answer2).toBe('hel')
     })
 
+    test('missing', () => {
+      const answer = logic.run({
+        missing: ['a']
+      })
+      expect(answer).toStrictEqual(['a'])
+
+      const answer2 = logic.run({
+        missing: ['a']
+      }, {
+        a: 1
+      })
+      expect(answer2).toStrictEqual([])
+    })
+
+    test('merge', () => {
+      const answer = logic.run({
+        merge: [{ preserve: ['b'] }, { preserve: ['c'] }]
+      })
+      expect(answer).toStrictEqual(['b', 'c'])
+    })
+
     test('not', () => {
       const answer = logic.run({
         not: true
@@ -682,7 +703,6 @@ modes.forEach(logic => {
           _logic: { yieldVar: 'a' }
         }])
 
-        console.log(instance.logic())
         expect(instance.logic()).toStrictEqual({
           '+': [1, 6, { yieldVar: 'a' }]
         })

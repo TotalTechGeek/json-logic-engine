@@ -40,7 +40,7 @@ function createYieldingControl (name, method, asyncMethod) {
         cur = input.cur
       }
 
-      const executed = method(input, context, above, engine)
+      const executed = asyncMethod(input, context, above, engine)
       const iter = new AsyncReduceIterator(arr, cur, executed)
 
       while (!iter.done()) {
@@ -159,7 +159,7 @@ const filterYield = createArrayIterativeMethod('filterYield', (input, context, a
   if (checkYield(currentItem)) return currentItem
   if (currentItem) cur.push(item)
   return cur
-}, [])
+}, () => ([]))
 
 const mapYield = createArrayIterativeMethod('mapYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
@@ -177,7 +177,7 @@ const mapYield = createArrayIterativeMethod('mapYield', (input, context, above, 
   if (checkYield(currentItem)) return currentItem
   cur.push(currentItem)
   return cur
-}, [])
+}, () => ([]))
 
 const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   return engine.run(iter.map, {
@@ -197,9 +197,11 @@ const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, a
   })
 })
 
-function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
+function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializer) {
   return {
     method: (input, context, above, engine) => {
+      let defaultCur = defaultInitializer
+      if (typeof defaultInitializer === 'function') defaultCur = defaultInitializer()
       let arr
       let cur
       let map = null
@@ -214,7 +216,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({
-            logic: {
+            _logic: {
               [name]: [selector, mapper, defaultValue]
             },
             yields: selected.yields()
@@ -240,7 +242,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
         if (checkYield(cur)) {
           return new Yield({
             yields: cur.yields(),
-            logic: {
+            _logic: {
               [name]: {
                 ...iter.state(),
                 map
@@ -253,6 +255,9 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
       return iter.result()
     },
     asyncMethod: async (input, context, above, engine) => {
+      let defaultCur = defaultInitializer
+      if (typeof defaultInitializer === 'function') defaultCur = defaultInitializer()
+
       let arr
       let cur
       let map = null
@@ -267,7 +272,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({
-            logic: {
+            _logic: {
               [name]: [selector, mapper, defaultValue]
             },
             yields: selected.yields()
@@ -293,7 +298,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultCur) {
         if (checkYield(cur)) {
           return new Yield({
             yields: cur.yields(),
-            logic: {
+            _logic: {
               [name]: {
                 ...iter.state(),
                 map
