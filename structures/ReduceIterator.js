@@ -1,3 +1,4 @@
+'use strict'
 const Yield = require('./Yield')
 const EngineObject = require('./EngineObject')
 

@@ -1,3 +1,4 @@
+'use strict'
 // Note: Each of these iterators executes synchronously, and will not "run in parallel"
 // I am supporting filter, reduce, some, every, map
 

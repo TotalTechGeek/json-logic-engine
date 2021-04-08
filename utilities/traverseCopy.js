@@ -1,4 +1,4 @@
-
+'use strict'
 const mutateKey = i => i
 const mutateValue = i => i
 const skipCopy = i => false

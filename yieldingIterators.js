@@ -4,6 +4,7 @@ const {
 } = require('./structures/ReduceIterator')
 const Yield = require('./structures/Yield')
 const checkYield = require('./utilities/checkYield')
+const { createProxy } = require('./proxy')
 
 function createYieldingControl (name, method, asyncMethod) {
   return {
@@ -222,9 +223,6 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
             yields: selected.yields()
           })
         }
-        // if (needsProxy) {
-        //   selected = createProxy(selected, context)
-        // }
         arr = selected
         map = mapper
         cur = defaultValue === 0 ? 0 : defaultValue || defaultCur
@@ -233,6 +231,9 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         cur = input.cur
         map = input.map
       }
+
+      input = createProxy(input, context)
+
       const executed = method(input, context, above, engine)
       const iter = new ReduceIterator(arr, cur, executed)
       iter.map = map
@@ -263,8 +264,6 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
       let map = null
       if (Array.isArray(input)) {
         const [selector, mapper, defaultValue] = input
-
-        // const needsProxy = !selector.var
         const selected = await engine.run(selector, context, {
           proxy: false,
           above
@@ -278,9 +277,6 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
             yields: selected.yields()
           })
         }
-        // if (needsProxy) {
-        //   selected = createProxy(selected, context)
-        // }
         arr = selected
         map = mapper
         cur = defaultValue === 0 ? 0 : defaultValue || defaultCur
@@ -289,6 +285,9 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         cur = input.cur
         map = input.map
       }
+
+      input = createProxy(input, context)
+
       const executed = asyncMethod(input, context, above, engine)
       const iter = new AsyncReduceIterator(arr, cur, executed)
       iter.map = map

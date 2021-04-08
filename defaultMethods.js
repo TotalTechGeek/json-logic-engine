@@ -1,3 +1,4 @@
+'use strict'
 const {
   createProxy
 } = require('./proxy')
@@ -59,6 +60,7 @@ const defaultMethods = {
     return string.substr(from, end)
   },
   var: (key, context, above, engine) => {
+    if (!key && context.__) return context.__
     if (!key) return context
     if (typeof context !== 'object' && key.startsWith('../')) {
       return engine.methods.var(key.substring(3), above, undefined, engine)
@@ -173,6 +175,18 @@ const defaultMethods = {
 
 function createArrayIterativeMethod (name) {
   return {
+    build: ([selector, mapper], context, above, engine) => {
+      selector = engine.build(selector, {}, {
+        top: true,
+        above
+      })
+      mapper = engine.build(mapper, {}, { top: true, above: createProxy(selector, context) })
+      return () => {
+        return selector(context)[name](i => {
+          return mapper(i)
+        })
+      }
+    },
     method: ([selector, mapper], context, above, engine) => {
       const needsProxy = !selector.var
       selector = engine.run(selector, context, {
@@ -204,6 +218,18 @@ function createArrayIterativeMethod (name) {
           above: selector
         })
       })
+    },
+    asyncBuild: ([selector, mapper], context, above, engine) => {
+      selector = engine.build(selector, {}, {
+        top: true,
+        above
+      })
+      mapper = engine.build(mapper, {}, { top: true, above: createProxy(selector, context) })
+      return async () => {
+        return asyncIterators[name](await selector(context), i => {
+          return mapper(i)
+        })
+      }
     },
     traverse: false
   }

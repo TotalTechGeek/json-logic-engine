@@ -1,3 +1,4 @@
+'use strict'
 class Yield {
   constructor (data) {
     Object.assign(this, data)

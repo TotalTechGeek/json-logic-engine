@@ -11,10 +11,10 @@ const nosync = new AsyncLogicEngine(undefined, { yieldSupported: true })
 const yieldVar = (key, context, above, engine) => {
   if (!key) return context
   if (typeof context !== 'object' && key.startsWith('../')) {
-    return engine.methods.var(key.substring(3), above, undefined, engine)
+    return engine.methods.yieldVar(key.substring(3), above, undefined, engine)
   }
   if (engine.allowFunctions || typeof context[key] !== 'function') {
-    if (!(key in context)) {
+    if (typeof context[key] === 'undefined') {
       return new Yield({
         message: 'Data does not exist in context.'
       })
@@ -162,9 +162,67 @@ describe('iterators', () => {
 
     expect(answer).toStrictEqual([1, 3])
   })
+
+  test('map +above', () => {
+    const answer = sync.run({
+      mapYield: [
+        [1, 2, 3], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(answer).toStrictEqual([2, 3, 4])
+  })
+
+  test('yielded selector map +above', () => {
+    const instance = sync.run({
+      mapYield: [
+        [1, 2, 3, { yieldVar: 'x' }], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(sync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([2, 3, 4, 5])
+  })
+
+  test('yielded iterator map +above', () => {
+    const instance = sync.run({
+      mapYield: [
+        [1, 2, 3, 4], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }, {
+            yieldVar: '../../x'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(sync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([2, 3, 4, 5])
+  })
 })
 
-describe('Sync Yielding Iterator Test', () => {
+describe('Async Yielding Iterator Test', () => {
   test('someYield', async () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
@@ -299,5 +357,63 @@ describe('iterators', () => {
     })
 
     expect(answer).toStrictEqual([1, 3])
+  })
+
+  test('map +above', async () => {
+    const answer = await nosync.run({
+      mapYield: [
+        [1, 2, 3], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(answer).toStrictEqual([2, 3, 4])
+  })
+
+  test('yielded selector map +above', async () => {
+    const instance = await nosync.run({
+      mapYield: [
+        [1, 2, 3, { yieldVar: 'x' }], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(await nosync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([2, 3, 4, 5])
+  })
+
+  test('yielded iterator map +above', async () => {
+    const instance = await nosync.run({
+      mapYield: [
+        [1, 2, 3, 4], {
+          '+': [{
+            var: ''
+          }, {
+            var: '../../data'
+          }, {
+            yieldVar: '../../x'
+          }]
+        }
+      ]
+    }, {
+      data: 1
+    })
+
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(await nosync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([2, 3, 4, 5])
   })
 })

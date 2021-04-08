@@ -1,15 +1,24 @@
-const { AsyncLogicEngine } = require('.')
+const { LogicEngine } = require('.')
 
-const logic = new AsyncLogicEngine()
+const logic = new LogicEngine(undefined, { yieldSupported: false })
 
 async function test () {
-  console.time('Simple adding')
-  for (let i = 0; i < 10e3; i++) {
-    await logic.run({
-      '+': [1, { '+': [1, { '+': [1, 2, 3, 4, 5] }] }, 3]
-    })
+  console.time('old')
+  // const outer = [...new Array(100)]
+  // for (let i = 0; i < 10e3; i++) {
+  //   const arr = outer.map((i, x) => (x + 10) * Math.random() | 0)
+  //   logic.run({
+  //     mapYield: [arr, { '+': [{ var: '' }, 1] }]
+  //   })
+  // }
+
+  console.log(logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: 5 }))
+  console.log(logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: 1 }))
+
+  for (let i = 0; i < 1e6; i++) {
+    logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: i })
   }
-  console.timeEnd('Simple adding')
+  console.timeEnd('old')
 }
 
 test()

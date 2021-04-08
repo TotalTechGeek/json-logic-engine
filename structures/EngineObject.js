@@ -1,3 +1,4 @@
+'use strict'
 const traverseCopy = require('../utilities/traverseCopy')
 const Yield = require('./Yield')
 

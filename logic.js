@@ -1,3 +1,4 @@
+'use strict'
 const {
   createProxy
 } = require('./proxy')
@@ -5,6 +6,20 @@ const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
+
+/* istanbul ignore next */
+function compose (...funcs) {
+  return funcs.reduce((a, b) => {
+    if (typeof a === 'function') {
+      return function () {
+        return b(a(...arguments))
+      }
+    }
+    return function () {
+      return b(a)
+    }
+  })
+}
 
 class LogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false }) {
@@ -69,6 +84,67 @@ class LogicEngine {
           result: { [func]: result.data.result }
         })
       }
+      return result
+    }
+
+    return logic
+  }
+
+  /* istanbul ignore next */
+  compose (func, data, context, above) {
+    if (this.methods[func]) {
+      if (typeof this.methods[func] === 'function') {
+        const input = this.build(data, context, { proxy: false, above, top: false })
+        return compose(input, input => this.methods[func](input, context, above, this))
+      }
+
+      if (typeof this.methods[func] === 'object') {
+        const { method, traverse: shouldTraverse, build } = this.methods[func]
+        const parsedData = shouldTraverse ? this.build(data, context, { proxy: false, above }) : data
+
+        if (build) {
+          return build(parsedData, context, above, this)
+        }
+
+        return compose(parsedData, input => method(input, context, above, this))
+      }
+    }
+  }
+
+  /* istanbul ignore next */
+  build (logic, data = {}, options = {
+    top: true
+  }) {
+    const { above } = options
+
+    if (options.top) {
+      const constructedFunction = this.build(logic, createProxy(data, above), { top: false })
+      return invokingData => {
+        Object.keys(data).forEach(key => delete data[key])
+
+        if (typeof invokingData === 'object') {
+          Object.assign(data, invokingData)
+        } else {
+          data.__ = invokingData
+        }
+
+        return constructedFunction()
+      }
+    }
+
+    if (Array.isArray(logic)) {
+      const result = logic.map(i => this.build(i, data, { top: false }))
+      return () => result.map(i => {
+        if (typeof i === 'function') {
+          return i()
+        }
+        return i
+      })
+    }
+
+    if (logic && typeof logic === 'object') {
+      const [func] = Object.keys(logic)
+      const result = this.compose(func, logic[func], data, above)
       return result
     }
 
