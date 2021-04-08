@@ -155,13 +155,13 @@ class AsyncLogicEngine {
           data[Override] = invokingData
         }
 
-        const result = constructedFunction()
+        const result = typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
         return (options.top === true) ? Promise.resolve(result) : result
       }, (options.top !== true) && (constructedFunction[Sync] || false))
 
       // we can avoid the async pool if the constructed function is synchronous since the data
       // can't be updated :)
-      if (options.top === true && !constructedFunction[Sync]) {
+      if (options.top === true && constructedFunction && !constructedFunction[Sync]) {
         // we use this async pool so that we can execute these in parallel without having
         // concerns about the data.
         return asyncPool({
@@ -176,6 +176,8 @@ class AsyncLogicEngine {
 
     if (Array.isArray(logic)) {
       const result = logic.map(i => this.build(i, data, { top: false }))
+
+      if (result.every(i => typeof i !== 'function')) return result
 
       // checks if any of the functions aren't synchronous
       if (result.some(i => typeof i === 'function' && !i[Sync])) {

@@ -57,8 +57,8 @@ const defaultMethods = {
   '!=': ([a, b]) => a != b,
   '!==': ([a, b]) => a !== b,
   xor: ([a, b]) => a ^ b,
-  or: ([a, b]) => a || b,
-  and: ([a, b]) => a && b,
+  or: (arr) => arr.reduce((a, b) => a || b, false),
+  and: (arr) => arr.reduce((a, b) => a && b),
   substr: ([string, from, end]) => {
     if (end <= 0) {
       end = string.length - from + end
@@ -75,6 +75,7 @@ const defaultMethods = {
     if (typeof context !== 'object' && key.startsWith('../')) {
       return engine.methods.var(key.substring(3), above, undefined, engine)
     }
+
     if (engine.allowFunctions || typeof context[key] !== 'function') { return undefinedToNull(context[key]) }
   },
   missing: (checked, context, above, engine) => {

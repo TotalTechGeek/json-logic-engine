@@ -133,6 +133,7 @@ class LogicEngine {
 
     if (Array.isArray(logic)) {
       const result = logic.map(i => this.build(i, data, { top: false }))
+      if (result.every(i => typeof i !== 'function')) return result
       return () => result.map(i => typeof i === 'function' ? i() : i)
     }
 

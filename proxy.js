@@ -1,4 +1,5 @@
 'use strict'
+
 function createProxy (obj, above) {
   const proxy = new Proxy(obj, {
     set: (target, prop, receiver) => {
@@ -22,6 +23,7 @@ function createProxy (obj, above) {
           cur = typeof cur[key] === 'object' ? cur[key] && createProxy(cur[key], cur) : cur[key]
         }
         return cur
+        // return getProp(cur, list)
       }
 
       if (prop === '__proto__') throw new Error('Attempted Prototype Pollution')
