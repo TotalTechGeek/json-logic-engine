@@ -5,7 +5,7 @@ const {
 const Yield = require('./structures/Yield')
 const checkYield = require('./utilities/checkYield')
 const { createProxy } = require('./proxy')
-const { Sync } = require('./constants')
+const { Sync, EfficientTop } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 
 // Todo: Pursue support for yielding within the built functions.
@@ -211,7 +211,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
     asyncBuild: (input, context, above, engine) => {
       const [selector, mapper] = input
 
-      if (engine.build(selector, {}, { top: 2 })[Sync] && engine.build(mapper, {}, { top: 2 })[Sync]) {
+      if (engine.build(selector, {}, { top: EfficientTop })[Sync] && engine.build(mapper, {}, { top: EfficientTop })[Sync]) {
         return declareSync(() => result.method(input, context, above, engine.fallback))
       }
 
