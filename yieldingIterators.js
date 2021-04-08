@@ -5,6 +5,11 @@ const {
 const Yield = require('./structures/Yield')
 const checkYield = require('./utilities/checkYield')
 const { createProxy } = require('./proxy')
+const { Sync } = require('./constants')
+const declareSync = require('./utilities/declareSync')
+
+// Todo: Pursue support for yielding within the built functions.
+// It will be extremely difficult to leverage the yields here.
 
 function createYieldingControl (name, method, asyncMethod) {
   return {
@@ -199,7 +204,19 @@ const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, a
 })
 
 function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializer) {
-  return {
+  const result = {
+    build: (input, context, above, engine) => {
+      return declareSync(() => result.method(input, context, above, engine))
+    },
+    asyncBuild: (input, context, above, engine) => {
+      const [selector, mapper] = input
+
+      if (engine.build(selector, {}, { top: 2 })[Sync] && engine.build(mapper, {}, { top: 2 })[Sync]) {
+        return declareSync(() => result.method(input, context, above, engine.fallback))
+      }
+
+      return () => result.asyncMethod(input, context, above, engine)
+    },
     method: (input, context, above, engine) => {
       let defaultCur = defaultInitializer
       if (typeof defaultInitializer === 'function') defaultCur = defaultInitializer()
@@ -311,6 +328,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
     },
     traverse: false
   }
+  return result
 }
 
 module.exports = {

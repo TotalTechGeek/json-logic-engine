@@ -1,24 +1,26 @@
-const { LogicEngine } = require('.')
+const { AsyncLogicEngine } = require('.')
 
-const logic = new LogicEngine(undefined, { yieldSupported: false })
+const x = new AsyncLogicEngine(undefined, { yieldSupported: false })
 
 async function test () {
-  console.time('old')
-  // const outer = [...new Array(100)]
-  // for (let i = 0; i < 10e3; i++) {
-  //   const arr = outer.map((i, x) => (x + 10) * Math.random() | 0)
-  //   logic.run({
-  //     mapYield: [arr, { '+': [{ var: '' }, 1] }]
-  //   })
-  // }
-
-  console.log(logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: 5 }))
-  console.log(logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: 1 }))
-
-  for (let i = 0; i < 1e6; i++) {
-    logic.run({ map: [[1, 2, { '+': [1, { var: 'x' }] }], { '+': [{ var: '' }, 1] }] }, { x: i })
+  const logic = {
+    or: [{
+      and: [{
+        '>': [{ var: 'x' }, { '+': [11, 5, { '+': [1, { var: 'y' }, 1] }, 2] }]
+      }, {
+        '*': [{ var: 'x' }, { '*': { mapYield: [[1, 5], { '+': [{ var: '' }, 1] }] } }]
+      }]
+    }, {
+      '/': [{ var: 'x' }, { '-': [100, 50, 30, 10] }]
+    }]
   }
-  console.timeEnd('old')
+
+  console.time('interpreted')
+  for (let i = 0; i < 2e6; i++) {
+    await x.run(logic, { x: i, y: i % 20 })
+  }
+  console.log(await x.run(logic, { x: 15, y: 1 }))
+  console.timeEnd('interpreted')
 }
 
 test()

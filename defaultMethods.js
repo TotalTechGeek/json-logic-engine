@@ -3,6 +3,12 @@ const {
   createProxy
 } = require('./proxy')
 const asyncIterators = require('./async_iterators')
+const { Sync, Override, EfficientTop } = require('./constants')
+const declareSync = require('./utilities/declareSync')
+
+function undefinedToNull (value) {
+  return typeof value === 'undefined' ? null : value
+}
 
 const defaultMethods = {
   '+': data => data.reduce((a, b) => a + b, 0),
@@ -17,7 +23,7 @@ const defaultMethods = {
   '<': ([a, b]) => a < b,
   preserve: {
     traverse: false,
-    method: i => i
+    method: declareSync(i => i)
   },
   if: {
     method: ([check, onTrue, onFalse], context, above, engine) => {
@@ -60,12 +66,16 @@ const defaultMethods = {
     return string.substr(from, end)
   },
   var: (key, context, above, engine) => {
-    if (!key && context.__) return context.__
+    // if (Array.isArray(key)) {
+    //   if (key.length === 0) return context
+    //   return key.map(i => defaultMethods.var(i, context, above, engine))
+    // }
+    if (!key && context && context[Override]) return context[Override]
     if (!key) return context
     if (typeof context !== 'object' && key.startsWith('../')) {
       return engine.methods.var(key.substring(3), above, undefined, engine)
     }
-    if (engine.allowFunctions || typeof context[key] !== 'function') { return context[key] }
+    if (engine.allowFunctions || typeof context[key] !== 'function') { return undefinedToNull(context[key]) }
   },
   missing: (checked, context, above, engine) => {
     return checked.filter(key => {
@@ -177,10 +187,10 @@ function createArrayIterativeMethod (name) {
   return {
     build: ([selector, mapper], context, above, engine) => {
       selector = engine.build(selector, {}, {
-        top: true,
+        top: EfficientTop,
         above
       })
-      mapper = engine.build(mapper, {}, { top: true, above: createProxy(selector, context) })
+      mapper = engine.build(mapper, {}, { top: EfficientTop, above: createProxy(selector, context) })
       return () => {
         return selector(context)[name](i => {
           return mapper(i)
@@ -221,10 +231,19 @@ function createArrayIterativeMethod (name) {
     },
     asyncBuild: ([selector, mapper], context, above, engine) => {
       selector = engine.build(selector, {}, {
-        top: true,
+        top: EfficientTop,
         above
       })
-      mapper = engine.build(mapper, {}, { top: true, above: createProxy(selector, context) })
+
+      mapper = engine.build(mapper, {}, { top: EfficientTop, above: createProxy(selector, context) })
+
+      if (selector[Sync] && mapper[Sync]) {
+        return declareSync(() => {
+          return selector(context)[name](i => {
+            return mapper(i)
+          })
+        })
+      }
       return async () => {
         return asyncIterators[name](await selector(context), i => {
           return mapper(i)
@@ -234,6 +253,13 @@ function createArrayIterativeMethod (name) {
     traverse: false
   }
 }
+
+// declare all of the functions here synchronous
+Object.keys(defaultMethods).forEach(item => {
+  if (typeof defaultMethods[item] === 'function') {
+    defaultMethods[item][Sync] = true
+  }
+})
 
 // include the yielding iterators as well
 module.exports = { ...defaultMethods, ...require('./yieldingIterators') }

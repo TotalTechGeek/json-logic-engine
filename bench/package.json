@@ -1,0 +1,14 @@
+{
+  "name": "json-logic-engine-bench",
+  "version": "1.0.0",
+  "description": "Test json-logic-engine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jesse Daniel Mitchell",
+  "license": "ISC",
+  "dependencies": {
+    "json-logic-js": "^2.0.1"
+  }
+}

@@ -6,8 +6,8 @@ const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
+const { Override } = require('./constants')
 
-/* istanbul ignore next */
 function compose (...funcs) {
   return funcs.reduce((a, b) => {
     if (typeof a === 'function') {
@@ -44,7 +44,8 @@ class LogicEngine {
     }
   }
 
-  addMethod (name, method) {
+  // eslint-disable-next-line no-empty-pattern
+  addMethod (name, method, {} = {}) {
     this.methods[name] = method
   }
 
@@ -90,7 +91,6 @@ class LogicEngine {
     return logic
   }
 
-  /* istanbul ignore next */
   compose (func, data, context, above) {
     if (this.methods[func]) {
       if (typeof this.methods[func] === 'function') {
@@ -111,7 +111,6 @@ class LogicEngine {
     }
   }
 
-  /* istanbul ignore next */
   build (logic, data = {}, options = {
     top: true
   }) {
@@ -125,21 +124,16 @@ class LogicEngine {
         if (typeof invokingData === 'object') {
           Object.assign(data, invokingData)
         } else {
-          data.__ = invokingData
+          data[Override] = invokingData
         }
 
-        return constructedFunction()
+        return typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
       }
     }
 
     if (Array.isArray(logic)) {
       const result = logic.map(i => this.build(i, data, { top: false }))
-      return () => result.map(i => {
-        if (typeof i === 'function') {
-          return i()
-        }
-        return i
-      })
+      return () => result.map(i => typeof i === 'function' ? i() : i)
     }
 
     if (logic && typeof logic === 'object') {

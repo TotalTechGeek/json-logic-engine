@@ -6,17 +6,36 @@ const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
+const LogicEngine = require('./logic')
+const asyncPool = require('./asyncPool')
+const { Sync, Override } = require('./constants')
+const declareSync = require('./utilities/declareSync')
 
-/* istanbul ignore next */
 function compose (...funcs) {
   return funcs.reduce((a, b) => {
     if (typeof a === 'function') {
+      if (a[Sync]) {
+        return declareSync(function () {
+          return b(a(...arguments))
+        }, b[Sync])
+      }
+
       return async function () {
-        return b(await a(...arguments))
+        const result = await a(...arguments)
+        return b(result)
       }
     }
-    return async function () {
-      return b(await a)
+
+    if (b[Sync]) {
+      return declareSync(function () {
+        return b(a)
+      }, true)
+    }
+
+    // async function?
+    return function () {
+      // await a?
+      return b(a)
     }
   })
 }
@@ -25,6 +44,7 @@ class AsyncLogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false }) {
     this.methods = methods
     this.options = options
+    this.fallback = new LogicEngine(methods, options)
   }
 
   async parse (func, data, context, above) {
@@ -46,8 +66,8 @@ class AsyncLogicEngine {
     }
   }
 
-  addMethod (name, method) {
-    this.methods[name] = method
+  addMethod (name, method, { async = false, sync = !async } = {}) {
+    this.methods[name] = declareSync(method, sync)
   }
 
   async run (logic, data = {}, options = {
@@ -92,28 +112,32 @@ class AsyncLogicEngine {
     return logic
   }
 
-  /* istanbul ignore next */
   compose (func, data, context, above) {
+    function createLambda (func, engine) {
+      return declareSync(function (input) {
+        return func(input, context, above, engine)
+      }, func[Sync])
+    }
+
     if (this.methods[func]) {
       if (typeof this.methods[func] === 'function') {
         const input = this.build(data, context, { proxy: false, above, top: false })
-        return compose(input, input => this.methods[func](input, context, above, this))
+        return compose(input, createLambda(this.methods[func], this))
       }
 
       if (typeof this.methods[func] === 'object') {
         const { asyncMethod, method, traverse: shouldTraverse, asyncBuild } = this.methods[func]
-        const parsedData = shouldTraverse ? this.build(data, context, { proxy: false, above }) : data
+        const parsedData = shouldTraverse ? this.build(data, context, { proxy: false, above, top: false }) : data
 
         if (asyncBuild) {
           return asyncBuild(parsedData, context, above, this)
         }
 
-        return compose(parsedData, input => (asyncMethod || method)(input, context, above, this))
+        return compose(parsedData, createLambda(asyncMethod || method, this))
       }
     }
   }
 
-  /* istanbul ignore next */
   build (logic, data = {}, options = {
     top: true
   }) {
@@ -122,27 +146,44 @@ class AsyncLogicEngine {
     if (options.top) {
       const constructedFunction = this.build(logic, createProxy(data, above), { top: false })
 
-      return invokingData => {
+      const result = declareSync(invokingData => {
         Object.keys(data).forEach(key => delete data[key])
 
         if (typeof invokingData === 'object') {
           Object.assign(data, invokingData)
         } else {
-          data.__ = invokingData
+          data[Override] = invokingData
         }
 
-        return constructedFunction()
+        const result = constructedFunction()
+        return (options.top === true) ? Promise.resolve(result) : result
+      }, (options.top !== true) && (constructedFunction[Sync] || false))
+
+      // we can avoid the async pool if the constructed function is synchronous since the data
+      // can't be updated :)
+      if (options.top === true && !constructedFunction[Sync]) {
+        // we use this async pool so that we can execute these in parallel without having
+        // concerns about the data.
+        return asyncPool({
+          free: [result],
+          max: 100,
+          create: () => this.build(logic, {}, options)
+        })
+      } else {
+        return result
       }
     }
 
     if (Array.isArray(logic)) {
       const result = logic.map(i => this.build(i, data, { top: false }))
-      return () => Promise.all(result.map(i => {
-        if (typeof i === 'function') {
-          return i()
-        }
-        return i
-      }))
+
+      // checks if any of the functions aren't synchronous
+      if (result.some(i => typeof i === 'function' && !i[Sync])) {
+        // if so, treat it like an async
+        return () => Promise.all(result.map(i => typeof i === 'function' ? i() : i))
+      } else {
+        return declareSync(() => result.map(i => typeof i === 'function' ? i() : i))
+      }
     }
 
     if (logic && typeof logic === 'object') {
