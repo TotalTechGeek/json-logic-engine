@@ -1,34 +1,40 @@
+'use strict'
 const { LogicEngine } = require('./')
+
+// const jsonLogic = require('json-logic-js')
 
 const x = new LogicEngine()
 
 async function main () {
-  console.time('async')
-
+  // map: [[{ '+': [1, 2, 3, 4, { var: 'x' }, { var: 'y' }] }, 1, 2, 4, 5, 7, { var: 'x' }, 1, 1, 1], { '+': [{ var: '' }, 1, 2, 3] }]
   const logic = {
-    or: [{
-      and: [{
-        '>': [{ var: 'x' }, 10]
-      }, {
-        '*': [{ var: 'x' }, 50]
-      }]
-    }, {
-      '/': [{ var: 'x' }, 10]
-    }]
+    '*': [{ '+': [{ var: 'x' }, { var: 'y' }, 1, 2] }, { var: 'y' }]
   }
-  const f = x.build(logic)
-  for (let i = 0; i < 5e5; i++) {
-    f({ x: i })
-  }
-  console.log(f({ x: 5 }))
-  console.log(f({ x: 15 }))
-  console.timeEnd('async')
 
-  console.time('sync')
-  for (let i = 0; i < 5e5; i++) {
-    x.run(logic, { x: i })
+  console.time('interpreted')
+  for (let i = 0; i < 5e6; i++) {
+    await x.run(logic, { x: i, y: 1 })
   }
-  console.timeEnd('sync')
+  console.log(await x.run(logic, { x: 15, y: 1 }))
+  console.timeEnd('interpreted')
+
+  const f = x.build(logic)
+
+  console.time('built')
+  for (let i = 0; i < 5e6; i++) {
+    await f({ x: i, y: 1 })
+  }
+  console.log(await f({ x: 15, y: 1 }))
+  console.timeEnd('built')
+
+  console.time('json-logic-js')
+
+  // for (let i = 0; i < 5e6; i++) {
+  //   await jsonLogic.apply(logic, { x: i, y: 1 })
+  // }
+  // console.log(jsonLogic.apply(logic, { x: 15, y: 1 }))
+
+  // console.timeEnd('json-logic-js')
 }
 
 main()
