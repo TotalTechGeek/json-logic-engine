@@ -113,17 +113,20 @@ class LogicEngine {
 
     if (options.top) {
       const constructedFunction = this.build(logic, data, { top: false, above })
-      return invokingData => {
-        Object.keys(data).forEach(key => delete data[key])
+      if (typeof constructedFunction === 'function' || options.top === true) {
+        return invokingData => {
+          Object.keys(data).forEach(key => delete data[key])
 
-        if (typeof invokingData === 'object') {
-          Object.assign(data, invokingData)
-        } else {
-          data[Override] = invokingData
+          if (typeof invokingData === 'object') {
+            Object.assign(data, invokingData)
+          } else {
+            data[Override] = invokingData
+          }
+
+          return typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
         }
-
-        return typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
       }
+      return constructedFunction
     }
 
     if (Array.isArray(logic)) {

@@ -219,7 +219,7 @@ function createArrayIterativeMethod (name) {
 
       mapper = engine.build(mapper, {}, { top: EfficientTop, above: [selector, context, ...above] })
       return () => {
-        return selector(context)[name](i => {
+        return (typeof selector === 'function' ? selector(context) : selector)[name](i => {
           return mapper(i)
         })
       }
@@ -260,7 +260,7 @@ function createArrayIterativeMethod (name) {
 
       if (selector[Sync] && mapper[Sync]) {
         return declareSync(() => {
-          return selector(context)[name](i => {
+          return (typeof selector === 'function' ? selector(context) : selector)[name](i => {
             return mapper(i)
           })
         })
