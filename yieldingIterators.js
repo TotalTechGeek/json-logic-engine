@@ -124,7 +124,7 @@ const someYield = createArrayIterativeMethod('someYield', (input, context, above
     return currentItem
   }
   return false
-})
+}, false)
 
 const everyYield = createArrayIterativeMethod('everyYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
@@ -146,7 +146,7 @@ const everyYield = createArrayIterativeMethod('everyYield', (input, context, abo
     return false
   }
   return currentItem
-})
+}, true)
 
 const filterYield = createArrayIterativeMethod('filterYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
@@ -230,7 +230,7 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         const selected = engine.run(selector, context, {
           proxy: false,
           above
-        })
+        }) || []
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({
@@ -280,10 +280,10 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
       let map = null
       if (Array.isArray(input)) {
         const [selector, mapper, defaultValue] = input
-        const selected = await engine.run(selector, context, {
+        const selected = (await engine.run(selector, context, {
           proxy: false,
           above
-        })
+        })) || []
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({

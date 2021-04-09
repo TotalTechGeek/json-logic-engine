@@ -123,6 +123,16 @@ const defaultMethods = {
   },
   map: createArrayIterativeMethod('map'),
   some: createArrayIterativeMethod('some'),
+  all: createArrayIterativeMethod('every'),
+  none: {
+    // todo: add async build & build
+    method: (val, context, above, engine) => {
+      return !defaultMethods.some.method(val, context, above, engine)
+    },
+    asyncMethod: async (val, context, above, engine) => {
+      return !await defaultMethods.some.asyncMethod(val, context, above, engine)
+    }
+  },
   merge: arrays => arrays.flat(),
   every: createArrayIterativeMethod('every'),
   filter: createArrayIterativeMethod('filter'),
@@ -136,7 +146,7 @@ const defaultMethods = {
       selector = engine.run(selector, context, {
         proxy: false,
         above
-      })
+      }) || []
 
       const func = (accumulator, current) => {
         return engine.run(mapper, {
@@ -163,7 +173,7 @@ const defaultMethods = {
       selector = await engine.run(selector, context, {
         proxy: false,
         above
-      })
+      }) || []
 
       return asyncIterators.reduce(selector, (accumulator, current) => {
         return engine.run(mapper, {
@@ -215,12 +225,12 @@ function createArrayIterativeMethod (name) {
       selector = engine.build(selector, {}, {
         top: EfficientTop,
         above: [selector, context, ...above]
-      })
+      }) || []
 
       mapper = engine.build(mapper, {}, { top: EfficientTop, above: [selector, context, ...above] })
       return () => {
-        return (typeof selector === 'function' ? selector(context) : selector)[name](i => {
-          return mapper(i)
+        return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
+          return typeof mapper === 'function' ? mapper(i) : mapper
         })
       }
     },
@@ -228,7 +238,7 @@ function createArrayIterativeMethod (name) {
       selector = engine.run(selector, context, {
         proxy: false,
         above
-      })
+      }) || []
 
       return selector[name](i => {
         return engine.run(mapper, i, {
@@ -238,10 +248,10 @@ function createArrayIterativeMethod (name) {
       })
     },
     asyncMethod: async ([selector, mapper], context, above, engine) => {
-      selector = await engine.run(selector, context, {
+      selector = (await engine.run(selector, context, {
         proxy: false,
         above
-      })
+      })) || []
 
       return asyncIterators[name](selector, i => {
         return engine.run(mapper, i, {
@@ -254,26 +264,28 @@ function createArrayIterativeMethod (name) {
       selector = engine.build(selector, {}, {
         top: EfficientTop,
         above
-      })
+      }) || []
 
       mapper = engine.build(mapper, {}, { top: EfficientTop, above: [selector, context, ...above] })
 
       if (selector[Sync] && mapper[Sync]) {
         return declareSync(() => {
-          return (typeof selector === 'function' ? selector(context) : selector)[name](i => {
-            return mapper(i)
+          return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
+            return typeof mapper === 'function' ? mapper(i) : mapper
           })
         })
       }
       return async () => {
-        return asyncIterators[name](typeof selector === 'function' ? await selector(context) : selector, i => {
-          return mapper(i)
+        return asyncIterators[name](typeof selector === 'function' ? await selector(context) || [] : selector, i => {
+          return typeof mapper === 'function' ? mapper(i) : mapper
         })
       }
     },
     traverse: false
   }
 }
+
+defaultMethods['?:'] = defaultMethods.if
 
 // declare all of the functions here synchronous
 Object.keys(defaultMethods).forEach(item => {

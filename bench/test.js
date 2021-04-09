@@ -35,27 +35,36 @@ const traverseCopy = require('../utilities/traverseCopy')
 fs.writeFileSync('compatible.json', JSON.stringify(compatible, undefined, 4))
 fs.writeFileSync('incompatible.json', JSON.stringify(incompatible, undefined, 4))
 
-const tests = [
-  [
-    { '+': [1, 2, 3, 4, 5] },
-    {}
-  ],
-  [
-    { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
-    {}
-  ],
-  [
-    { cat: ['Test of a ', { var: 'x' }] },
-    { x: 'Program' }
-  ],
-  [
-    { '>': [{ var: 'x' }, 10] },
-    {
-      x: 7
-    }
-  ]
-]
-// const tests = compatible.slice(5, 100)
+// const tests = [
+//   [
+//     { '+': [1, 2, 3, 4, 5] },
+//     {}
+//   ],
+//   [
+//     { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
+//     {}
+//   ],
+//   [
+//     { cat: ['Test of a ', { var: 'x' }] },
+//     { x: 'Program' }
+//   ],
+//   [
+//     { '>': [{ var: 'x' }, 10] },
+//     {
+//       x: 7
+//     }
+//   ],
+//   [
+//     { and: [{ '>': [{ var: 'accountants' }, 3] }, { var: 'approvedBy.ceo' }] },
+//     {
+//       approvedBy: {
+//         ceo: true
+//       },
+//       accountants: 10
+//     }
+//   ]
+// ]
+const tests = compatible.slice(5)
 
 const other = traverseCopy(tests, [], {
   mutateKey: i => {
@@ -89,7 +98,7 @@ const jl = require('json-logic-js')
 
 console.time('json-logic-js')
 for (let j = 0; j < tests.length; j++) {
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e4; i++) {
     jl.apply(tests[j][0], tests[j][1])
   }
 }
@@ -97,7 +106,7 @@ console.timeEnd('json-logic-js')
 
 console.time('le interpreted')
 for (let j = 0; j < other.length; j++) {
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e4; i++) {
     x.run(other[j][0], other[j][1])
   }
 }
@@ -106,7 +115,7 @@ console.timeEnd('le interpreted')
 console.time('le built')
 
 for (let j = 0; j < tests.length; j++) {
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e4; i++) {
     built[j](tests[j][1])
   }
 }
@@ -116,7 +125,7 @@ async function run () {
   console.time('le async built')
 
   for (let j = 0; j < tests.length; j++) {
-    for (let i = 0; i < 1e5; i++) {
+    for (let i = 0; i < 1e4; i++) {
       await built2[j](tests[j][1])
     }
   }

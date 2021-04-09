@@ -36,6 +36,9 @@ async function map (arr, iter) {
 
 async function reduce (arr, iter, defaultValue) {
   if (arr.length === 0) {
+    if (typeof defaultValue !== 'undefined') {
+      return defaultValue
+    }
     throw new Error('Array has no elements.')
   }
 
