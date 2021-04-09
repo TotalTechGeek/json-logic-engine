@@ -1,7 +1,5 @@
 'use strict'
-const {
-  createProxy
-} = require('./proxy')
+
 const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
@@ -52,11 +50,7 @@ class LogicEngine {
   run (logic, data = {}, options = {
     proxy: true
   }) {
-    if (typeof data === 'object' && options.proxy) {
-      data = createProxy(data)
-    }
-
-    const { above } = options
+    const { above = [] } = options
 
     if (Array.isArray(logic)) {
       const result = logic.map(i => this.run(i, data, { proxy: false, above }))
@@ -112,12 +106,13 @@ class LogicEngine {
   }
 
   build (logic, data = {}, options = {
-    top: true
+    top: true,
+    above: []
   }) {
-    const { above } = options
+    const { above = [] } = options
 
     if (options.top) {
-      const constructedFunction = this.build(logic, createProxy(data, above), { top: false })
+      const constructedFunction = this.build(logic, data, { top: false, above })
       return invokingData => {
         Object.keys(data).forEach(key => delete data[key])
 
@@ -132,7 +127,7 @@ class LogicEngine {
     }
 
     if (Array.isArray(logic)) {
-      const result = logic.map(i => this.build(i, data, { top: false }))
+      const result = logic.map(i => this.build(i, data, { top: false, above }))
       if (result.every(i => typeof i !== 'function')) return result
       return () => result.map(i => typeof i === 'function' ? i() : i)
     }

@@ -5,25 +5,35 @@ const x = new LogicEngine()
 const y = new AsyncLogicEngine()
 const compatible = []
 const incompatible = []
+const { isDeepStrictEqual } = require('util')
 
 JSON.parse(fs.readFileSync('./tests.json').toString()).forEach(test => {
   if (typeof test === 'string') {
     // console.log(test)
   } else {
     try {
-      if (x.run(test[0], test[1]) !== test[2]) {
+      if (!isDeepStrictEqual(x.run(test[0], test[1]), test[2])) {
         incompatible.push(test)
+        // console.log(test[0])
       } else {
         compatible.push(test)
       }
     } catch (err) {
-    //   console.log(test[0])
+    //   console.log(err)
+      //   console.log(test[0])
       incompatible.push(test)
     }
   }
 })
 
-// console.log(compatible.length, incompatible.length)
+console.log(compatible.length, incompatible.length, compatible.length / (compatible.length + incompatible.length))
+
+// const tests = compatible
+
+const traverseCopy = require('../utilities/traverseCopy')
+
+fs.writeFileSync('compatible.json', JSON.stringify(compatible, undefined, 4))
+fs.writeFileSync('incompatible.json', JSON.stringify(incompatible, undefined, 4))
 
 const tests = [
   [
@@ -31,15 +41,12 @@ const tests = [
     {}
   ],
   [
-    // mapYield is faster than map at smaller sizes, will probably get the engine to acknowledge this.
-    { mapYield: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
-    {},
-    { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] }
+    { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
+    {}
   ],
   [
-    { concat: ['Test of a ', { var: 'x' }] },
-    { x: 'Program' },
-    { cat: ['Test of a  ', { var: 'x' }] }
+    { cat: ['Test of a ', { var: 'x' }] },
+    { x: 'Program' }
   ],
   [
     { '>': [{ var: 'x' }, 10] },
@@ -48,44 +55,68 @@ const tests = [
     }
   ]
 ]
+// const tests = compatible.slice(5, 100)
 
-const built = tests.map(i => {
+const other = traverseCopy(tests, [], {
+  mutateKey: i => {
+    if (i === 'map') {
+      return 'mapYield'
+    }
+    if (i === 'reduce') {
+      return 'reduceYield'
+    }
+    if (i === 'filter') {
+      return 'filterYield'
+    }
+    if (i === 'every') {
+      return 'everyYield'
+    }
+    if (i === 'some') {
+      return 'someYield'
+    }
+    return i
+  }
+})
+
+const built = other.map(i => {
   return x.build(i[0])
 })
-const built2 = tests.map(i => {
+const built2 = other.map(i => {
   return y.build(i[0])
 })
 
+const jl = require('json-logic-js')
+
+console.time('json-logic-js')
+for (let j = 0; j < tests.length; j++) {
+  for (let i = 0; i < 1e5; i++) {
+    jl.apply(tests[j][0], tests[j][1])
+  }
+}
+console.timeEnd('json-logic-js')
+
 console.time('le interpreted')
-for (let i = 0; i < 1e6; i++) {
-  for (let j = 0; j < tests.length; j++) {
-    x.run(tests[j][0], tests[j][1])
+for (let j = 0; j < other.length; j++) {
+  for (let i = 0; i < 1e5; i++) {
+    x.run(other[j][0], other[j][1])
   }
 }
 console.timeEnd('le interpreted')
 
 console.time('le built')
-for (let i = 0; i < 1e6; i++) {
-  for (let j = 0; j < tests.length; j++) {
+
+for (let j = 0; j < tests.length; j++) {
+  for (let i = 0; i < 1e5; i++) {
     built[j](tests[j][1])
   }
 }
 console.timeEnd('le built')
 
-const jl = require('json-logic-js')
-
-console.time('json-logic-js')
-for (let i = 0; i < 1e6; i++) {
-  for (let j = 0; j < tests.length; j++) {
-    jl.apply(tests[j][2] || tests[j][0], tests[j][1])
-  }
-}
-console.timeEnd('json-logic-js')
-
 async function run () {
   console.time('le async built')
-  for (let i = 0; i < 1e6; i++) {
-    for (let j = 0; j < tests.length; j++) {
+
+  for (let j = 0; j < tests.length; j++) {
+    for (let i = 0; i < 1e5; i++) {
       await built2[j](tests[j][1])
     }
   }

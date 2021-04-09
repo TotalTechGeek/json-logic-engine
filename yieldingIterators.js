@@ -4,8 +4,7 @@ const {
 } = require('./structures/ReduceIterator')
 const Yield = require('./structures/Yield')
 const checkYield = require('./utilities/checkYield')
-const { createProxy } = require('./proxy')
-const { Sync, EfficientTop } = require('./constants')
+const { EfficientTop, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 
 // Todo: Pursue support for yielding within the built functions.
@@ -108,7 +107,7 @@ const ifYield = createYieldingControl('ifYield', (input, context, above, engine)
 const someYield = createArrayIterativeMethod('someYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (currentItem) {
     iter.dump()
@@ -118,7 +117,7 @@ const someYield = createArrayIterativeMethod('someYield', (input, context, above
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
   const currentItem = await engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (currentItem) {
     iter.dump()
@@ -130,7 +129,7 @@ const someYield = createArrayIterativeMethod('someYield', (input, context, above
 const everyYield = createArrayIterativeMethod('everyYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (!currentItem) {
     iter.dump()
@@ -140,7 +139,7 @@ const everyYield = createArrayIterativeMethod('everyYield', (input, context, abo
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
   const currentItem = await engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (!currentItem) {
     iter.dump()
@@ -152,7 +151,7 @@ const everyYield = createArrayIterativeMethod('everyYield', (input, context, abo
 const filterYield = createArrayIterativeMethod('filterYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (checkYield(currentItem)) return currentItem
   if (currentItem) cur.push(item)
@@ -160,7 +159,7 @@ const filterYield = createArrayIterativeMethod('filterYield', (input, context, a
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
   const currentItem = await engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (checkYield(currentItem)) return currentItem
   if (currentItem) cur.push(item)
@@ -170,7 +169,7 @@ const filterYield = createArrayIterativeMethod('filterYield', (input, context, a
 const mapYield = createArrayIterativeMethod('mapYield', (input, context, above, engine) => (cur, item, arr, iter) => {
   const currentItem = engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (checkYield(currentItem)) return currentItem
   cur.push(currentItem)
@@ -178,7 +177,7 @@ const mapYield = createArrayIterativeMethod('mapYield', (input, context, above, 
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
   const currentItem = await engine.run(iter.map, item, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
   if (checkYield(currentItem)) return currentItem
   cur.push(currentItem)
@@ -191,7 +190,7 @@ const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, a
     current: item
   }, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
 }, (input, context, above, engine) => async (cur, item, arr, iter) => {
   return engine.run(iter.map, {
@@ -199,7 +198,7 @@ const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, a
     current: item
   }, {
     proxy: false,
-    above: input
+    above: [input, context, ...above]
   })
 })
 
@@ -211,7 +210,9 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
     asyncBuild: (input, context, above, engine) => {
       const [selector, mapper] = input
 
-      if (engine.build(selector, {}, { top: EfficientTop })[Sync] && engine.build(mapper, {}, { top: EfficientTop })[Sync]) {
+      const selectFunction = engine.build(selector, {}, { top: EfficientTop })
+      const mapFunction = engine.build(mapper, {}, { top: EfficientTop })
+      if (isSync(selectFunction) && isSync(mapFunction)) {
         return declareSync(() => result.method(input, context, above, engine.fallback))
       }
 
@@ -226,7 +227,6 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
       if (Array.isArray(input)) {
         const [selector, mapper, defaultValue] = input
 
-        // const needsProxy = !selector.var
         const selected = engine.run(selector, context, {
           proxy: false,
           above
@@ -249,14 +249,13 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         map = input.map
       }
 
-      input = createProxy(input, context)
-
       const executed = method(input, context, above, engine)
       const iter = new ReduceIterator(arr, cur, executed)
       iter.map = map
 
       while (!iter.done()) {
         const cur = iter.next()
+
         if (checkYield(cur)) {
           return new Yield({
             yields: cur.yields(),
@@ -302,8 +301,6 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         cur = input.cur
         map = input.map
       }
-
-      input = createProxy(input, context)
 
       const executed = asyncMethod(input, context, above, engine)
       const iter = new AsyncReduceIterator(arr, cur, executed)

@@ -1,14 +1,8 @@
 'use strict'
-const {
-  createProxy
-} = require('./proxy')
+
 const asyncIterators = require('./async_iterators')
 const { Sync, Override, EfficientTop } = require('./constants')
 const declareSync = require('./utilities/declareSync')
-
-function undefinedToNull (value) {
-  return typeof value === 'undefined' ? null : value
-}
 
 const defaultMethods = {
   '+': data => data.reduce((a, b) => a + b, 0),
@@ -20,7 +14,7 @@ const defaultMethods = {
   min: data => Math.min(...data),
   in: ([item, array]) => array.includes(item),
   '>': ([a, b]) => a > b,
-  '<': ([a, b]) => a < b,
+  '<': ([a, b, c]) => c === undefined ? a < b : (a < b) && (b < c),
   preserve: {
     traverse: false,
     method: declareSync(i => i)
@@ -41,6 +35,7 @@ const defaultMethods = {
         proxy: false,
         above
       })
+
       return engine.run(test ? onTrue : onFalse, context, {
         proxy: false,
         above
@@ -48,7 +43,7 @@ const defaultMethods = {
     },
     traverse: false
   },
-  '<=': ([a, b]) => a <= b,
+  '<=': ([a, b, c]) => c === undefined ? a <= b : (a <= b) && (b <= c),
   '>=': ([a, b]) => a >= b,
   // eslint-disable-next-line eqeqeq
   '==': ([a, b]) => a == b,
@@ -65,27 +60,66 @@ const defaultMethods = {
     }
     return string.substr(from, end)
   },
+  // var: (key, context, above, engine) => {
+  //   // if (Array.isArray(key)) {
+  //   //   if (key.length === 0) return context
+  //   //   return key.map(i => defaultMethods.var(i, context, above, engine))
+  //   // }
+  //   if (!key && context && context[Override]) return context[Override]
+  //   if (!key) return context
+  //   if (typeof context !== 'object' && key.startsWith('../')) {
+  //     return engine.methods.var(key.substring(3), above, undefined, engine)
+  //   }
+
+  //   if (engine.allowFunctions || typeof context[key] !== 'function') { return undefinedToNull(context[key]) }
+  // },
   var: (key, context, above, engine) => {
-    // if (Array.isArray(key)) {
-    //   if (key.length === 0) return context
-    //   return key.map(i => defaultMethods.var(i, context, above, engine))
-    // }
-    if (!key && context && context[Override]) return context[Override]
-    if (!key) return context
-    if (typeof context !== 'object' && key.startsWith('../')) {
-      return engine.methods.var(key.substring(3), above, undefined, engine)
+    let b
+    if (Array.isArray(key)) {
+      b = key[1]
+      key = key[0]
     }
 
-    if (engine.allowFunctions || typeof context[key] !== 'function') { return undefinedToNull(context[key]) }
+    if (!key && context && context[Override]) return context[Override]
+
+    let iter = 0
+    while (typeof key === 'string' && key.startsWith('../') && iter < above.length) {
+      context = above[iter++]
+      key = key.substring(3)
+    }
+
+    const notFound = (b === undefined) ? null : b
+
+    if (typeof key === 'undefined' || key === '' || key === null) {
+      return context
+    }
+    const subProps = String(key).split('.')
+    for (let i = 0; i < subProps.length; i++) {
+      if (context === null || context === undefined) {
+        return notFound
+      }
+      // Descending into context
+      context = context[subProps[i]]
+      if (context === undefined) {
+        return notFound
+      }
+    }
+
+    if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
+    return null
   },
   missing: (checked, context, above, engine) => {
-    return checked.filter(key => {
-      if (!key) return context
-      if (typeof context !== 'object' && key.startsWith('../')) {
-        return engine.methods.missing(key.substring(3), above)
-      }
-      return typeof context[key] === 'undefined'
+    return (Array.isArray(checked) ? checked : [checked]).filter(key => {
+      return defaultMethods.var(key, context, above, engine) === null
     })
+  },
+  missing_some: ([needCount, options], context, above, engine) => {
+    const missing = defaultMethods.missing(options, context, above, engine)
+    if (options.length - missing.length >= needCount) {
+      return []
+    } else {
+      return missing
+    }
   },
   map: createArrayIterativeMethod('map'),
   some: createArrayIterativeMethod('some'),
@@ -98,24 +132,19 @@ const defaultMethods = {
         proxy: false,
         above
       })
-      const needsProxy = !selector.var
 
       selector = engine.run(selector, context, {
         proxy: false,
         above
       })
 
-      if (needsProxy) {
-        selector = createProxy(selector, context)
-      }
-
       const func = (accumulator, current) => {
-        return engine.run(mapper, createProxy({
+        return engine.run(mapper, {
           accumulator,
           current
-        }, selector), {
+        }, {
           proxy: false,
-          above: selector
+          above: [selector, context, ...above]
         })
       }
 
@@ -130,23 +159,19 @@ const defaultMethods = {
         proxy: false,
         above
       })
-      const needsProxy = !selector.var
+
       selector = await engine.run(selector, context, {
         proxy: false,
         above
       })
 
-      if (needsProxy) {
-        selector = createProxy(selector, context)
-      }
-
       return asyncIterators.reduce(selector, (accumulator, current) => {
-        return engine.run(mapper, createProxy({
+        return engine.run(mapper, {
           accumulator,
           current
-        }, selector), {
+        }, {
           proxy: false,
-          above: selector
+          above: [selector, context, ...above]
         })
       }, defaultValue)
     },
@@ -155,7 +180,7 @@ const defaultMethods = {
   not: value => !value,
   '!': value => !value,
   '!!': value => Boolean(value),
-  concat: arr => arr.join(''),
+  cat: arr => typeof arr === 'string' ? arr : arr.join(''),
   keys: obj => Object.keys(obj),
   eachKey: {
     traverse: false,
@@ -164,7 +189,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: engine.run(item, createProxy({ key }, context), { above, proxy: false })
+          value: engine.run(item, { key }, { above: [context, ...above], proxy: false })
         })
         return accumulator
       }, {})
@@ -175,7 +200,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: await engine.run(item, createProxy({ key }, context), { above, proxy: false })
+          value: await engine.run(item, { key }, { above: [context, ...above], proxy: false })
         })
         return accumulator
       }, {})
@@ -189,9 +214,10 @@ function createArrayIterativeMethod (name) {
     build: ([selector, mapper], context, above, engine) => {
       selector = engine.build(selector, {}, {
         top: EfficientTop,
-        above
+        above: [selector, context, ...above]
       })
-      mapper = engine.build(mapper, {}, { top: EfficientTop, above: createProxy(selector, context) })
+
+      mapper = engine.build(mapper, {}, { top: EfficientTop, above: [selector, context, ...above] })
       return () => {
         return selector(context)[name](i => {
           return mapper(i)
@@ -199,34 +225,28 @@ function createArrayIterativeMethod (name) {
       }
     },
     method: ([selector, mapper], context, above, engine) => {
-      const needsProxy = !selector.var
       selector = engine.run(selector, context, {
         proxy: false,
         above
       })
-      if (needsProxy) {
-        selector = createProxy(selector, context)
-      }
+
       return selector[name](i => {
         return engine.run(mapper, i, {
           proxy: false,
-          above: selector
+          above: [selector, context, ...above]
         })
       })
     },
     asyncMethod: async ([selector, mapper], context, above, engine) => {
-      const needsProxy = !selector.var
       selector = await engine.run(selector, context, {
         proxy: false,
         above
       })
-      if (needsProxy) {
-        selector = createProxy(selector, context)
-      }
+
       return asyncIterators[name](selector, i => {
         return engine.run(mapper, i, {
           proxy: false,
-          above: selector
+          above: [selector, context, ...above]
         })
       })
     },
@@ -236,7 +256,7 @@ function createArrayIterativeMethod (name) {
         above
       })
 
-      mapper = engine.build(mapper, {}, { top: EfficientTop, above: createProxy(selector, context) })
+      mapper = engine.build(mapper, {}, { top: EfficientTop, above: [selector, context, ...above] })
 
       if (selector[Sync] && mapper[Sync]) {
         return declareSync(() => {
@@ -246,7 +266,7 @@ function createArrayIterativeMethod (name) {
         })
       }
       return async () => {
-        return asyncIterators[name](await selector(context), i => {
+        return asyncIterators[name](typeof selector === 'function' ? await selector(context) : selector, i => {
           return mapper(i)
         })
       }

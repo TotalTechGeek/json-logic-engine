@@ -1,14 +1,12 @@
 'use strict'
-const {
-  createProxy
-} = require('./proxy')
+
 const checkYield = require('./utilities/checkYield')
 const defaultMethods = require('./defaultMethods')
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
 const LogicEngine = require('./logic')
 const asyncPool = require('./asyncPool')
-const { Sync, Override } = require('./constants')
+const { Sync, Override, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 
 function compose (...funcs) {
@@ -17,7 +15,7 @@ function compose (...funcs) {
       if (a[Sync]) {
         return declareSync(function () {
           return b(a(...arguments))
-        }, b[Sync])
+        }, isSync(b))
       }
 
       return async function () {
@@ -26,10 +24,10 @@ function compose (...funcs) {
       }
     }
 
-    if (b[Sync]) {
+    if (isSync(b)) {
       return declareSync(function () {
         return b(a)
-      }, true)
+      })
     }
 
     // async function?
@@ -53,7 +51,7 @@ class AsyncLogicEngine {
         const input = await this.run(data, context, { proxy: false, above })
         if (this.options.yieldSupported && await checkYield(input)) return input
         const result = await this.methods[func](input, context, above, this)
-        return Array.isArray(result) ? createProxy(await Promise.all(result), result['../'] || above || context) : result
+        return Array.isArray(result) ? await Promise.all(result) : result
       }
 
       if (typeof this.methods[func] === 'object') {
@@ -61,7 +59,7 @@ class AsyncLogicEngine {
         const parsedData = shouldTraverse ? await this.run(data, context, { proxy: false, above }) : data
         if (this.options.yieldSupported && await checkYield(parsedData)) return parsedData
         const result = await (asyncMethod || method)(parsedData, context, above, this)
-        return Array.isArray(result) ? createProxy(await Promise.all(result), result['../'] || above || context) : result
+        return Array.isArray(result) ? await Promise.all(result) : result
       }
     }
   }
@@ -73,11 +71,7 @@ class AsyncLogicEngine {
   async run (logic, data = {}, options = {
     proxy: true
   }) {
-    if (typeof data === 'object' && options.proxy) {
-      data = createProxy(data)
-    }
-
-    const { above } = options
+    const { above = [] } = options
 
     if (Array.isArray(logic)) {
       const result = await Promise.all(logic.map(i => this.run(i, data, { proxy: false, above })))
@@ -116,7 +110,7 @@ class AsyncLogicEngine {
     function createLambda (func, engine) {
       return declareSync(function (input) {
         return func(input, context, above, engine)
-      }, func[Sync])
+      }, isSync(func))
     }
 
     if (this.methods[func]) {
@@ -139,12 +133,13 @@ class AsyncLogicEngine {
   }
 
   build (logic, data = {}, options = {
-    top: true
+    top: true,
+    above: []
   }) {
-    const { above } = options
+    const { above = [] } = options
 
     if (options.top) {
-      const constructedFunction = this.build(logic, createProxy(data, above), { top: false })
+      const constructedFunction = this.build(logic, data, { top: false, above })
 
       const result = declareSync(invokingData => {
         Object.keys(data).forEach(key => delete data[key])
@@ -157,7 +152,7 @@ class AsyncLogicEngine {
 
         const result = typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
         return (options.top === true) ? Promise.resolve(result) : result
-      }, (options.top !== true) && (constructedFunction[Sync] || false))
+      }, (options.top !== true) && (isSync(constructedFunction)))
 
       // we can avoid the async pool if the constructed function is synchronous since the data
       // can't be updated :)
@@ -167,15 +162,15 @@ class AsyncLogicEngine {
         return asyncPool({
           free: [result],
           max: 100,
-          create: () => this.build(logic, {}, options)
+          create: () => this.build(logic, { }, { ...options, above })
         })
       } else {
-        return result
+        return typeof constructedFunction === 'function' || options.top === true ? result : constructedFunction
       }
     }
 
     if (Array.isArray(logic)) {
-      const result = logic.map(i => this.build(i, data, { top: false }))
+      const result = logic.map(i => this.build(i, data, { top: false, above }))
 
       if (result.every(i => typeof i !== 'function')) return result
 

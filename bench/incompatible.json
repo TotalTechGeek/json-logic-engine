@@ -1,0 +1,877 @@
+[
+    [
+        {
+            "!": [
+                false
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "?:": [
+                true,
+                1,
+                2
+            ]
+        },
+        {},
+        1
+    ],
+    [
+        {
+            "?:": [
+                false,
+                1,
+                2
+            ]
+        },
+        {},
+        2
+    ],
+    [
+        {
+            "+": [
+                "1",
+                1
+            ]
+        },
+        {},
+        2
+    ],
+    [
+        {
+            "-": [
+                3
+            ]
+        },
+        {},
+        -3
+    ],
+    [
+        {
+            "substr": [
+                "jsonlogic",
+                -5,
+                -2
+            ]
+        },
+        null,
+        "log"
+    ],
+    [
+        {
+            "merge": 1
+        },
+        null,
+        [
+            1
+        ]
+    ],
+    [
+        {
+            "if": []
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                true
+            ]
+        },
+        null,
+        true
+    ],
+    [
+        {
+            "if": [
+                false
+            ]
+        },
+        null,
+        false
+    ],
+    [
+        {
+            "if": [
+                "apple"
+            ]
+        },
+        null,
+        "apple"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                [],
+                "apple",
+                "banana"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "===": [
+                0,
+                {
+                    "+": "0"
+                }
+            ]
+        },
+        null,
+        true
+    ],
+    [
+        {
+            "if": [
+                {
+                    "+": "0"
+                },
+                "apple",
+                "banana"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                {
+                    "+": "1"
+                },
+                "apple",
+                "banana"
+            ]
+        },
+        null,
+        "apple"
+    ],
+    [
+        {
+            "!": [
+                []
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "!!": [
+                []
+            ]
+        },
+        {},
+        false
+    ],
+    [
+        {
+            "and": [
+                [],
+                true
+            ]
+        },
+        {},
+        []
+    ],
+    [
+        {
+            "or": [
+                [],
+                true
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "!": [
+                0
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "!!": [
+                0
+            ]
+        },
+        {},
+        false
+    ],
+    [
+        {
+            "!": [
+                ""
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "!!": [
+                ""
+            ]
+        },
+        {},
+        false
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                "carrot"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                "carrot"
+            ]
+        },
+        null,
+        "carrot"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                false,
+                "carrot"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                false,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "date"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                true,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "carrot"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                false,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                true,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "?:": [
+                {
+                    ">": [
+                        3,
+                        1
+                    ]
+                },
+                "visible",
+                "hidden"
+            ]
+        },
+        {},
+        "visible"
+    ],
+    [
+        {
+            "var": [
+                {
+                    "?:": [
+                        {
+                            "<": [
+                                {
+                                    "var": "temp"
+                                },
+                                110
+                            ]
+                        },
+                        "pie.filling",
+                        "pie.eta"
+                    ]
+                }
+            ]
+        },
+        {
+            "temp": 100,
+            "pie": {
+                "filling": "apple",
+                "eta": "60s"
+            }
+        },
+        "apple"
+    ],
+    [
+        {
+            "if": [
+                {
+                    "missing": "a"
+                },
+                "missed it",
+                "found it"
+            ]
+        },
+        {
+            "a": "apple"
+        },
+        "found it"
+    ],
+    [
+        {
+            "map": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "*": [
+                        {
+                            "var": ""
+                        },
+                        2
+                    ]
+                }
+            ]
+        },
+        null,
+        []
+    ],
+    [
+        {
+            "reduce": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "+": [
+                        {
+                            "var": "current"
+                        },
+                        {
+                            "var": "accumulator"
+                        }
+                    ]
+                },
+                0
+            ]
+        },
+        null,
+        0
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "integers"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        true
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "==": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "<": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "<": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": []
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        true
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "items"
+                },
+                {
+                    "<": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": []
+        },
+        false
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "integers"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "==": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "<": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3
+            ]
+        },
+        true
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "<": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": []
+        },
+        true
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        false
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "items"
+                },
+                {
+                    "<": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": [
+                {
+                    "qty": 1,
+                    "sku": "apple"
+                },
+                {
+                    "qty": 2,
+                    "sku": "banana"
+                }
+            ]
+        },
+        true
+    ],
+    [
+        {
+            "none": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": []
+        },
+        true
+    ]
+]

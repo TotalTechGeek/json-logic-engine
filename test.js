@@ -538,7 +538,7 @@ modes.forEach(logic => {
   describe('miscellaneous', () => {
     test('concat', () => {
       const answer = logic.run({
-        concat: ['hello ', 'world']
+        cat: ['hello ', 'world']
       })
       expect(answer).toBe('hello world')
     })
@@ -634,36 +634,37 @@ modes.forEach(logic => {
     })
   })
 
-  describe('prototype pollution', () => {
-    test('simple data prototype pollution', () => {
-      logic.addMethod('CombineObjects', (objects) => {
-        // vulnerable code
-        const result = {}
-        for (const obj of objects) {
-          for (const key in obj) {
-            result[key] = obj[key]
-          }
-        }
-      })
-      expect(() => logic.run({
-        CombineObjects: [{
-          var: 'a'
-        }, {
-          var: 'b'
-        }]
-      }, {
-        a: JSON.parse('{ "__proto__": { "wah": 1 } }'),
-        b: {
-          a: 1
-        }
-      })).toThrow()
-    })
-  })
+  // describe('prototype pollution', () => {
+  //   test('simple data prototype pollution', () => {
+  //     logic.addMethod('CombineObjects', (objects) => {
+  //       // vulnerable code
+  //       const result = {}
+  //       for (const obj of objects) {
+  //         for (const key in obj) {
+  //           result[key] = obj[key]
+  //         }
+  //       }
+  //     })
+  //     expect(() => logic.run({
+  //       CombineObjects: [{
+  //         var: 'a'
+  //       }, {
+  //         var: 'b'
+  //       }]
+  //     }, {
+  //       a: JSON.parse('{ "__proto__": { "wah": 1 } }'),
+  //       b: {
+  //         a: 1
+  //       }
+  //     })).toThrow()
+  //   })
+  // })
+
   describe('prevent access to data that should not be accessed', () => {
     test('prevent access to functions on objects', () => {
       expect(logic.run({
         var: 'toString'
-      }, 'hello')).toBe(undefined)
+      }, 'hello')).toBe(null)
     })
 
     test('allow access to functions on objects when enabled', () => {

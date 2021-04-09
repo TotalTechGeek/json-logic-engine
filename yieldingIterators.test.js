@@ -9,20 +9,34 @@ const sync = new LogicEngine(undefined, { yieldSupported: true })
 const nosync = new AsyncLogicEngine(undefined, { yieldSupported: true })
 
 const yieldVar = (key, context, above, engine) => {
-  if (!key) return context
-  if (typeof context !== 'object' && key.startsWith('../')) {
-    return engine.methods.yieldVar(key.substring(3), above, undefined, engine)
+  if (Array.isArray(key)) {
+    key = key[0]
   }
-  if (engine.allowFunctions || typeof context[key] !== 'function') {
-    if (typeof context[key] === 'undefined') {
-      return new Yield({
-        message: 'Data does not exist in context.'
-      })
-    }
-    return context[key]
-  }
-}
 
+  let iter = 0
+  while (key.startsWith('../') && iter < above.length) {
+    context = above[iter++]
+    key = key.substring(3)
+  }
+
+  if (typeof key === 'undefined' || key === '' || key === null) {
+    return context
+  }
+  const subProps = String(key).split('.')
+  for (let i = 0; i < subProps.length; i++) {
+    if (context === null || context === undefined) {
+      return new Yield({ message: 'Data is not found.' })
+    }
+    // Descending into context
+    context = context[subProps[i]]
+    if (context === undefined) {
+      return new Yield({ message: 'Data is not found.' })
+    }
+  }
+
+  if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
+  return null
+}
 sync.addMethod('yieldVar', yieldVar)
 nosync.addMethod('yieldVar', yieldVar)
 
