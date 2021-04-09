@@ -3,3 +3,4 @@ node_modules/
 coverage
 .vscode
 .npmrc
+bench/node_modules/
