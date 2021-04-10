@@ -6,42 +6,15 @@ const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
 const LogicEngine = require('./logic')
 const asyncPool = require('./asyncPool')
-const { Sync, Override, isSync } = require('./constants')
+const { Sync, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
-
-function compose (...funcs) {
-  return funcs.reduce((a, b) => {
-    if (typeof a === 'function') {
-      if (a[Sync]) {
-        return declareSync(function () {
-          return b(a(...arguments))
-        }, isSync(b))
-      }
-
-      return async function () {
-        const result = await a(...arguments)
-        return b(result)
-      }
-    }
-
-    if (isSync(b)) {
-      return declareSync(function () {
-        return b(a)
-      })
-    }
-
-    // async function?
-    return function () {
-      // await a?
-      return b(a)
-    }
-  })
-}
+const { build } = require('./compiler')
 
 class AsyncLogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false }) {
     this.methods = methods
     this.options = options
+    this.async = true
     this.fallback = new LogicEngine(methods, options)
   }
 
@@ -106,51 +79,26 @@ class AsyncLogicEngine {
     return logic
   }
 
-  compose (func, data, context, above) {
-    function createLambda (func, engine) {
-      return declareSync(function (input) {
-        return func(input, context, above, engine)
-      }, isSync(func))
-    }
-
-    if (this.methods[func]) {
-      if (typeof this.methods[func] === 'function') {
-        const input = this.build(data, context, { proxy: false, above, top: false })
-        return compose(input, createLambda(this.methods[func], this))
-      }
-
-      if (typeof this.methods[func] === 'object') {
-        const { asyncMethod, method, traverse: shouldTraverse, asyncBuild } = this.methods[func]
-        const parsedData = shouldTraverse ? this.build(data, context, { proxy: false, above, top: false }) : data
-
-        if (asyncBuild) {
-          return asyncBuild(parsedData, context, above, this)
-        }
-
-        return compose(parsedData, createLambda(asyncMethod || method, this))
-      }
-    }
-  }
-
   build (logic, data = {}, options = {
     top: true,
     above: []
   }) {
-    const { above = [] } = options
+    const { above = [], useOther = true } = options
 
     if (options.top) {
-      const constructedFunction = this.build(logic, data, { top: false, above })
+      const constructedFunction = useOther ? build(logic, { engine: this, above, async: true, state: data }) : this.build(logic, data, { top: false, above })
 
       const result = declareSync(invokingData => {
-        Object.keys(data).forEach(key => delete data[key])
+        // Object.keys(data).forEach(key => delete data[key])
 
-        if (typeof invokingData === 'object') {
-          Object.assign(data, invokingData)
-        } else {
-          data[Override] = invokingData
-        }
+        // temp comment out
+        // if (typeof invokingData === 'object') {
+        //   Object.assign(data, invokingData)
+        // } else {
+        //   data[Override] = invokingData
+        // }
 
-        const result = typeof constructedFunction === 'function' ? constructedFunction() : constructedFunction
+        const result = typeof constructedFunction === 'function' ? constructedFunction(invokingData) : constructedFunction
         return (options.top === true) ? Promise.resolve(result) : result
       }, (options.top !== true) && (isSync(constructedFunction)))
 
@@ -167,26 +115,6 @@ class AsyncLogicEngine {
       } else {
         return typeof constructedFunction === 'function' || options.top === true ? result : constructedFunction
       }
-    }
-
-    if (Array.isArray(logic)) {
-      const result = logic.map(i => this.build(i, data, { top: false, above }))
-
-      if (result.every(i => typeof i !== 'function')) return result
-
-      // checks if any of the functions aren't synchronous
-      if (result.some(i => typeof i === 'function' && !i[Sync])) {
-        // if so, treat it like an async
-        return () => Promise.all(result.map(i => typeof i === 'function' ? i() : i))
-      } else {
-        return declareSync(() => result.map(i => typeof i === 'function' ? i() : i))
-      }
-    }
-
-    if (logic && typeof logic === 'object') {
-      const [func] = Object.keys(logic)
-      const result = this.compose(func, logic[func], data, above)
-      return result
     }
 
     return logic

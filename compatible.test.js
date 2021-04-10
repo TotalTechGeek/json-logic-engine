@@ -76,6 +76,7 @@ describe('All of the compatible tests with yielded iterators', () => {
     for (let i = 0; i < other.length; i++) {
       const test = other[i]
       const f = logic.build(test[0])
+      console.log(JSON.stringify(test[0]), JSON.stringify(test[1]))
       expect(f(test[1])).toStrictEqual(test[2])
     }
   })

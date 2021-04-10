@@ -9,6 +9,7 @@
   "author": "Jesse Daniel Mitchell",
   "license": "ISC",
   "dependencies": {
-    "json-logic-js": "^2.0.1"
+    "json-logic-js": "^2.0.1",
+    "json-rules-engine": "^6.0.1"
   }
 }

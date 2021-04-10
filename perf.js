@@ -1,6 +1,6 @@
-const { AsyncLogicEngine } = require('.')
+const { LogicEngine } = require('.')
 
-const x = new AsyncLogicEngine(undefined, { yieldSupported: false })
+const x = new LogicEngine(undefined, { yieldSupported: false })
 
 async function test () {
   const logic = {
@@ -8,7 +8,7 @@ async function test () {
       and: [{
         '>': [{ var: 'x' }, { '+': [11, 5, { '+': [1, { var: 'y' }, 1] }, 2] }]
       }, {
-        '*': [{ var: 'x' }, { '*': { mapYield: [[1, 5], { '+': [{ var: '' }, 1] }] } }]
+        '*': [{ var: 'x' }, { '*': { map: [[1, 5], { '+': [{ var: '' }, 1] }] } }]
       }]
     }, {
       '/': [{ var: 'x' }, { '-': [100, 50, 30, 10] }]
@@ -16,10 +16,10 @@ async function test () {
   }
 
   console.time('interpreted')
-  for (let i = 0; i < 2e6; i++) {
-    await x.run(logic, { x: i, y: i % 20 })
+  for (let i = 0; i < 1e6; i++) {
+    x.run(logic, { x: i, y: i % 20 })
   }
-  console.log(await x.run(logic, { x: 15, y: 1 }))
+  console.log(x.run(logic, { x: 15, y: 1 }))
   console.timeEnd('interpreted')
 }
 

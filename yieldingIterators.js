@@ -4,9 +4,9 @@ const {
 } = require('./structures/ReduceIterator')
 const Yield = require('./structures/Yield')
 const checkYield = require('./utilities/checkYield')
-const { EfficientTop, isSync } = require('./constants')
+const { isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
-
+const { build } = require('./compiler')
 // Todo: Pursue support for yielding within the built functions.
 // It will be extremely difficult to leverage the yields here.
 
@@ -210,8 +210,12 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
     asyncBuild: (input, context, above, engine) => {
       const [selector, mapper] = input
 
-      const selectFunction = engine.build(selector, {}, { top: EfficientTop })
-      const mapFunction = engine.build(mapper, {}, { top: EfficientTop })
+      // const selectFunction = engine.build(selector, {}, { top: EfficientTop })
+      // const mapFunction = engine.build(mapper, {}, { top: EfficientTop })
+
+      const selectFunction = build(selector, { engine, async: true })
+      const mapFunction = build(mapper, { engine, async: true })
+
       if (isSync(selectFunction) && isSync(mapFunction)) {
         return declareSync(() => result.method(input, context, above, engine.fallback))
       }
