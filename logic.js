@@ -32,7 +32,9 @@ class LogicEngine {
   }
 
   // eslint-disable-next-line no-empty-pattern
-  addMethod (name, method, {} = {}) {
+  addMethod (name, method, { deterministic = false, yields = false } = {}) {
+    method.yields = yields
+    method.deterministic = deterministic
     this.methods[name] = method
   }
 
@@ -58,6 +60,9 @@ class LogicEngine {
       const result = this.parse(func, logic[func], data, above)
       if (this.options.yieldSupported && checkYield(result)) {
         if (result instanceof Yield) {
+          if (result._input) {
+            result._logic = { [func]: result._input }
+          }
           if (!result._logic) {
             result._logic = logic
           }
@@ -88,8 +93,8 @@ class LogicEngine {
       })
 
       if (typeof constructedFunction === 'function' || options.top === true) {
-        return invokingData => {
-          return typeof constructedFunction === 'function' ? constructedFunction(invokingData) : constructedFunction
+        return (...args) => {
+          return typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
         }
       }
       return constructedFunction

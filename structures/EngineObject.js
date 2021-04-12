@@ -11,7 +11,7 @@ function fetchYields (obj, arr = []) {
   if (Array.isArray(obj)) {
     obj.forEach(i => fetchYields(i, arr))
   } else if (typeof obj === 'object') {
-    Object.keys(obj).forEach(key => {
+    Object.keys(obj || {}).forEach(key => {
       fetchYields(obj[key], arr)
     })
   }

@@ -1,8 +1,8 @@
 'use strict'
-const { LogicEngine } = require('./')
+const { AsyncLogicEngine } = require('./')
 // const { Sync } = require('./constants')
 
-const x = new LogicEngine()
+const x = new AsyncLogicEngine(undefined)
 
 async function main () {
   const logic = {
@@ -18,13 +18,13 @@ async function main () {
   }
 
   console.time('built')
-  const f = x.build(logic)
+  const f = await x.build(logic)
 
   // console.log(f[Sync])
-  console.log(f({ x: 15, y: 1 }))
+  console.log(await f({ x: 15, y: 1 }))
 
   for (let i = 0; i < 2e6; i++) {
-    f({ x: i, y: i % 20 })
+    await f({ x: i, y: i % 20 })
   }
   console.timeEnd('built')
 }

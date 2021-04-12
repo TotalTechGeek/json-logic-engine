@@ -5,6 +5,10 @@ class Yield {
   }
 
   logic () {
+    // if (this._input && !this._logic) {
+    // return { [this._name]: this._input }
+    // }
+
     return this._logic
   }
 }

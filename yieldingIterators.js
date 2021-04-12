@@ -10,8 +10,27 @@ const { build } = require('./compiler')
 // Todo: Pursue support for yielding within the built functions.
 // It will be extremely difficult to leverage the yields here.
 
+function isDeterministic (method, engine, buildState) {
+  if (Array.isArray(method)) {
+    return method.every(i => isDeterministic(i, engine, buildState))
+  }
+
+  if (method && typeof method === 'object') {
+    const func = Object.keys(method)[0]
+    const lower = method[func]
+
+    if (engine.methods[func].traverse === false) {
+      return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic
+    }
+    return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic && isDeterministic(lower, engine, buildState)
+  }
+
+  return true
+}
+
 function createYieldingControl (name, method, asyncMethod) {
   return {
+    yields: true,
     method: (input, context, above, engine) => {
       let arr = input
       let cur = null
@@ -28,9 +47,8 @@ function createYieldingControl (name, method, asyncMethod) {
         if (checkYield(cur)) {
           return new Yield({
             yield: cur,
-            _logic: {
-              [name]: iter.state()
-            }
+            _name: name,
+            _input: iter.state()
           })
         }
       }
@@ -53,9 +71,8 @@ function createYieldingControl (name, method, asyncMethod) {
         if (checkYield(cur)) {
           return new Yield({
             yield: cur,
-            _logic: {
-              [name]: iter.state()
-            }
+            _name: name,
+            _input: iter.state()
           })
         }
       }
@@ -204,6 +221,10 @@ const reduceYield = createArrayIterativeMethod('reduceYield', (input, context, a
 
 function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializer) {
   const result = {
+    yields: true,
+    deterministic: (data, buildState) => {
+      return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
+    },
     build: (input, context, above, engine) => {
       return declareSync(() => result.method(input, context, above, engine))
     },
@@ -238,9 +259,8 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({
-            _logic: {
-              [name]: [selector, mapper, defaultValue]
-            },
+            _input: [selector, mapper, defaultValue],
+            _name: name,
             yields: selected.yields()
           })
         }
@@ -263,11 +283,10 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         if (checkYield(cur)) {
           return new Yield({
             yields: cur.yields(),
-            _logic: {
-              [name]: {
-                ...iter.state(),
-                map
-              }
+            _name: name,
+            _input: {
+              ...iter.state(),
+              map
             }
           })
         }
@@ -291,9 +310,8 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
           return new Yield({
-            _logic: {
-              [name]: [selector, mapper, defaultValue]
-            },
+            _name: name,
+            _input: [selector, mapper, defaultValue],
             yields: selected.yields()
           })
         }
@@ -315,11 +333,10 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
         if (checkYield(cur)) {
           return new Yield({
             yields: cur.yields(),
-            _logic: {
-              [name]: {
-                ...iter.state(),
-                map
-              }
+            _name: name,
+            _input: {
+              ...iter.state(),
+              map
             }
           })
         }

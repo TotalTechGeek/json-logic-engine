@@ -37,6 +37,11 @@ const yieldVar = (key, context, above, engine) => {
   if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
   return null
 }
+yieldVar.compile = (data, buildState) => {
+  buildState.varFallbacks = (buildState.varFallbacks || 0) + 1
+  return false
+}
+
 sync.addMethod('yieldVar', yieldVar)
 nosync.addMethod('yieldVar', yieldVar)
 
@@ -55,6 +60,27 @@ describe('Sync Yielding Iterator Test', () => {
     expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
     expect(sync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(sync.run(instance.logic(), { a: 0 })).toBe(false)
+  })
+
+  test('someYield (built)', () => {
+    const script = {
+      someYield: [[true, false, true], { var: '' }]
+    }
+
+    expect(sync.build(script)()).toBe(true)
+
+    const script2 = {
+      someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
+    }
+    const instance = sync.build(script2)
+
+    try {
+      instance()
+      expect(false).toBe(true) // this should never be hit
+    } catch (err) {
+      expect(instance({ a: 10 })).toBe(10)
+      expect(instance({ a: 0 })).toBe(false)
+    }
   })
 
   test('everyYield', () => {
@@ -251,6 +277,27 @@ describe('Async Yielding Iterator Test', () => {
     expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
     expect(await nosync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(await nosync.run(instance.logic(), { a: 0 })).toBe(false)
+  })
+
+  test('someYield (built)', async () => {
+    const script = {
+      someYield: [[true, false, true], { var: '' }]
+    }
+
+    expect(await (await nosync.build(script))()).toBe(true)
+
+    const script2 = {
+      someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
+    }
+    const instance = await nosync.build(script2)
+
+    try {
+      await instance()
+      expect(false).toBe(true) // this should never be hit
+    } catch (err) {
+      expect(await instance({ a: 10 })).toBe(10)
+      expect(await instance({ a: 0 })).toBe(false)
+    }
   })
 
   test('everyYield', async () => {

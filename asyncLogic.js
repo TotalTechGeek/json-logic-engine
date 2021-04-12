@@ -38,7 +38,9 @@ class AsyncLogicEngine {
     }
   }
 
-  addMethod (name, method, { async = false, sync = !async } = {}) {
+  addMethod (name, method, { deterministic = false, async = false, sync = !async, yields = false } = {}) {
+    method.yields = yields
+    method.deterministic = deterministic
     this.methods[name] = declareSync(method, sync)
   }
 
@@ -64,6 +66,9 @@ class AsyncLogicEngine {
       const result = await this.parse(func, logic[func], data, above)
       if (this.options.yieldSupported && await checkYield(result)) {
         if (result instanceof Yield) {
+          if (result._input) {
+            result._logic = { [func]: result._input }
+          }
           if (!result._logic) {
             result._logic = logic
           }
@@ -89,8 +94,8 @@ class AsyncLogicEngine {
     if (options.top) {
       const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: data })
 
-      const result = declareSync(invokingData => {
-        const result = typeof constructedFunction === 'function' ? constructedFunction(invokingData) : constructedFunction
+      const result = declareSync((...args) => {
+        const result = typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
         return (options.top === true) ? Promise.resolve(result) : result
       }, (options.top !== true) && (isSync(constructedFunction)))
 

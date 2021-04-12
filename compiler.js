@@ -1,4 +1,5 @@
 const { isSync, Override } = require('./constants')
+const Yield = require('./structures/Yield')
 const declareSync = require('./utilities/declareSync')
 // eslint-disable-next-line no-unused-vars
 const asyncIterators = require('./async_iterators')
@@ -19,6 +20,100 @@ function isDeterministic (method, engine, buildState) {
   }
 
   return true
+}
+
+function r (func, input, name, resumable) {
+  if (resumable[name]) {
+    return resumable[name]
+  }
+  if (resumable[name + '_input']) {
+    return func(resumable[name + '_input'])
+  }
+
+  const result = func(typeof input === 'function' ? input() : input)
+  if (result instanceof Yield) {
+    if (result._input) {
+      resumable[name + '_input'] = result._input
+    }
+    result.resumable = resumable
+    throw result
+  } else {
+    resumable[name] = result
+  }
+  return result
+}
+
+async function rAsync (func, input, name, resumable) {
+  if (resumable[name]) {
+    return resumable[name]
+  }
+  if (resumable[name + '_input']) {
+    return func(resumable[name + '_input'])
+  }
+
+  const result = await func(typeof input === 'function' ? await input() : input)
+  if (result instanceof Yield) {
+    if (result._input) {
+      resumable[name + '_input'] = result._input
+    }
+    result.resumable = resumable
+    throw result
+  } else {
+    resumable[name] = result
+  }
+  return result
+}
+
+function buildYield (method, buildState = {}) {
+  // todo: add gc so we don't save resumable state for longer than it needs to exist
+
+  const { notTraversed = [], functions = {}, async, engine } = buildState
+  const func = Object.keys(method)[0]
+
+  buildState.yieldUsed = (buildState.yieldUsed || 0) + 1
+
+  let asyncDetected = false
+
+  function makeAsync (i) {
+    buildState.asyncDetected = buildState.asyncDetected || asyncDetected
+    return i
+  }
+
+  if (typeof engine.methods[func] === 'function') {
+    functions[func] = 1
+    asyncDetected = !isSync(engine.methods[func])
+    const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
+
+    if (asyncDetected || inputStr.includes('await')) {
+      return `await rAsync(gen["${func}"], async () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
+    }
+    return `r(gen["${func}"], () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
+  } else {
+    if (engine.methods[func] && engine.methods[func].traverse) {
+      functions[func] = 1
+      console.log(async)
+      asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
+      const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
+
+      if (asyncDetected || inputStr.includes('await')) {
+        return `await rAsync(gen["${func}"], async () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
+      }
+
+      return makeAsync(`r(gen["${func}"], () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`)
+    } else {
+      // todo: make build work for yields somehow. The issue is that it pre-binds data, thus making it impossible
+
+      asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
+      functions[func] = 1
+      notTraversed.push(method[func])
+
+      if (asyncDetected) {
+        return makeAsync(`await rAsync(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
+      }
+
+      return makeAsync(`r(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
+    }
+  }
 }
 
 function buildString (method, buildState = {}) {
@@ -51,6 +146,10 @@ function buildString (method, buildState = {}) {
       }
     }
 
+    if (engine.options.yieldSupported && engine.methods[func] && engine.methods[func].yields) {
+      return buildYield(method, buildState)
+    }
+
     if (engine.methods[func] && engine.methods[func].compile) {
       const str = engine.methods[func].compile(method[func], buildState)
       if ((str || '').startsWith('await')) buildState.asyncDetected = true
@@ -59,13 +158,12 @@ function buildString (method, buildState = {}) {
 
     if (typeof engine.methods[func] === 'function') {
       functions[func] = 1
-
       asyncDetected = !isSync(engine.methods[func])
       return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
     } else {
       if (engine.methods[func] && engine.methods[func].traverse) {
         functions[func] = 1
-
+        asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
         return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
       } else {
         if (engine.methods[func]) {
@@ -162,7 +260,7 @@ function processBuiltString (method, str, buildState) {
       cleanup += 'delete state[Override];'
     } else {
       copyStateCall = 'Object.assign(state, context);'
-      if (!buildState.varFallbacks && !Object.keys(buildState.methods).length && !buildState.missingUsed) {
+      if (!notTraversed.length && !buildState.varFallbacks && !Object.keys(buildState.methods).length && !buildState.missingUsed) {
         copyStateCall = ''
         ;(buildState.varTop || []).forEach(key => {
           // copyStateCall += `state[${JSON.stringify(key)}]=context?.[${JSON.stringify(key)}];`
@@ -175,7 +273,7 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
-  if (!buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
+  if (!notTraversed.length && !buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
     copyStateCall = ''
   }
 
@@ -185,7 +283,7 @@ function processBuiltString (method, str, buildState) {
     })
   }
 
-  const final = `${buildState.asyncDetected ? 'async' : ''} (context) => { ${copyStateCall} const result = ${str}; ${cleanup} return result }`
+  const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; ${cleanup} return result }`
 
   // console.log(str)
   // console.log(final)
@@ -194,4 +292,4 @@ function processBuiltString (method, str, buildState) {
   return declareSync(eval(final), !buildState.asyncDetected)
 }
 
-module.exports = { build, buildAsync, buildString }
+module.exports = { build, buildAsync, buildString, r, rAsync }
