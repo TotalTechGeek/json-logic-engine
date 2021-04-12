@@ -56,9 +56,10 @@ const logicRules = {
     }
   ]
 }
-const f = logic.build(logicRules)
 
 async function main () {
+  const f = await logic.build(logicRules)
+
   const facts = {
     personalFoulCount: 6,
     gameDuration: 40

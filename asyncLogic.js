@@ -8,7 +8,7 @@ const LogicEngine = require('./logic')
 const asyncPool = require('./asyncPool')
 const { Sync, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
-const { build } = require('./compiler')
+const { buildAsync } = require('./compiler')
 
 class AsyncLogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false }) {
@@ -79,14 +79,14 @@ class AsyncLogicEngine {
     return logic
   }
 
-  build (logic, data = {}, options = {
+  async build (logic, data = {}, options = {
     top: true,
     above: []
   }) {
     const { above = [], useOther = true } = options
 
     if (options.top) {
-      const constructedFunction = useOther ? build(logic, { engine: this, above, async: true, state: data }) : this.build(logic, data, { top: false, above })
+      const constructedFunction = await (useOther ? buildAsync(logic, { engine: this, above, async: true, state: data }) : this.build(logic, data, { top: false, above }))
 
       const result = declareSync(invokingData => {
         // Object.keys(data).forEach(key => delete data[key])

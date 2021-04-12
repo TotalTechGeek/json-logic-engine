@@ -5,12 +5,31 @@ const { Sync, Override, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 const { build, buildString } = require('./compiler')
 
+function isDeterministic (method, engine, buildState) {
+  if (Array.isArray(method)) {
+    return method.every(i => isDeterministic(i, engine, buildState))
+  }
+
+  if (method && typeof method === 'object') {
+    const func = Object.keys(method)[0]
+    const lower = method[func]
+
+    if (engine.methods[func].traverse === false) {
+      return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic
+    }
+    return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic && isDeterministic(lower, engine, buildState)
+  }
+
+  return true
+}
+
 const defaultMethods = {
-  '+': data => data.reduce((a, b) => a + b, 0),
-  '*': data => data.reduce((a, b) => a * b),
-  '/': data => data.reduce((a, b) => a / b),
-  '-': data => data.reduce((a, b) => a - b),
-  '%': data => data.reduce((a, b) => a % b),
+  '+': data => ([].concat(data)).reduce((a, b) => (+a) + (+b), 0),
+  '*': data => data.reduce((a, b) => (+a) * (+b)),
+  '/': data => data.reduce((a, b) => (+a) / (+b)),
+  // eslint-disable-next-line no-return-assign
+  '-': data => ((a => (a.length === 1 ? a[0] = -a[0] : a) & 0 || a)([].concat(data))).reduce((a, b) => (+a) - (+b)),
+  '%': data => data.reduce((a, b) => (+a) % (+b)),
   max: data => Math.max(...data),
   min: data => Math.min(...data),
   in: ([item, array]) => array.includes(item),
@@ -30,6 +49,9 @@ const defaultMethods = {
         proxy: false,
         above
       })
+    },
+    deterministic: (data, buildState) => {
+      return isDeterministic(data, buildState.engine, buildState)
     },
     asyncMethod: async ([check, onTrue, onFalse], context, above, engine) => {
       const test = await engine.run(check, context, {
@@ -56,9 +78,11 @@ const defaultMethods = {
   or: (arr) => arr.reduce((a, b) => a || b, false),
   and: (arr) => arr.reduce((a, b) => a && b),
   substr: ([string, from, end]) => {
-    if (end <= 0) {
-      end = string.length - from + end
+    if (end < 0) {
+      const result = string.substr(from)
+      return result.substr(0, result.length + end)
     }
+
     return string.substr(from, end)
   },
   // var: (key, context, above, engine) => {
@@ -138,10 +162,13 @@ const defaultMethods = {
       return result ? `!(${result})` : false
     }
   },
-  merge: arrays => arrays.flat(),
+  merge: arrays => ([].concat(arrays)).flat(),
   every: createArrayIterativeMethod('every'),
   filter: createArrayIterativeMethod('filter'),
   reduce: {
+    deterministic: (data, buildState) => {
+      return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
+    },
     compile: (data, buildState) => {
       if (Array.isArray(data)) {
         const { above = [], state, async } = buildState
@@ -150,7 +177,7 @@ const defaultMethods = {
         selector = buildString(selector, buildState)
         if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
 
-        mapper = build(mapper, { ...buildState, above: [selector, state, ...above] })
+        mapper = build(mapper, { ...buildState, above: [selector, state, ...above], avoidInlineAsync: true })
         buildState.methods.push(mapper)
 
         if (async) {
@@ -255,13 +282,17 @@ const defaultMethods = {
 
 function createArrayIterativeMethod (name) {
   return {
+    deterministic: (data, buildState) => {
+      return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
+    },
     build: ([selector, mapper], context, above, engine) => {
       selector = build(selector, {
         above: [selector, context, ...above],
-        engine
+        engine,
+        avoidInlineAsync: true
       }) || []
 
-      mapper = build(mapper, { engine, above: [selector, context, ...above] })
+      mapper = build(mapper, { engine, above: [selector, context, ...above], avoidInlineAsync: true })
 
       return () => {
         return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
@@ -301,7 +332,7 @@ function createArrayIterativeMethod (name) {
         let [selector, mapper] = data
 
         selector = buildString(selector, buildState)
-        mapper = build(mapper, { ...buildState, above: [selector, state, ...above] })
+        mapper = build(mapper, { ...buildState, above: [selector, state, ...above], avoidInlineAsync: true })
         buildState.methods.push(mapper)
 
         if (async) {
@@ -319,10 +350,11 @@ function createArrayIterativeMethod (name) {
       selector = build(selector, {
         above,
         engine,
-        async: true
+        async: true,
+        avoidInlineAsync: true
       }) || []
 
-      mapper = build(mapper, { engine, above: [selector, context, ...above], async: true })
+      mapper = build(mapper, { engine, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
 
       if (isSync(selector) && isSync(mapper)) {
         return declareSync(() => {
@@ -349,9 +381,17 @@ Object.keys(defaultMethods).forEach(item => {
   if (typeof defaultMethods[item] === 'function') {
     defaultMethods[item][Sync] = true
   }
+
+  defaultMethods[item].deterministic = defaultMethods[item].deterministic || true
 })
 
-// include the yielding iterators as well
+defaultMethods.var.deterministic = (data, buildState) => {
+  // console.log('what??', data, buildState.insideIterator && !String(data).includes('../'))
+  return buildState.insideIterator && !String(data).includes('../')
+}
+defaultMethods.var.traverse = false
+defaultMethods.missing.deterministic = false
+defaultMethods.missing_some.deterministic = false
 
 defaultMethods['<'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
@@ -467,17 +507,29 @@ defaultMethods['==='].compile = function (data, buildState) {
 
 defaultMethods['+'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' + ')})`
+    return `(${data.map(i => {
+      if (typeof i === 'number' || typeof i === 'string') {
+        return i
+      }
+      return `+(${buildString(i, buildState)})`
+    }).join(' + ')})`
+  } else if (typeof data === 'string' || typeof data === 'number') {
+    return `+${data}`
   } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a+b, 0)`
+    return `([].concat(${buildString(data, buildState)})).reduce((a,b) => +(+a)+(+b), 0)`
   }
 }
 
 defaultMethods['%'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' % ')})`
+    return `(${data.map(i => {
+      if (typeof i === 'number' || typeof i === 'string') {
+        return i
+      }
+      return `+(${buildString(i, buildState)})`
+    }).join(' % ')})`
   } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a%b)`
+    return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
   }
 }
 defaultMethods.or.compile = function (data, buildState) {
@@ -505,25 +557,42 @@ defaultMethods.and.compile = function (data, buildState) {
 
 defaultMethods['-'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' - ')})`
+    return `${data.length === 1 ? '-' : ''}(${data.map(i => {
+      if (typeof i === 'number' || typeof i === 'string') {
+        return i
+      }
+      return `+(${buildString(i, buildState)})`
+    }).join(' - ')})`
+  } if (typeof data === 'string' || typeof data === 'number') {
+    return `-${data}`
   } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a-b, 0)`
+    return `((a=>(a.length===1?a[0]=-a[0]:a)&0||a)([].concat(${buildString(data, buildState)}))).reduce((a,b) => (+a)-(+b))`
   }
 }
 
 defaultMethods['/'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' / ')})`
+    return `(${data.map(i => {
+      if (typeof i === 'number' || typeof i === 'string') {
+        return i
+      }
+      return `+(${buildString(i, buildState)})`
+    }).join(' / ')})`
   } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a/b)`
+    return `(${buildString(data, buildState)}).reduce((a,b) => (+a)/(+b))`
   }
 }
 
 defaultMethods['*'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' * ')})`
+    return `(${data.map(i => {
+      if (typeof i === 'number' || typeof i === 'string') {
+        return i
+      }
+      return `+(${buildString(i, buildState)})`
+    }).join(' * ')})`
   } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a*b)`
+    return `(${buildString(data, buildState)}).reduce((a,b) => (+a)*(+b))`
   }
 }
 
@@ -596,4 +665,5 @@ defaultMethods.var.compile = function (data, buildState) {
   return false
 }
 
+// include the yielding iterators as well
 module.exports = { ...defaultMethods, ...require('./yieldingIterators') }

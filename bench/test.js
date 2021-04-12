@@ -28,42 +28,40 @@ JSON.parse(fs.readFileSync('./tests.json').toString()).forEach(test => {
 
 console.log(compatible.length, incompatible.length, compatible.length / (compatible.length + incompatible.length))
 
-// const tests = compatible
-
 const traverseCopy = require('../utilities/traverseCopy')
 
 fs.writeFileSync('compatible.json', JSON.stringify(compatible, undefined, 4))
 fs.writeFileSync('incompatible.json', JSON.stringify(incompatible, undefined, 4))
 
-const defined = [
-  [
-    { '+': [1, 2, 3, 4, 5] },
-    {}
-  ],
-  [
-    { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
-    {}
-  ],
-  [
-    { cat: ['Test of a ', { var: 'x' }] },
-    { x: 'Program' }
-  ],
-  [
-    { '>': [{ var: 'x' }, 10] },
-    {
-      x: 7
-    }
-  ],
-  [
-    { and: [{ '>': [{ var: 'accountants' }, 3] }, { var: 'approvedBy.ceo' }] },
-    {
-      approvedBy: {
-        ceo: true
-      },
-      accountants: 10
-    }
-  ]
-]
+// const defined = [
+//   [
+//     { '+': [1, 2, 3, 4, 5] },
+//     {}
+//   ],
+//   [
+//     { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
+//     {}
+//   ],
+//   [
+//     { cat: ['Test of a ', { var: 'x' }] },
+//     { x: 'Program' }
+//   ],
+//   [
+//     { '>': [{ var: 'x' }, 10] },
+//     {
+//       x: 7
+//     }
+//   ],
+//   [
+//     { and: [{ '>': [{ var: 'accountants' }, 3] }, { var: 'approvedBy.ceo' }] },
+//     {
+//       approvedBy: {
+//         ceo: true
+//       },
+//       accountants: 10
+//     }
+//   ]
+// ]
 const tests = compatible
 
 const other = tests || traverseCopy(tests, [], {
@@ -89,9 +87,6 @@ const other = tests || traverseCopy(tests, [], {
 
 const built = other.map(i => {
   return x.build(i[0])
-})
-const built2 = other.map(i => {
-  return y.build(i[0])
 })
 
 const jl = require('json-logic-js')
@@ -121,6 +116,10 @@ for (let j = 0; j < tests.length; j++) {
 console.timeEnd('le built')
 
 async function run () {
+  const built2 = await Promise.all(other.map(i => {
+    return y.build(i[0])
+  }))
+
   console.time('le async built')
 
   for (let j = 0; j < tests.length; j++) {

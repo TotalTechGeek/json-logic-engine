@@ -213,8 +213,8 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
       // const selectFunction = engine.build(selector, {}, { top: EfficientTop })
       // const mapFunction = engine.build(mapper, {}, { top: EfficientTop })
 
-      const selectFunction = build(selector, { engine, async: true })
-      const mapFunction = build(mapper, { engine, async: true })
+      const selectFunction = build(selector, { engine, async: true, avoidInlineAsync: true })
+      const mapFunction = build(mapper, { engine, async: true, avoidInlineAsync: true })
 
       if (isSync(selectFunction) && isSync(mapFunction)) {
         return declareSync(() => result.method(input, context, above, engine.fallback))

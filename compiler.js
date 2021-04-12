@@ -3,8 +3,26 @@ const declareSync = require('./utilities/declareSync')
 // eslint-disable-next-line no-unused-vars
 const asyncIterators = require('./async_iterators')
 
+function isDeterministic (method, engine, buildState) {
+  if (Array.isArray(method)) {
+    return method.every(i => isDeterministic(i, engine, buildState))
+  }
+
+  if (method && typeof method === 'object') {
+    const func = Object.keys(method)[0]
+    const lower = method[func]
+
+    if (engine.methods[func].traverse === false) {
+      return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic
+    }
+    return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic && isDeterministic(lower, engine, buildState)
+  }
+
+  return true
+}
+
 function buildString (method, buildState = {}) {
-  const { notTraversed = [], functions = {}, methods = [], state, async, above = [], engine } = buildState
+  const { notTraversed = [], functions = {}, methods = [], state, async, above = [], processing = [], engine } = buildState
   if (Array.isArray(method)) {
     return '[' + method.map(i => buildString(i, buildState)).join(', ') + ']'
   }
@@ -19,6 +37,18 @@ function buildString (method, buildState = {}) {
   if (method && typeof method === 'object') {
     const func = Object.keys(method)[0]
     functions[func] = functions[func] || 2
+
+    if (engine.methods[func] && isDeterministic(method, engine, buildState)) {
+      // console.log(method)
+
+      if (isSync(engine.methods[func])) {
+        return JSON.stringify((engine.fallback || engine).run(method))
+      }
+      if (async && !buildState.avoidInlineAsync) {
+        processing.push(engine.run(method).then(i => JSON.stringify(i)))
+        return `__%%%${processing.length - 1}%%%__`
+      }
+    }
 
     if (engine.methods[func] && engine.methods[func].compile) {
       const str = engine.methods[func].compile(method[func], buildState)
@@ -65,12 +95,29 @@ function buildString (method, buildState = {}) {
   return JSON.stringify(method)
 }
 
-function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, async = engine.async, above = [], asyncDetected = false } = {}) {
+function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false } = {}) {
+  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected }
+  const str = buildString(method, buildState)
+  return processBuiltString(method, str, buildState)
+}
+
+async function buildAsync (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false } = {}) {
+  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected }
+  const str = buildString(method, buildState)
+  buildState.processing = await Promise.all(buildState.processing)
+  // console.log(buildState.processing)
+  return processBuiltString(method, str, buildState)
+}
+
+function processBuiltString (method, str, buildState) {
   const gen = {}
 
-  const buildState = { notTraversed, functions, methods, state, async, engine, above, asyncDetected }
+  // eslint-disable-next-line no-unused-vars
+  const { functions, state, async, engine, above, methods, notTraversed, processing } = buildState
 
-  let str = buildString(method, buildState)
+  processing.forEach((item, x) => {
+    str = str.replace(`__%%%${x}%%%__`, item)
+  })
 
   Object.keys(functions).forEach(key => {
     if (functions[key] === 2) return
@@ -139,10 +186,11 @@ function build (method, { notTraversed = [], functions = {}, methods = [], state
 
   const final = `${buildState.asyncDetected ? 'async' : ''} (context) => { ${copyStateCall} const result = ${str}; ${cleanup} return result }`
 
+  // console.log(str)
   // console.log(final)
 
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
 }
 
-module.exports = { build, buildString }
+module.exports = { build, buildAsync, buildString }
