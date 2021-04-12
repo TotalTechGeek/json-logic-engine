@@ -5,6 +5,10 @@ const declareSync = require('./utilities/declareSync')
 // eslint-disable-next-line no-unused-vars
 const asyncIterators = require('./async_iterators')
 
+function isPrimitive (x) {
+  return x === null || x === undefined || ['Number', 'String', 'Boolean', 'Object'].includes(x.constructor.name)
+}
+
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
     return method.every(i => isDeterministic(i, engine, buildState))
@@ -112,7 +116,14 @@ function buildYield (method, buildState = {}) {
 }
 
 function buildString (method, buildState = {}) {
-  const { notTraversed = [], functions = {}, methods = [], state, async, above = [], processing = [], engine } = buildState
+  const { notTraversed = [], functions = {}, methods = [], state, async, above = [], processing = [], values = [], engine } = buildState
+
+  function pushValue (value) {
+    if (isPrimitive(value)) return JSON.stringify(value)
+    values.push(value)
+    return `values[${values.length - 1}]`
+  }
+
   if (Array.isArray(method)) {
     return '[' + method.map(i => buildString(i, buildState)).join(', ') + ']'
   }
@@ -132,11 +143,11 @@ function buildString (method, buildState = {}) {
       // console.log(method)
 
       if (isSync(engine.methods[func])) {
-        return JSON.stringify((engine.fallback || engine).run(method))
+        return pushValue((engine.fallback || engine).run(method))
       }
 
       if (async && !buildState.avoidInlineAsync) {
-        processing.push(engine.run(method).then(i => JSON.stringify(i)))
+        processing.push(engine.run(method).then(i => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
       }
     }
@@ -186,17 +197,17 @@ function buildString (method, buildState = {}) {
     }
   }
 
-  return JSON.stringify(method)
+  return pushValue(method)
 }
 
-function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false } = {}) {
-  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected }
+function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
+  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
   const str = buildString(method, buildState)
   return processBuiltString(method, str, buildState)
 }
 
-async function buildAsync (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false } = {}) {
-  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected }
+async function buildAsync (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
+  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
   const str = buildString(method, buildState)
   buildState.processing = await Promise.all(buildState.processing)
   // console.log(buildState.processing)
@@ -207,7 +218,7 @@ function processBuiltString (method, str, buildState) {
   const gen = {}
 
   // eslint-disable-next-line no-unused-vars
-  const { functions, state, async, engine, above, methods, notTraversed, processing } = buildState
+  const { functions, state, async, engine, above, methods, notTraversed, processing, values } = buildState
 
   processing.forEach((item, x) => {
     str = str.replace(`__%%%${x}%%%__`, item)
@@ -244,8 +255,8 @@ function processBuiltString (method, str, buildState) {
 
   const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
-  // console.log(str)
-  console.log(final)
+  console.log(str)
+  // console.log(final)
 
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
