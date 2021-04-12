@@ -27,11 +27,8 @@ function r (func, input, name, resumable) {
   if (resumable[name]) {
     return resumable[name]
   }
-  if (resumable[name + '_input']) {
-    return func(resumable[name + '_input'])
-  }
 
-  const result = func(typeof input === 'function' ? input() : input)
+  const result = resumable[name + '_input'] ? func(resumable[name + '_input']) : func(typeof input === 'function' ? input() : input)
   if (result instanceof Yield) {
     if (result._input) {
       resumable[name + '_input'] = result._input
@@ -48,11 +45,7 @@ async function rAsync (func, input, name, resumable) {
   if (resumable[name]) {
     return resumable[name]
   }
-  if (resumable[name + '_input']) {
-    return func(resumable[name + '_input'])
-  }
-
-  const result = await func(typeof input === 'function' ? await input() : input)
+  const result = resumable[name + '_input'] ? await func(resumable[name + '_input']) : await func(typeof input === 'function' ? await input() : input)
   if (result instanceof Yield) {
     if (result._input) {
       resumable[name + '_input'] = result._input
@@ -75,11 +68,6 @@ function buildYield (method, buildState = {}) {
 
   let asyncDetected = false
 
-  function makeAsync (i) {
-    buildState.asyncDetected = buildState.asyncDetected || asyncDetected
-    return i
-  }
-
   if (typeof engine.methods[func] === 'function') {
     functions[func] = 1
 
@@ -89,6 +77,7 @@ function buildYield (method, buildState = {}) {
     const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
 
     if (asyncDetected || inputStr.includes('await')) {
+      buildState.asyncDetected = buildState.asyncDetected || asyncDetected
       return `await rAsync(gen["${func}"], async () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
     }
     return `r(gen["${func}"], () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
@@ -100,10 +89,11 @@ function buildYield (method, buildState = {}) {
       const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
 
       if (asyncDetected || inputStr.startsWith('await')) {
+        buildState.asyncDetected = buildState.asyncDetected || asyncDetected
         return `await rAsync(gen["${func}"], async () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
       }
 
-      return makeAsync(`r(gen["${func}"], () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`)
+      return (`r(gen["${func}"], () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`)
     } else {
       // todo: make build work for yields somehow. The issue is that it pre-binds data, thus making it impossible
 
@@ -112,10 +102,11 @@ function buildYield (method, buildState = {}) {
       notTraversed.push(method[func])
 
       if (asyncDetected) {
-        return makeAsync(`await rAsync(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
+        buildState.asyncDetected = buildState.asyncDetected || asyncDetected
+        return (`await rAsync(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
       }
 
-      return makeAsync(`r(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
+      return (`r(gen["${func}"], notTraversed[${notTraversed.length - 1}], 'yield${buildState.yieldUsed}', resumable)`)
     }
   }
 }
@@ -254,7 +245,7 @@ function processBuiltString (method, str, buildState) {
   const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
-  // console.log(final)
+  console.log(final)
 
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
