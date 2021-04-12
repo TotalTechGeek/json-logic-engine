@@ -87,24 +87,27 @@ const defaultMethods = {
   },
   var: (key, context, above, engine) => {
     let b
+
     if (Array.isArray(key)) {
       b = key[1]
       key = key[0]
     }
 
-    if (!key && context && context[Override]) return context[Override]
+    // if (!key && context && context[Override]) return context[Override]
 
     let iter = 0
     while (typeof key === 'string' && key.startsWith('../') && iter < above.length) {
       context = above[iter++]
       key = key.substring(3)
     }
+    if (context && typeof context[Override] !== 'undefined') context = context[Override]
 
     const notFound = (b === undefined) ? null : b
 
     if (typeof key === 'undefined' || key === '' || key === null) {
       return context
     }
+
     const subProps = String(key).split('.')
     for (let i = 0; i < subProps.length; i++) {
       if (context === null || context === undefined) {
@@ -164,7 +167,7 @@ const defaultMethods = {
         selector = buildString(selector, buildState)
         if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
 
-        mapper = build(mapper, { ...buildState, above: [selector, state, ...above], avoidInlineAsync: true })
+        mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
         buildState.methods.push(mapper)
 
         if (async) {
@@ -279,7 +282,7 @@ function createArrayIterativeMethod (name) {
         avoidInlineAsync: true
       }) || []
 
-      mapper = build(mapper, { engine, above: [selector, context, ...above], avoidInlineAsync: true })
+      mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], avoidInlineAsync: true })
 
       return () => {
         return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
@@ -319,7 +322,7 @@ function createArrayIterativeMethod (name) {
         let [selector, mapper] = data
 
         selector = buildString(selector, buildState)
-        mapper = build(mapper, { ...buildState, above: [selector, state, ...above], avoidInlineAsync: true })
+        mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
         buildState.methods.push(mapper)
 
         if (async) {
@@ -341,7 +344,7 @@ function createArrayIterativeMethod (name) {
         avoidInlineAsync: true
       }) || []
 
-      mapper = build(mapper, { engine, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
+      mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
 
       if (isSync(selector) && isSync(mapper)) {
         return declareSync(() => {
@@ -646,7 +649,7 @@ defaultMethods.var.compile = function (data, buildState) {
     const pieces = key.split('.')
     const [top] = pieces
     buildState.varTop.add(top)
-    return `(state${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
+    return `(context${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
   }
   buildState.varFallbacks++
   return false

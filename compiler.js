@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 const { isSync, Override } = require('./constants')
 const Yield = require('./structures/Yield')
 const declareSync = require('./utilities/declareSync')
@@ -91,7 +92,7 @@ function buildYield (method, buildState = {}) {
   } else {
     if (engine.methods[func] && engine.methods[func].traverse) {
       functions[func] = 1
-      console.log(async)
+      // console.log(async)
       asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
       const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
 
@@ -236,54 +237,18 @@ function processBuiltString (method, str, buildState) {
     return method
   }
 
-  // eslint-disable-next-line no-unused-vars
-  const copyState = (context) => {
-    if (typeof context === 'object') {
-      // Object.keys(state).forEach(key => {
-      //   delete state[key]
-      // })
-      Object.assign(state, context)
-    } else {
-      state[Override] = context
-    }
-  }
-
-  let cleanup = ''
-  let copyStateCall = 'copyState(context);'
+  let copyStateCall = 'state[Override] = context;'
 
   if (buildState.varUseOverride === buildState.varAccesses && buildState.varUseOverride) {
-    // copyStateCall = 'state[Override] = context;'
     copyStateCall = ''
     while (str.includes('state[Override]')) { str = str.replace('state[Override]', 'context') }
-  } else {
-    if (buildState.varUseOverride) {
-      cleanup += 'delete state[Override];'
-    } else {
-      copyStateCall = 'Object.assign(state, context);'
-      if (!notTraversed.length && !buildState.varFallbacks && !Object.keys(buildState.methods).length && !buildState.missingUsed) {
-        copyStateCall = ''
-        ;(buildState.varTop || []).forEach(key => {
-          // copyStateCall += `state[${JSON.stringify(key)}]=context?.[${JSON.stringify(key)}];`
-
-          const stateString = `state?.[${JSON.stringify(key)}]`
-          const contextString = `context?.[${JSON.stringify(key)}]`
-          while (str.includes(stateString)) { str = str.replace(stateString, contextString) }
-        })
-      }
-    }
   }
 
   if (!notTraversed.length && !buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
     copyStateCall = ''
   }
 
-  if (!(!buildState.varFallbacks && !Object.keys(buildState.methods).length && !buildState.missingUsed)) {
-    ;([...(buildState.varTop || [])]).forEach(key => {
-      cleanup += `delete state[${JSON.stringify(key)}];`
-    })
-  }
-
-  const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; ${cleanup} return result }`
+  const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)

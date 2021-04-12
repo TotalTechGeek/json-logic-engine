@@ -4,6 +4,7 @@ const {
 
 const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
+const { Override } = require('./constants')
 
 const sync = new LogicEngine(undefined, { yieldSupported: true })
 const nosync = new AsyncLogicEngine(undefined, { yieldSupported: true })
@@ -17,6 +18,10 @@ const yieldVar = (key, context, above, engine) => {
   while (key.startsWith('../') && iter < above.length) {
     context = above[iter++]
     key = key.substring(3)
+  }
+
+  if (context && typeof context[Override] !== 'undefined') {
+    context = context[Override]
   }
 
   if (typeof key === 'undefined' || key === '' || key === null) {
