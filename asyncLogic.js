@@ -11,9 +11,10 @@ const declareSync = require('./utilities/declareSync')
 const { buildAsync } = require('./compiler')
 
 class AsyncLogicEngine {
-  constructor (methods = defaultMethods, options = { yieldSupported: false }) {
+  constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
     this.methods = methods
     this.options = options
+    this.disableInline = options.disableInline
     this.async = true
     this.fallback = new LogicEngine(methods, options)
   }
@@ -83,21 +84,12 @@ class AsyncLogicEngine {
     top: true,
     above: []
   }) {
-    const { above = [], useOther = true } = options
+    const { above = [] } = options
 
     if (options.top) {
-      const constructedFunction = await (useOther ? buildAsync(logic, { engine: this, above, async: true, state: data }) : this.build(logic, data, { top: false, above }))
+      const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: data })
 
       const result = declareSync(invokingData => {
-        // Object.keys(data).forEach(key => delete data[key])
-
-        // temp comment out
-        // if (typeof invokingData === 'object') {
-        //   Object.assign(data, invokingData)
-        // } else {
-        //   data[Override] = invokingData
-        // }
-
         const result = typeof constructedFunction === 'function' ? constructedFunction(invokingData) : constructedFunction
         return (options.top === true) ? Promise.resolve(result) : result
       }, (options.top !== true) && (isSync(constructedFunction)))

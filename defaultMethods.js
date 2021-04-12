@@ -85,19 +85,6 @@ const defaultMethods = {
 
     return string.substr(from, end)
   },
-  // var: (key, context, above, engine) => {
-  //   // if (Array.isArray(key)) {
-  //   //   if (key.length === 0) return context
-  //   //   return key.map(i => defaultMethods.var(i, context, above, engine))
-  //   // }
-  //   if (!key && context && context[Override]) return context[Override]
-  //   if (!key) return context
-  //   if (typeof context !== 'object' && key.startsWith('../')) {
-  //     return engine.methods.var(key.substring(3), above, undefined, engine)
-  //   }
-
-  //   if (engine.allowFunctions || typeof context[key] !== 'function') { return undefinedToNull(context[key]) }
-  // },
   var: (key, context, above, engine) => {
     let b
     if (Array.isArray(key)) {

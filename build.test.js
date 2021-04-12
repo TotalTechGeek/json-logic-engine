@@ -7,7 +7,7 @@ function timeout (n, x) {
   })
 }
 
-;[new LogicEngine(), new AsyncLogicEngine()].forEach(logic => {
+;[new LogicEngine(), new AsyncLogicEngine(), new LogicEngine(undefined, { disableInline: true }), new AsyncLogicEngine(undefined, { disableInline: true })].forEach(logic => {
   describe('Simple built functions', () => {
     test('Simple Addition', async () => {
       const f = await logic.build({ '+': [1, 2, 3] })

@@ -38,12 +38,13 @@ function buildString (method, buildState = {}) {
     const func = Object.keys(method)[0]
     functions[func] = functions[func] || 2
 
-    if (engine.methods[func] && isDeterministic(method, engine, buildState)) {
+    if (!buildState.engine.disableInline && engine.methods[func] && isDeterministic(method, engine, buildState)) {
       // console.log(method)
 
       if (isSync(engine.methods[func])) {
         return JSON.stringify((engine.fallback || engine).run(method))
       }
+
       if (async && !buildState.avoidInlineAsync) {
         processing.push(engine.run(method).then(i => JSON.stringify(i)))
         return `__%%%${processing.length - 1}%%%__`

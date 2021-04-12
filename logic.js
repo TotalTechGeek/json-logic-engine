@@ -8,7 +8,8 @@ const EngineObject = require('./structures/EngineObject')
 const { build } = require('./compiler')
 
 class LogicEngine {
-  constructor (methods = defaultMethods, options = { yieldSupported: false }) {
+  constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
+    this.disableInline = options.disableInline
     this.methods = methods
     this.options = options
   }
@@ -77,25 +78,17 @@ class LogicEngine {
     top: true,
     above: []
   }) {
-    const { above = [], useOther = true } = options
+    const { above = [] } = options
 
     if (options.top) {
-      const constructedFunction = useOther
-        ? build(logic, {
-          state: data,
-          engine: this
-        })
-        : this.build(logic, data, { top: false, above })
+      const constructedFunction = build(logic, {
+        state: data,
+        engine: this,
+        above
+      })
+
       if (typeof constructedFunction === 'function' || options.top === true) {
         return invokingData => {
-          // Object.keys(data).forEach(key => delete data[key])
-
-          // if (typeof invokingData === 'object') {
-          //   Object.assign(data, invokingData)
-          // } else {
-          //   data[Override] = invokingData
-          // }
-
           return typeof constructedFunction === 'function' ? constructedFunction(invokingData) : constructedFunction
         }
       }
