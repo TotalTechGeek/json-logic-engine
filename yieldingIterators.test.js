@@ -42,13 +42,9 @@ const yieldVar = (key, context, above, engine) => {
   if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
   return null
 }
-yieldVar.compile = (data, buildState) => {
-  buildState.varFallbacks = (buildState.varFallbacks || 0) + 1
-  return false
-}
 
-sync.addMethod('yieldVar', yieldVar)
-nosync.addMethod('yieldVar', yieldVar)
+sync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
+nosync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
 
 describe('Sync Yielding Iterator Test', () => {
   test('someYield', () => {
@@ -481,5 +477,23 @@ describe('iterators', () => {
 
     expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
     expect(await nosync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([2, 3, 4, 5])
+  })
+})
+
+describe('Test of multi-step yield', () => {
+  test('multi-step yield array', () => {
+    const testFunction = sync.build([{ yieldVar: 'a' }, { yieldVar: 'b' }])
+
+    try {
+      testFunction({})
+      expect(true).toBe(false)
+    } catch (err) {
+      try {
+        testFunction({ a: 1 }, err.resumable)
+        expect(true).toBe(false)
+      } catch (err2) {
+        expect(testFunction({ b: 2 }, err2.resumable)).toStrictEqual([1, 2])
+      }
+    }
   })
 })

@@ -82,6 +82,9 @@ function buildYield (method, buildState = {}) {
 
   if (typeof engine.methods[func] === 'function') {
     functions[func] = 1
+
+    buildState.useContext |= (engine.methods[func] || {}).useContext
+
     asyncDetected = !isSync(engine.methods[func])
     const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
 
@@ -96,7 +99,7 @@ function buildYield (method, buildState = {}) {
       asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
       const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
 
-      if (asyncDetected || inputStr.includes('await')) {
+      if (asyncDetected || inputStr.startsWith('await')) {
         return `await rAsync(gen["${func}"], async () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
       }
 
@@ -239,12 +242,12 @@ function processBuiltString (method, str, buildState) {
 
   let copyStateCall = 'state[Override] = context;'
 
-  if (buildState.varUseOverride === buildState.varAccesses && buildState.varUseOverride) {
+  if (!buildState.useContext && buildState.varUseOverride === buildState.varAccesses && buildState.varUseOverride) {
     copyStateCall = ''
     while (str.includes('state[Override]')) { str = str.replace('state[Override]', 'context') }
   }
 
-  if (!notTraversed.length && !buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
+  if (!buildState.useContext && !notTraversed.length && !buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
     copyStateCall = ''
   }
 

@@ -38,9 +38,10 @@ class AsyncLogicEngine {
     }
   }
 
-  addMethod (name, method, { deterministic = false, async = false, sync = !async, yields = false } = {}) {
+  addMethod (name, method, { deterministic = false, async = false, sync = !async, yields = false, useContext = false } = {}) {
     method.yields = yields
     method.deterministic = deterministic
+    method.useContext = useContext
     this.methods[name] = declareSync(method, sync)
   }
 
@@ -95,8 +96,16 @@ class AsyncLogicEngine {
       const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: data })
 
       const result = declareSync((...args) => {
+        if (options.top === true) {
+          try {
+            const result = typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
+            return Promise.resolve(result)
+          } catch (err) {
+            return Promise.reject(err)
+          }
+        }
         const result = typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
-        return (options.top === true) ? Promise.resolve(result) : result
+        return result
       }, (options.top !== true) && (isSync(constructedFunction)))
 
       // we can avoid the async pool if the constructed function is synchronous since the data

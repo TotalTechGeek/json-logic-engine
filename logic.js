@@ -6,6 +6,7 @@ const Yield = require('./structures/Yield')
 const EngineObject = require('./structures/EngineObject')
 // const { Override } = require('./constants')
 const { build } = require('./compiler')
+const declareSync = require('./utilities/declareSync')
 
 class LogicEngine {
   constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
@@ -32,10 +33,11 @@ class LogicEngine {
   }
 
   // eslint-disable-next-line no-empty-pattern
-  addMethod (name, method, { deterministic = false, yields = false } = {}) {
+  addMethod (name, method, { deterministic = false, yields = false, useContext = false } = {}) {
     method.yields = yields
+    method.useContext = useContext
     method.deterministic = deterministic
-    this.methods[name] = method
+    this.methods[name] = declareSync(method)
   }
 
   run (logic, data = {}, options = {
