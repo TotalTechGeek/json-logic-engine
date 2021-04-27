@@ -4,6 +4,7 @@ const asyncIterators = require('./async_iterators')
 const { Sync, Override, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 const { build, buildString } = require('./compiler')
+const chainingSupported = require('./utilities/chainingSupported')
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
@@ -152,7 +153,7 @@ const defaultMethods = {
       return result ? `!(${result})` : false
     }
   },
-  merge: arrays => ([].concat(arrays)).flat(),
+  merge: arrays => Array.isArray(arrays) ? ([].concat(...arrays)) : [arrays],
   every: createArrayIterativeMethod('every'),
   filter: createArrayIterativeMethod('filter'),
   reduce: {
@@ -625,7 +626,7 @@ defaultMethods.var.compile = function (data, buildState) {
   if (!key || typeof data === 'string' || typeof data === 'number' || (Array.isArray(data) && data.length <= 2)) {
     if (Array.isArray(data)) {
       key = data[0]
-      defaultValue = data[1] ?? null
+      defaultValue = typeof data[1] === 'undefined' ? null : data[1]
     }
 
     if (typeof key === 'undefined' || key === null || key === '') {
@@ -649,6 +650,14 @@ defaultMethods.var.compile = function (data, buildState) {
     const pieces = key.split('.')
     const [top] = pieces
     buildState.varTop.add(top)
+
+    // support older versions of node
+    if (!chainingSupported) {
+      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce((text, i) => {
+        return `(${text}||0)[${JSON.stringify(i)}]`
+      }, '(context||0)')}, ${JSON.stringify(defaultValue)}))`
+    }
+
     return `(context${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
   }
   buildState.varFallbacks++
