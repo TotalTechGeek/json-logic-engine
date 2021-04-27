@@ -276,21 +276,21 @@ function createArrayIterativeMethod (name) {
     deterministic: (data, buildState) => {
       return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
     },
-    build: ([selector, mapper], context, above, engine) => {
-      selector = build(selector, {
-        above: [selector, context, ...above],
-        engine,
-        avoidInlineAsync: true
-      }) || []
+    // build: ([selector, mapper], context, above, engine) => {
+    //   selector = build(selector, {
+    //     above: [selector, context, ...above],
+    //     engine,
+    //     avoidInlineAsync: true
+    //   }) || []
 
-      mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], avoidInlineAsync: true })
+    //   mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], avoidInlineAsync: true })
 
-      return () => {
-        return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
-          return typeof mapper === 'function' ? mapper(i) : mapper
-        })
-      }
-    },
+    //   return () => {
+    //     return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
+    //       return typeof mapper === 'function' ? mapper(i) : mapper
+    //     })
+    //   }
+    // },
     method: ([selector, mapper], context, above, engine) => {
       selector = engine.run(selector, context, {
         proxy: false,
@@ -337,30 +337,30 @@ function createArrayIterativeMethod (name) {
       }
       return false
     },
-    asyncBuild: ([selector, mapper], context, above, engine) => {
-      selector = build(selector, {
-        above,
-        engine,
-        async: true,
-        avoidInlineAsync: true
-      }) || []
+    // asyncBuild: ([selector, mapper], context, above, engine) => {
+    //   selector = build(selector, {
+    //     above,
+    //     engine,
+    //     async: true,
+    //     avoidInlineAsync: true
+    //   }) || []
 
-      mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
+    //   mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
 
-      if (isSync(selector) && isSync(mapper)) {
-        return declareSync(() => {
-          return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
-            return typeof mapper === 'function' ? mapper(i) : mapper
-          })
-        })
-      }
+    //   if (isSync(selector) && isSync(mapper)) {
+    //     return declareSync(() => {
+    //       return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
+    //         return typeof mapper === 'function' ? mapper(i) : mapper
+    //       })
+    //     })
+    //   }
 
-      return async () => {
-        return asyncIterators[name](typeof selector === 'function' ? await selector(context) || [] : selector, i => {
-          return typeof mapper === 'function' ? mapper(i) : mapper
-        })
-      }
-    },
+    //   return async () => {
+    //     return asyncIterators[name](typeof selector === 'function' ? await selector(context) || [] : selector, i => {
+    //       return typeof mapper === 'function' ? mapper(i) : mapper
+    //     })
+    //   }
+    // },
     traverse: false
   }
 }
@@ -596,12 +596,10 @@ defaultMethods.cat.compile = function (data, buildState) {
   return false
 }
 
-defaultMethods.not.compile = function (data, buildState) {
+defaultMethods.not.compile = defaultMethods['!'].compile = function (data, buildState) {
   return `(!(${buildString(data, buildState)}))`
 }
-defaultMethods['!'].compile = function (data, buildState) {
-  return `(!(${buildString(data, buildState)}))`
-}
+
 defaultMethods['!!'].compile = function (data, buildState) {
   return `(!!(${buildString(data, buildState)}))`
 }

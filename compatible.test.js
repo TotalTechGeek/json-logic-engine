@@ -24,11 +24,11 @@ const other = traverseCopy(tests, [], {
   }
 })
 
-const logic = new LogicEngine()
-const asyncLogic = new AsyncLogicEngine()
+// eslint-disable-next-line no-labels
+inline: {
+  const logic = new LogicEngine()
+  const asyncLogic = new AsyncLogicEngine()
 
-// using a loop to disable the inline compilation mechanism.
-for (let i = 0; i < 2; i++) {
   describe('All of the compatible tests', () => {
     test('All of the compatible tests', () => {
       tests.forEach(test => {
@@ -92,7 +92,78 @@ for (let i = 0; i < 2; i++) {
       }
     })
   })
+}
 
+// eslint-disable-next-line no-labels
+notInline: {
+  const logic = new LogicEngine()
+  const asyncLogic = new AsyncLogicEngine()
   logic.disableInline = true
   asyncLogic.disableInline = true
+
+  // using a loop to disable the inline compilation mechanism.
+
+  describe('All of the compatible tests', () => {
+    test('All of the compatible tests', () => {
+      tests.forEach(test => {
+        expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
+      })
+    })
+
+    test('All of the compatible tests (async)', async () => {
+      for (let i = 0; i < tests.length; i++) {
+        const test = tests[i]
+        expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
+      }
+    })
+
+    test('All of the compatible tests (built)', () => {
+      for (let i = 0; i < tests.length; i++) {
+        const test = tests[i]
+        const f = logic.build(test[0])
+        // console.log(JSON.stringify(test[0]), JSON.stringify(test[1]))
+        expect(f(test[1])).toStrictEqual(test[2])
+      }
+    })
+
+    test('All of the compatible tests (asyncBuilt)', async () => {
+      for (let i = 0; i < tests.length; i++) {
+        const test = tests[i]
+        const f = await asyncLogic.build(test[0])
+        expect(await f(test[1])).toStrictEqual(test[2])
+      }
+    })
+  })
+
+  describe('All of the compatible tests with yielded iterators', () => {
+    test('All of the compatible tests', () => {
+      other.forEach(test => {
+        expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
+      })
+    })
+
+    test('All of the compatible tests (async)', async () => {
+      for (let i = 0; i < other.length; i++) {
+        const test = other[i]
+        expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
+      }
+    })
+
+    test('All of the compatible tests (built)', () => {
+      for (let i = 0; i < other.length; i++) {
+        const test = other[i]
+        const f = logic.build(test[0])
+        // console.log(JSON.stringify(test[0]), JSON.stringify(test[1]))
+        expect(f(test[1])).toStrictEqual(test[2])
+      }
+    })
+
+    test('All of the compatible tests (asyncBuilt)', async () => {
+      for (let i = 0; i < other.length; i++) {
+        const test = other[i]
+        const f = await asyncLogic.build(test[0])
+        expect(await f(test[1])).toStrictEqual(test[2])
+      }
+    })
+  })
 }

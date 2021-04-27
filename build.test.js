@@ -18,6 +18,121 @@ function timeout (n, x) {
       const f = await logic.build({ '+': [1, 2, { var: 'x' }] })
       expect(await f({ x: 3 })).toEqual(6)
     })
+
+    test('cat operator w/ Variable input', async () => {
+      const f = await logic.build({ cat: { preserve: ['a', 'b', 'c'] } })
+      expect(await f()).toEqual('abc')
+    })
+
+    test('Minus operator w/ String', async () => {
+      const f = await logic.build({ '-': '5' })
+      expect(await f()).toEqual(-5)
+    })
+
+    test('Minus operator w/ array w/ variable input', async () => {
+      const f = await logic.build({ '-': [{ preserve: 5 }] })
+      expect(await f()).toEqual(-5)
+    })
+
+    test('Minus operator w/ variable input', async () => {
+      const f = await logic.build({ '-': { preserve: '5' } })
+      expect(await f()).toEqual(-5)
+    })
+
+    test('Plus operator w/ variable input', async () => {
+      const f = await logic.build({ '+': { preserve: '5' } })
+      expect(await f()).toEqual(5)
+    })
+
+    test('Multiplication operator w/ variable input', async () => {
+      const f = await logic.build({ '*': { preserve: [1, 2] } })
+      expect(await f()).toEqual(2)
+    })
+
+    test('Division operator w/ variable input', async () => {
+      const f = await logic.build({ '/': { preserve: [1, 2] } })
+      expect(await f()).toEqual(1 / 2)
+    })
+
+    test('Multiplication operator w/ array w/ variable input', async () => {
+      const f = await logic.build({ '*': [1, { preserve: 2 }] })
+      expect(await f()).toEqual(2)
+    })
+
+    test('Modulo operator w/ variable input', async () => {
+      const f = await logic.build({ '%': { preserve: [1, 2] } })
+      expect(await f()).toEqual(1)
+    })
+
+    test('Modulo operator w/ array w/ variable input', async () => {
+      const f = await logic.build({ '%': [1, { preserve: 2 }] })
+      expect(await f()).toEqual(1)
+    })
+
+    test('Division operator w/ array w/ variable input', async () => {
+      const f = await logic.build({ '/': [1, { preserve: 2 }] })
+      expect(await f()).toEqual(1 / 2)
+    })
+
+    test('or operator w/ variable input', async () => {
+      const f = await logic.build({ or: { preserve: [true, false] } })
+      expect(await f()).toEqual(true)
+    })
+
+    test('and operator w/ variable input', async () => {
+      const f = await logic.build({ and: { preserve: [true, false] } })
+      expect(await f()).toEqual(false)
+    })
+
+    test('<= operator w/ variable input', async () => {
+      const f = await logic.build({ '<=': { preserve: [1, 2] } })
+      expect(await f()).toEqual(true)
+    })
+
+    test('< operator w/ variable input', async () => {
+      const f = await logic.build({ '<': { preserve: [1, 2] } })
+      expect(await f()).toEqual(true)
+    })
+
+    test('>= operator w/ variable input', async () => {
+      const f = await logic.build({ '>=': { preserve: [1, 2] } })
+      expect(await f()).toEqual(false)
+    })
+
+    test('> operator w/ variable input', async () => {
+      const f = await logic.build({ '>': { preserve: [1, 2] } })
+      expect(await f()).toEqual(false)
+    })
+
+    test('== operator w/ variable input', async () => {
+      const f = await logic.build({ '==': { preserve: [1, 2] } })
+      expect(await f()).toEqual(false)
+    })
+
+    test('=== operator w/ variable input', async () => {
+      const f = await logic.build({ '===': { preserve: [1, 2] } })
+      expect(await f()).toEqual(false)
+    })
+
+    test('!== operator w/ variable input', async () => {
+      const f = await logic.build({ '!==': { preserve: [1, 2] } })
+      expect(await f()).toEqual(true)
+    })
+
+    test('!= operator w/ variable input', async () => {
+      const f = await logic.build({ '!=': { preserve: [1, 2] } })
+      expect(await f()).toEqual(true)
+    })
+
+    test('min command w/ variable input', async () => {
+      const f = await logic.build({ min: { preserve: [1, 2] } })
+      expect(await f()).toEqual(1)
+    })
+
+    test('max command w/ variable input', async () => {
+      const f = await logic.build({ max: { preserve: [1, 2] } })
+      expect(await f()).toEqual(2)
+    })
   })
 
   describe('Nested structures', () => {
