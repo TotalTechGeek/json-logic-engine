@@ -5,6 +5,7 @@ const { Sync, Override, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 const { build, buildString } = require('./compiler')
 const chainingSupported = require('./utilities/chainingSupported')
+const InvalidControlInput = require('./errors/InvalidControlInput')
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
@@ -41,7 +42,10 @@ const defaultMethods = {
     method: declareSync(i => i)
   },
   if: {
-    method: ([check, onTrue, onFalse], context, above, engine) => {
+    method: (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+
+      const [check, onTrue, onFalse] = input
       const test = engine.run(check, context, {
         proxy: false,
         above
@@ -54,7 +58,10 @@ const defaultMethods = {
     deterministic: (data, buildState) => {
       return isDeterministic(data, buildState.engine, buildState)
     },
-    asyncMethod: async ([check, onTrue, onFalse], context, above, engine) => {
+    asyncMethod: async (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+
+      const [check, onTrue, onFalse] = input
       const test = await engine.run(check, context, {
         proxy: false,
         above
@@ -161,35 +168,36 @@ const defaultMethods = {
       return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
     },
     compile: (data, buildState) => {
-      if (Array.isArray(data)) {
-        const { above = [], state, async } = buildState
-        let [selector, mapper, defaultValue] = data
+      if (!Array.isArray(data)) throw new InvalidControlInput(data)
 
-        selector = buildString(selector, buildState)
-        if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
+      const { above = [], state, async } = buildState
+      let [selector, mapper, defaultValue] = data
 
-        mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
-        buildState.methods.push(mapper)
+      selector = buildString(selector, buildState)
+      if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
 
-        if (async) {
-          if (!isSync(mapper) || selector.includes('await')) {
-            buildState.detectAsync = true
-            if (typeof defaultValue !== 'undefined') {
-              return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
-            }
-            return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
+      mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
+      buildState.methods.push(mapper)
+
+      if (async) {
+        if (!isSync(mapper) || selector.includes('await')) {
+          buildState.detectAsync = true
+          if (typeof defaultValue !== 'undefined') {
+            return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
           }
+          return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
         }
-
-        if (typeof defaultValue !== 'undefined') {
-          return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
-        }
-
-        return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
       }
-      return false
+
+      if (typeof defaultValue !== 'undefined') {
+        return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
+      }
+
+      return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
     },
-    method: ([selector, mapper, defaultValue], context, above, engine) => {
+    method: (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+      let [selector, mapper, defaultValue] = input
       defaultValue = engine.run(defaultValue, context, {
         proxy: false,
         above
@@ -216,7 +224,9 @@ const defaultMethods = {
 
       return selector.reduce(func, defaultValue)
     },
-    asyncMethod: async ([selector, mapper, defaultValue], context, above, engine) => {
+    asyncMethod: async (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+      let [selector, mapper, defaultValue] = input
       defaultValue = await engine.run(defaultValue, context, {
         proxy: false,
         above
@@ -291,7 +301,10 @@ function createArrayIterativeMethod (name) {
     //     })
     //   }
     // },
-    method: ([selector, mapper], context, above, engine) => {
+    method: (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+
+      let [selector, mapper] = input
       selector = engine.run(selector, context, {
         proxy: false,
         above
@@ -304,7 +317,10 @@ function createArrayIterativeMethod (name) {
         })
       })
     },
-    asyncMethod: async ([selector, mapper], context, above, engine) => {
+    asyncMethod: async (input, context, above, engine) => {
+      if (!Array.isArray(input)) throw new InvalidControlInput(input)
+
+      let [selector, mapper] = input
       selector = (await engine.run(selector, context, {
         proxy: false,
         above
@@ -318,24 +334,23 @@ function createArrayIterativeMethod (name) {
       })
     },
     compile: (data, buildState) => {
-      if (Array.isArray(data)) {
-        const { above = [], state, async } = buildState
-        let [selector, mapper] = data
+      if (!Array.isArray(data)) throw new InvalidControlInput(data)
 
-        selector = buildString(selector, buildState)
-        mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
-        buildState.methods.push(mapper)
+      const { above = [], state, async } = buildState
+      let [selector, mapper] = data
 
-        if (async) {
-          if (!isSync(mapper) || selector.includes('await')) {
-            buildState.detectAsync = true
-            return `await asyncIterators.${name}(${selector} || [], methods[${buildState.methods.length - 1}])`
-          }
+      selector = buildString(selector, buildState)
+      mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
+      buildState.methods.push(mapper)
+
+      if (async) {
+        if (!isSync(mapper) || selector.includes('await')) {
+          buildState.detectAsync = true
+          return `await asyncIterators.${name}(${selector} || [], methods[${buildState.methods.length - 1}])`
         }
-
-        return `(${selector} || []).${name}(methods[${buildState.methods.length - 1}])`
       }
-      return false
+
+      return `(${selector} || []).${name}(methods[${buildState.methods.length - 1}])`
     },
     // asyncBuild: ([selector, mapper], context, above, engine) => {
     //   selector = build(selector, {

@@ -90,7 +90,7 @@ class AsyncLogicEngine {
     top: true,
     above: []
   }) {
-    const { above = [] } = options
+    const { above = [], max = 100 } = options
 
     if (options.top) {
       const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: data })
@@ -115,7 +115,7 @@ class AsyncLogicEngine {
         // concerns about the data.
         return asyncPool({
           free: [result],
-          max: 100,
+          max,
           create: () => this.build(logic, { }, { ...options, above })
         })
       } else {
