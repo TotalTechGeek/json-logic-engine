@@ -69,6 +69,20 @@ class AsyncLogicEngine {
   }
 
   /**
+   * Adds a batch of functions to the engine
+   * @param {String} name
+   * @param {Object} obj
+   * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
+   */
+  addModule (name, obj, annotations = {}) {
+    Object.getOwnPropertyNames(obj).forEach(key => {
+      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
+        this.addMethod(`${name}${name ? '.' : ''}${key}`, obj[key], annotations)
+      }
+    })
+  }
+
+  /**
    *
    * @param {*} logic The logic to be executed
    * @param {*} data The data being passed in to the logic to be executed against.
