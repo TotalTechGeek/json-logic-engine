@@ -42,7 +42,8 @@ class LogicEngine {
       }
 
       if (typeof this.methods[func] === 'object') {
-        const { method, traverse: shouldTraverse } = this.methods[func]
+        const { method, traverse } = this.methods[func]
+        const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
         const parsedData = shouldTraverse ? this.run(data, context, { above }) : data
         if (this.options.yieldSupported && checkYield(parsedData)) return parsedData
         return method(parsedData, context, above, this)

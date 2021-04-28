@@ -30,34 +30,24 @@ inline: {
   const asyncLogic = new AsyncLogicEngine()
 
   describe('All of the compatible tests', () => {
-    test('All of the compatible tests', () => {
-      tests.forEach(test => {
-        expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
+    tests.forEach(testCase => {
+      test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])}`, () => {
+        expect(logic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
       })
-    })
 
-    test('All of the compatible tests (async)', async () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
-      }
-    })
+      test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (async)`, async () => {
+        expect(await asyncLogic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
+      })
 
-    test('All of the compatible tests (built)', () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        const f = logic.build(test[0])
-        // console.log(JSON.stringify(test[0]), JSON.stringify(test[1]))
-        expect(f(test[1])).toStrictEqual(test[2])
-      }
-    })
+      test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (built)`, () => {
+        const f = logic.build(testCase[0])
+        expect(f(testCase[1])).toStrictEqual(testCase[2])
+      })
 
-    test('All of the compatible tests (asyncBuilt)', async () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        const f = await asyncLogic.build(test[0])
-        expect(await f(test[1])).toStrictEqual(test[2])
-      }
+      test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (asyncBuilt)`, async () => {
+        const f = await asyncLogic.build(testCase[0])
+        expect(await f(testCase[1])).toStrictEqual(testCase[2])
+      })
     })
   })
 
@@ -103,35 +93,23 @@ notInline: {
 
   // using a loop to disable the inline compilation mechanism.
 
-  describe('All of the compatible tests', () => {
-    test('All of the compatible tests', () => {
-      tests.forEach(test => {
-        expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
-      })
+  tests.forEach(testCase => {
+    test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])}`, () => {
+      expect(logic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
     })
 
-    test('All of the compatible tests (async)', async () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
-      }
+    test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (async)`, async () => {
+      expect(await asyncLogic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
     })
 
-    test('All of the compatible tests (built)', () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        const f = logic.build(test[0])
-        // console.log(JSON.stringify(test[0]), JSON.stringify(test[1]))
-        expect(f(test[1])).toStrictEqual(test[2])
-      }
+    test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (built)`, () => {
+      const f = logic.build(testCase[0])
+      expect(f(testCase[1])).toStrictEqual(testCase[2])
     })
 
-    test('All of the compatible tests (asyncBuilt)', async () => {
-      for (let i = 0; i < tests.length; i++) {
-        const test = tests[i]
-        const f = await asyncLogic.build(test[0])
-        expect(await f(test[1])).toStrictEqual(test[2])
-      }
+    test(`${JSON.stringify(testCase[0])} ${JSON.stringify(testCase[1])} (asyncBuilt)`, async () => {
+      const f = await asyncLogic.build(testCase[0])
+      expect(await f(testCase[1])).toStrictEqual(testCase[2])
     })
   })
 

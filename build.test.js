@@ -40,6 +40,26 @@ function timeout (n, x) {
       expect(await f()).toEqual(-5)
     })
 
+    test('get operator w/ deterministic input', async () => {
+      const f = await logic.build({ get: [{ preserve: { a: 1 } }, 'a'] })
+      expect(await f()).toEqual(1)
+    })
+
+    test('get operator w/ deterministic input and default', async () => {
+      const f = await logic.build({ get: [{ preserve: { } }, 'a', 5] })
+      expect(await f()).toEqual(5)
+    })
+
+    test('get operator w/ non-deterministic input', async () => {
+      const f = await logic.build({ get: [{ eachKey: { a: { var: 'x' } } }, 'a'] })
+      expect(await f({ x: 1 })).toEqual(1)
+    })
+
+    test('get operator w/ non-deterministic input and default', async () => {
+      const f = await logic.build({ get: [{ eachKey: { a: { var: 'x' } } }, 'a', 5] })
+      expect(await f({ })).toEqual(5)
+    })
+
     test('Plus operator w/ variable input', async () => {
       const f = await logic.build({ '+': { preserve: '5' } })
       expect(await f()).toEqual(5)

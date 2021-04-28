@@ -581,6 +581,48 @@ modes.forEach(logic => {
       expect(answer2).toStrictEqual([])
     })
 
+    test('get from string', () => {
+      const answer = logic.run({
+        get: ['hello', 'length']
+      })
+      expect(answer).toStrictEqual(5)
+    })
+
+    test('length string', () => {
+      const answer = logic.run({
+        length: 'hello'
+      })
+      expect(answer).toStrictEqual(5)
+    })
+
+    test('length array', () => {
+      const answer = logic.run({
+        length: ['hello']
+      })
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from array', () => {
+      const answer = logic.run({
+        get: [['hi'], 'length']
+      })
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from object', () => {
+      const answer = logic.run({
+        get: [{ preserve: { a: 1 } }, 'a']
+      })
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from object default', () => {
+      const answer = logic.run({
+        get: [{ preserve: { } }, 'a', 5]
+      })
+      expect(answer).toStrictEqual(5)
+    })
+
     test('merge', () => {
       const answer = logic.run({
         merge: [{ preserve: ['b'] }, { preserve: ['c'] }]

@@ -47,7 +47,8 @@ class AsyncLogicEngine {
       }
 
       if (typeof this.methods[func] === 'object') {
-        const { asyncMethod, method, traverse: shouldTraverse } = this.methods[func]
+        const { asyncMethod, method, traverse } = this.methods[func]
+        const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
         const parsedData = shouldTraverse ? await this.run(data, context, { above }) : data
         if (this.options.yieldSupported && await checkYield(parsedData)) return parsedData
         const result = await (asyncMethod || method)(parsedData, context, above, this)

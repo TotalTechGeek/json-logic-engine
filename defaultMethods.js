@@ -95,6 +95,26 @@ const defaultMethods = {
 
     return string.substr(from, end)
   },
+  length: i => i.length,
+  get: {
+    method: ([data, key, defaultValue], context, above, engine) => {
+      const notFound = (defaultValue === undefined) ? null : defaultValue
+
+      const subProps = String(key).split('.')
+      for (let i = 0; i < subProps.length; i++) {
+        if (data === null || data === undefined) {
+          return notFound
+        }
+        // Descending into context
+        data = data[subProps[i]]
+        if (data === undefined) {
+          return notFound
+        }
+      }
+
+      if (engine.allowFunctions || typeof data[key] !== 'function') { return data }
+    }
+  },
   var: (key, context, above, engine) => {
     let b
 
@@ -115,7 +135,10 @@ const defaultMethods = {
     const notFound = (b === undefined) ? null : b
 
     if (typeof key === 'undefined' || key === '' || key === null) {
-      return context
+      if (engine.allowFunctions || typeof context[key] !== 'function') {
+        return context
+      }
+      return null
     }
 
     const subProps = String(key).split('.')
@@ -150,6 +173,7 @@ const defaultMethods = {
   some: createArrayIterativeMethod('some'),
   all: createArrayIterativeMethod('every'),
   none: {
+    traverse: false,
     // todo: add async build & build
     method: (val, context, above, engine) => {
       return !defaultMethods.some.method(val, context, above, engine)
@@ -676,6 +700,32 @@ defaultMethods.missing.compile = function (data, buildState) {
 // @ts-ignore Allow custom attribute
 defaultMethods.missing_some.compile = function (data, buildState) {
   buildState.missingUsed = true
+  return false
+}
+
+defaultMethods.none.deterministic = defaultMethods.some.deterministic
+
+defaultMethods.get.compile = function (data, buildState) {
+  let defaultValue = null
+  let key = data
+  let obj = null
+
+  if (Array.isArray(data) && data.length <= 3) {
+    obj = data[0]
+    key = data[1]
+    defaultValue = typeof data[2] === 'undefined' ? null : data[2]
+
+    key = key.toString()
+    const pieces = key.split('.')
+
+    if (!chainingSupported) {
+      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce((text, i) => {
+      return `(${text}||0)[${JSON.stringify(i)}]`
+    }, `(${buildString(obj, buildState)}||0)`)}, ${JSON.stringify(defaultValue)}))`
+    }
+
+    return `((${buildString(obj, buildState)})${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
+  }
   return false
 }
 
