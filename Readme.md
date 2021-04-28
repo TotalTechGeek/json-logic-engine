@@ -4,11 +4,20 @@
 
 [![npm version](https://badge.fury.io/js/json-logic-engine.svg)](https://badge.fury.io/js/json-logic-engine) [![Coverage Status](https://coveralls.io/repos/github/TotalTechGeek/json-logic-engine/badge.svg?branch=master)](https://coveralls.io/github/TotalTechGeek/json-logic-engine?branch=master) [![Build Status](https://travis-ci.com/TotalTechGeek/json-logic-engine.svg?branch=master)](https://travis-ci.com/TotalTechGeek/json-logic-engine)
 
-This library was developed to be (for the most part) a drop-in replacement for the popular npm module [`json-logic-js`](https://github.com/jwadhams/json-logic-js), which at the time of writing has an vulnerability with prototype pollution.
 
-The intention of the library is to keep the functionality very similar to the original, while adding a few new notable features.
+![Logo](https://raw.githubusercontent.com/gist/TotalTechGeek/22d699b6d7cb0f7fa1c37fdb0c427e60/raw/63bd743ce7720b7337ac30ae09cbb1b8e12f3a5b/json-logic-engine.svg)
 
-The library has an async version of the engine, so if an operation needed to be added that needed to process asynchronously, the library is capable of handling it.
+
+### Fast, Powerful, and Persistable Logic
+
+Have you ever needed the ability to write a custom set of logic or set of rules for a particular customer? Or needed to be able to configure a piece of logic on the fly? 
+ 
+JSON Logic might be your solution! Designed with a lisp-like syntax, JSON Logic makes it easy to write safe instructions that can be persisted into a database, and shared between the front-end and back-end.
+
+Check out our [Documentation Here](https://jessemitchell.me/json-logic-engine).
+
+
+The engine supports both synchronous & asynchronous operations, and can use function compilation to keep your logic performant at scale.
 
 Examples:
 
@@ -98,3 +107,10 @@ logic.run({
     'adder':  7
 }) // [8, 9, 10, 11]
 ```
+--- 
+
+
+This library was developed to be (for the most part) a drop-in replacement for the popular npm module [`json-logic-js`](https://github.com/jwadhams/json-logic-js), which at the time of writing has an vulnerability with prototype pollution.
+
+The intention of the library is to keep the functionality very similar to the original, while adding a few new notable features.
+
