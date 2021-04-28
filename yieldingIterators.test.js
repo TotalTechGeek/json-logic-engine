@@ -44,7 +44,7 @@ const yieldVar = (key, context, above, engine) => {
 }
 
 sync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
-nosync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
+nosync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true, sync: true })
 
 describe('Sync Yielding Iterator Test', () => {
   test('someYield', () => {

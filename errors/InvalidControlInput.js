@@ -1,4 +1,5 @@
-
+// @ts-check
+'use strict'
 class InvalidControlInput extends Error {
   constructor (input) {
     super()

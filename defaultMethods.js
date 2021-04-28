@@ -1,3 +1,4 @@
+// @ts-check
 'use strict'
 
 const asyncIterators = require('./async_iterators')
@@ -29,6 +30,7 @@ const defaultMethods = {
   '+': data => ([].concat(data)).reduce((a, b) => (+a) + (+b), 0),
   '*': data => data.reduce((a, b) => (+a) * (+b)),
   '/': data => data.reduce((a, b) => (+a) / (+b)),
+  // @ts-ignore Type checking is incorrect on the following line.
   // eslint-disable-next-line no-return-assign
   '-': data => ((a => (a.length === 1 ? a[0] = -a[0] : a) & 0 || a)([].concat(data))).reduce((a, b) => (+a) - (+b)),
   '%': data => data.reduce((a, b) => (+a) % (+b)),
@@ -47,11 +49,11 @@ const defaultMethods = {
 
       const [check, onTrue, onFalse] = input
       const test = engine.run(check, context, {
-        proxy: false,
+
         above
       })
       return engine.run(test ? onTrue : onFalse, context, {
-        proxy: false,
+
         above
       })
     },
@@ -63,12 +65,12 @@ const defaultMethods = {
 
       const [check, onTrue, onFalse] = input
       const test = await engine.run(check, context, {
-        proxy: false,
+
         above
       })
 
       return engine.run(test ? onTrue : onFalse, context, {
-        proxy: false,
+
         above
       })
     },
@@ -199,12 +201,12 @@ const defaultMethods = {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
       defaultValue = engine.run(defaultValue, context, {
-        proxy: false,
+
         above
       })
 
       selector = engine.run(selector, context, {
-        proxy: false,
+
         above
       }) || []
 
@@ -213,7 +215,7 @@ const defaultMethods = {
           accumulator,
           current
         }, {
-          proxy: false,
+
           above: [selector, context, ...above]
         })
       }
@@ -228,12 +230,12 @@ const defaultMethods = {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
       defaultValue = await engine.run(defaultValue, context, {
-        proxy: false,
+
         above
       })
 
       selector = await engine.run(selector, context, {
-        proxy: false,
+
         above
       }) || []
 
@@ -242,7 +244,7 @@ const defaultMethods = {
           accumulator,
           current
         }, {
-          proxy: false,
+
           above: [selector, context, ...above]
         })
       }, defaultValue)
@@ -261,7 +263,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: engine.run(item, { key }, { above: [context, ...above], proxy: false })
+          value: engine.run(item, { key }, { above: [context, ...above] })
         })
         return accumulator
       }, {})
@@ -272,7 +274,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: await engine.run(item, { key }, { above: [context, ...above], proxy: false })
+          value: await engine.run(item, { key }, { above: [context, ...above] })
         })
         return accumulator
       }, {})
@@ -306,13 +308,11 @@ function createArrayIterativeMethod (name) {
 
       let [selector, mapper] = input
       selector = engine.run(selector, context, {
-        proxy: false,
         above
       }) || []
 
       return selector[name](i => {
         return engine.run(mapper, i, {
-          proxy: false,
           above: [selector, context, ...above]
         })
       })
@@ -322,13 +322,11 @@ function createArrayIterativeMethod (name) {
 
       let [selector, mapper] = input
       selector = (await engine.run(selector, context, {
-        proxy: false,
         above
       })) || []
 
       return asyncIterators[name](selector, i => {
         return engine.run(mapper, i, {
-          proxy: false,
           above: [selector, context, ...above]
         })
       })
@@ -391,14 +389,19 @@ Object.keys(defaultMethods).forEach(item => {
   defaultMethods[item].deterministic = defaultMethods[item].deterministic || true
 })
 
+// @ts-ignore Allow custom attribute
 defaultMethods.var.deterministic = (data, buildState) => {
-  // console.log('what??', data, buildState.insideIterator && !String(data).includes('../'))
   return buildState.insideIterator && !String(data).includes('../')
 }
+
+// @ts-ignore Allow custom attribute
 defaultMethods.var.traverse = false
+// @ts-ignore Allow custom attribute
 defaultMethods.missing.deterministic = false
+// @ts-ignore Allow custom attribute
 defaultMethods.missing_some.deterministic = false
 
+// @ts-ignore Allow custom attribute
 defaultMethods['<'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -415,6 +418,7 @@ defaultMethods['<'].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['<='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -431,6 +435,7 @@ defaultMethods['<='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.min.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `Math.min(${data.map(i => buildString(i, buildState)).join(', ')})`
@@ -438,6 +443,7 @@ defaultMethods.min.compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.max.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `Math.max(${data.map(i => buildString(i, buildState)).join(', ')})`
@@ -445,6 +451,7 @@ defaultMethods.max.compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['>'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -454,6 +461,7 @@ defaultMethods['>'].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['>='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -463,6 +471,7 @@ defaultMethods['>='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['=='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -472,6 +481,7 @@ defaultMethods['=='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['!='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -481,6 +491,7 @@ defaultMethods['!='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.if.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -493,6 +504,7 @@ defaultMethods.if.compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['!=='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -502,6 +514,7 @@ defaultMethods['!=='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['==='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
@@ -511,6 +524,7 @@ defaultMethods['==='].compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['+'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => {
@@ -526,6 +540,7 @@ defaultMethods['+'].compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['%'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => {
@@ -538,6 +553,7 @@ defaultMethods['%'].compile = function (data, buildState) {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
   }
 }
+// @ts-ignore Allow custom attribute
 defaultMethods.or.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => buildString(i, buildState)).join(' || ')})`
@@ -546,6 +562,7 @@ defaultMethods.or.compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${buildString(data[1], buildState)}).includes(${buildString(data[0], buildState)})`
@@ -553,6 +570,7 @@ defaultMethods.in.compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.and.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => buildString(i, buildState)).join(' && ')})`
@@ -561,6 +579,7 @@ defaultMethods.and.compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['-'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `${data.length === 1 ? '-' : ''}(${data.map(i => {
@@ -576,6 +595,7 @@ defaultMethods['-'].compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['/'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => {
@@ -589,6 +609,7 @@ defaultMethods['/'].compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['*'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data.map(i => {
@@ -602,6 +623,7 @@ defaultMethods['*'].compile = function (data, buildState) {
   }
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.cat.compile = function (data, buildState) {
   if (typeof data === 'string') {
     return JSON.stringify(data)
@@ -611,24 +633,29 @@ defaultMethods.cat.compile = function (data, buildState) {
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.not.compile = defaultMethods['!'].compile = function (data, buildState) {
   return `(!(${buildString(data, buildState)}))`
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods['!!'].compile = function (data, buildState) {
   return `(!!(${buildString(data, buildState)}))`
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.missing.compile = function (data, buildState) {
   buildState.missingUsed = true
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.missing_some.compile = function (data, buildState) {
   buildState.missingUsed = true
   return false
 }
 
+// @ts-ignore Allow custom attribute
 defaultMethods.var.compile = function (data, buildState) {
   let key = data
   let defaultValue = null

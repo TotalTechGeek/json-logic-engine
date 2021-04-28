@@ -1,3 +1,5 @@
+// @ts-check
+'use strict'
 function timeout (n) {
   return new Promise(resolve => {
     setTimeout(() => {

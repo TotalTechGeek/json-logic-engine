@@ -627,7 +627,7 @@ modes.forEach(logic => {
 
   describe('addMethod', () => {
     test('adding a method works', async () => {
-      logic.addMethod('+1', item => item + 1)
+      logic.addMethod('+1', item => item + 1, { sync: true })
       expect(await logic.run({
         '+1': 7
       })).toBe(8)
@@ -691,7 +691,7 @@ modes.forEach(logic => {
             }
             return context[key]
           }
-        })
+        }, { sync: true })
 
         const script = {
           '+': [1, { '+': [1, 2, 3] }, { yieldVar: 'a' }]
@@ -701,8 +701,10 @@ modes.forEach(logic => {
 
         expect(instance instanceof EngineObject).toBe(true)
         expect(instance.yields().map(i => ({ ...i }))).toStrictEqual([{
+          _input: null,
           message: 'Data does not exist in context.',
-          _logic: { yieldVar: 'a' }
+          _logic: { yieldVar: 'a' },
+          resumable: null
         }])
         expect(instance.logic()).toStrictEqual({
           '+': [1, 6, { yieldVar: 'a' }]

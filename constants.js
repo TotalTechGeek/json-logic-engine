@@ -1,3 +1,6 @@
+// @ts-check
+'use strict'
+
 module.exports = {
   Sync: Symbol('_sync'),
   Override: Symbol('_override'),

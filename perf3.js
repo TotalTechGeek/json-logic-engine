@@ -1,3 +1,4 @@
+// @ts-check
 const { LogicEngine } = require('.')
 
 const x = new LogicEngine()

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict'
 const Yield = require('./Yield')
 const EngineObject = require('./EngineObject')
@@ -10,6 +11,7 @@ class ReduceIterator {
     this.nextCall = next
     this.position = 0
     this._position = 0
+    this.map = null
   }
 
   next () {

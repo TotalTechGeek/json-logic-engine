@@ -1,3 +1,5 @@
+// @ts-check
+'use strict'
 // eslint-disable-next-line no-unused-vars
 const { isSync, Override } = require('./constants')
 const Yield = require('./structures/Yield')
@@ -5,10 +7,44 @@ const declareSync = require('./utilities/declareSync')
 // eslint-disable-next-line no-unused-vars
 const asyncIterators = require('./async_iterators')
 
+/**
+ * @typedef BuildState
+ * Used to keep track of the compilation.
+ * @property {*} [engine]
+ * @property {Object} [notTraversed]
+ * @property {Object} [functions]
+ * @property {Object} [methods]
+ * @property {Object} [state]
+ * @property {Array} [processing]
+ * @property {*} [async]
+ * @property {Array} [above]
+ * @property {Boolean} [asyncDetected]
+ * @property {*} [values]
+ * @property {*} [yieldUsed]
+ * @property {Boolean} [useContext]
+ * @property {Number} [varAccesses]
+ * @property {Number} [varUseOverride]
+ * @property {Boolean} [missingUsed]
+ * @property {Boolean} [avoidInlineAsync]
+ *
+ */
+
+/**
+ * Checks if the value passed in is a primitive JS object / value.
+ * @param {*} x
+ * @returns
+ */
 function isPrimitive (x) {
   return x === null || x === undefined || ['Number', 'String', 'Boolean', 'Object'].includes(x.constructor.name)
 }
 
+/**
+ * Checks if the method & its inputs are deterministic.
+ * @param {*} method
+ * @param {*} engine
+ * @param {BuildState} buildState
+ * @returns
+ */
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
     return method.every(i => isDeterministic(i, engine, buildState))
@@ -27,6 +63,14 @@ function isDeterministic (method, engine, buildState) {
   return true
 }
 
+/**
+ * A function that handles yields by caching the values to resumable object.
+ * @param {Function} func
+ * @param {*} input
+ * @param {String} name
+ * @param {Object} resumable
+ * @returns
+ */
 function r (func, input, name, resumable) {
   if (resumable[name]) {
     return resumable[name]
@@ -45,6 +89,14 @@ function r (func, input, name, resumable) {
   return result
 }
 
+/**
+ * A function that handles async yields by caching the values to resumable object.
+ * @param {Function} func
+ * @param {*} input
+ * @param {String} name
+ * @param {Object} resumable
+ * @returns
+ */
 async function rAsync (func, input, name, resumable) {
   if (resumable[name]) {
     return resumable[name]
@@ -62,6 +114,12 @@ async function rAsync (func, input, name, resumable) {
   return result
 }
 
+/**
+ * Builds a string for a function that may need to yield & resume.
+ * @param {String} method
+ * @param {BuildState} buildState
+ * @returns
+ */
 function buildYield (method, buildState = {}) {
   // todo: add gc so we don't save resumable state for longer than it needs to exist
 
@@ -75,7 +133,7 @@ function buildYield (method, buildState = {}) {
   if (typeof engine.methods[func] === 'function') {
     functions[func] = 1
 
-    buildState.useContext |= (engine.methods[func] || {}).useContext
+    buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
 
     asyncDetected = !isSync(engine.methods[func])
     const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
@@ -115,6 +173,12 @@ function buildYield (method, buildState = {}) {
   }
 }
 
+/**
+ * Builds the string for the function that will be evaluated.
+ * @param {*} method
+ * @param {BuildState} buildState
+ * @returns
+ */
 function buildString (method, buildState = {}) {
   const { notTraversed = [], functions = {}, methods = [], state, async, above = [], processing = [], values = [], engine } = buildState
 
@@ -130,7 +194,7 @@ function buildString (method, buildState = {}) {
 
   let asyncDetected = false
   function makeAsync (result) {
-    buildState.asyncDetected |= asyncDetected
+    buildState.asyncDetected = buildState.asyncDetected || asyncDetected
     if (async && asyncDetected) { return `await ${result}` }
     return result
   }
@@ -200,12 +264,24 @@ function buildString (method, buildState = {}) {
   return pushValue(method)
 }
 
+/**
+ * Synchronously compiles the logic to a function that can run the logic more optimally.
+ * @param {*} method
+ * @param {BuildState} [buildState]
+ * @returns
+ */
 function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
   const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
   const str = buildString(method, buildState)
   return processBuiltString(method, str, buildState)
 }
 
+/**
+ * Asynchronously compiles the logic to a function that can run the logic more optimally. Also supports async logic methods.
+ * @param {*} method
+ * @param {BuildState} [buildState]
+ * @returns
+ */
 async function buildAsync (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
   const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
   const str = buildString(method, buildState)
@@ -214,6 +290,13 @@ async function buildAsync (method, { notTraversed = [], functions = {}, methods 
   return processBuiltString(method, str, buildState)
 }
 
+/**
+ * Takes the string that's been generated and does some post-processing on it to be evaluated.
+ * @param {*} method
+ * @param {*} str
+ * @param {BuildState} buildState
+ * @returns
+ */
 function processBuiltString (method, str, buildState) {
   const gen = {}
 

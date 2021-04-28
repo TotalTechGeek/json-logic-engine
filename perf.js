@@ -1,3 +1,4 @@
+// @ts-check
 const { AsyncLogicEngine } = require('.')
 
 const x = new AsyncLogicEngine(undefined, { yieldSupported: false })

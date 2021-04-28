@@ -1,3 +1,4 @@
+// @ts-check
 'use strict'
 const { AsyncLogicEngine } = require('./')
 // const { Sync } = require('./constants')

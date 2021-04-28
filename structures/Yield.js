@@ -1,6 +1,14 @@
+// @ts-check
 'use strict'
+
+/**
+ * A class that handles the Yielding logic & helps generate replacement logic.
+ */
 class Yield {
   constructor (data) {
+    this._logic = null
+    this.resumable = null
+    this._input = null
     Object.assign(this, data)
   }
 
