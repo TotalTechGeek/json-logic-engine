@@ -1,6 +1,6 @@
 {
   "name": "json-logic-engine",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Construct complex rules with JSON & process them.",
   "main": "index.js",
   "author": "Jesse Daniel Mitchell",

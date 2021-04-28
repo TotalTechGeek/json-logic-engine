@@ -521,7 +521,7 @@ modes.forEach(logic => {
         eachKey: {
           a: {
             '+': [{
-              var: '../test'
+              var: 'test'
             }, 3]
           }
         }

@@ -263,18 +263,42 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: engine.run(item, { key }, { above: [context, ...above] })
+          value: engine.run(item, context, { above })
         })
         return accumulator
       }, {})
       return result
+    },
+    useContext: true,
+    deterministic: (data, buildState) => {
+      if (data && typeof data === 'object') {
+        return Object.values(data).every(i => {
+          return isDeterministic(i, buildState.engine, buildState)
+        })
+      }
+
+      throw new InvalidControlInput(data)
+    },
+    compile: (data, buildState) => {
+      // what's nice about this is that I don't have to worry about whether it's async or not, the lower entries take care of that ;)
+      // however, this is not engineered support yields, I will have to make a note of that & possibly support it at a later point.
+
+      if (data && typeof data === 'object') {
+        const result = `({ ${Object.keys(data).reduce((accumulator, key) => {
+          accumulator.push(`${JSON.stringify(key)}: ${buildString(data[key], buildState)}`)
+          return accumulator
+        }, []).join(',')} })`
+        return result
+      }
+
+      throw new InvalidControlInput(data)
     },
     asyncMethod: async (object, context, above, engine) => {
       const result = await asyncIterators.reduce(Object.keys(object), async (accumulator, key) => {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: await engine.run(item, { key }, { above: [context, ...above] })
+          value: await engine.run(item, context, { above })
         })
         return accumulator
       }, {})
@@ -386,7 +410,7 @@ Object.keys(defaultMethods).forEach(item => {
     defaultMethods[item][Sync] = true
   }
 
-  defaultMethods[item].deterministic = defaultMethods[item].deterministic || true
+  defaultMethods[item].deterministic = typeof defaultMethods[item].deterministic === 'undefined' ? true : defaultMethods[item].deterministic
 })
 
 // @ts-ignore Allow custom attribute
@@ -531,12 +555,12 @@ defaultMethods['+'].compile = function (data, buildState) {
       if (typeof i === 'number' || typeof i === 'string') {
         return i
       }
-      return `+(${buildString(i, buildState)})`
+      return `(+${buildString(i, buildState)})`
     }).join(' + ')})`
   } else if (typeof data === 'string' || typeof data === 'number') {
     return `+${data}`
   } else {
-    return `([].concat(${buildString(data, buildState)})).reduce((a,b) => +(+a)+(+b), 0)`
+    return `([].concat(${buildString(data, buildState)})).reduce((a,b) => (+a)+(+b), 0)`
   }
 }
 
@@ -547,7 +571,7 @@ defaultMethods['%'].compile = function (data, buildState) {
       if (typeof i === 'number' || typeof i === 'string') {
         return i
       }
-      return `+(${buildString(i, buildState)})`
+      return `(+${buildString(i, buildState)})`
     }).join(' % ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
@@ -586,7 +610,7 @@ defaultMethods['-'].compile = function (data, buildState) {
       if (typeof i === 'number' || typeof i === 'string') {
         return i
       }
-      return `+(${buildString(i, buildState)})`
+      return `(+${buildString(i, buildState)})`
     }).join(' - ')})`
   } if (typeof data === 'string' || typeof data === 'number') {
     return `-${data}`
@@ -602,7 +626,7 @@ defaultMethods['/'].compile = function (data, buildState) {
       if (typeof i === 'number' || typeof i === 'string') {
         return i
       }
-      return `+(${buildString(i, buildState)})`
+      return `(+${buildString(i, buildState)})`
     }).join(' / ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)/(+b))`
@@ -616,7 +640,7 @@ defaultMethods['*'].compile = function (data, buildState) {
       if (typeof i === 'number' || typeof i === 'string') {
         return i
       }
-      return `+(${buildString(i, buildState)})`
+      return `(+${buildString(i, buildState)})`
     }).join(' * ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)*(+b))`

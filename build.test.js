@@ -1,4 +1,5 @@
 const { LogicEngine, AsyncLogicEngine } = require('.')
+const InvalidControlInput = require('./errors/InvalidControlInput')
 function timeout (n, x) {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -144,6 +145,20 @@ function timeout (n, x) {
     test('Simple mapYield (w/ handlebars traversal)', async () => {
       const f = await logic.build({ mapYield: [[1, 2, 3], { '+': [{ var: '' }, { var: '../../x' }, { preserve: 0 }] }] })
       expect(await f({ x: 1 })).toStrictEqual([2, 3, 4])
+    })
+
+    test('Simple eachKey', async () => {
+      const f = await logic.build({ eachKey: { a: { var: 'x' }, b: { var: 'y' } } })
+      expect(await f({ x: 1, y: 2 })).toStrictEqual({ a: 1, b: 2 })
+    })
+
+    test('Invalid eachKey', async () => {
+      expect(async () => await logic.build({ eachKey: 5 })).rejects.toThrow(InvalidControlInput)
+    })
+
+    test('Simple deterministic eachKey', async () => {
+      const f = await logic.build({ eachKey: { a: 1, b: { '+': [1, 1] } } })
+      expect(await f({ x: 1, y: 2 })).toStrictEqual({ a: 1, b: 2 })
     })
   })
 })
