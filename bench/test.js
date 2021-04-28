@@ -33,36 +33,51 @@ const traverseCopy = require('../utilities/traverseCopy')
 fs.writeFileSync('compatible.json', JSON.stringify(compatible, undefined, 4))
 fs.writeFileSync('incompatible.json', JSON.stringify(incompatible, undefined, 4))
 
-// const defined = [
-//   [
-//     { '+': [1, 2, 3, 4, 5] },
-//     {}
-//   ],
-//   [
-//     { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
-//     {}
-//   ],
-//   [
-//     { cat: ['Test of a ', { var: 'x' }] },
-//     { x: 'Program' }
-//   ],
-//   [
-//     { '>': [{ var: 'x' }, 10] },
-//     {
-//       x: 7
-//     }
-//   ],
-//   [
-//     { and: [{ '>': [{ var: 'accountants' }, 3] }, { var: 'approvedBy.ceo' }] },
-//     {
-//       approvedBy: {
-//         ceo: true
-//       },
-//       accountants: 10
-//     }
-//   ]
-// ]
-const tests = compatible
+const defined = [
+  [
+    { '+': [1, 2, 3, 4, 5] },
+    {}
+  ],
+  [
+    { map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] },
+    {}
+  ],
+  [
+    { cat: ['Test of a ', { var: 'x' }] },
+    { x: 'Program' }
+  ],
+  [
+    { '>': [{ var: 'x' }, 10] },
+    {
+      x: 7
+    }
+  ],
+  [
+    { and: [{ '>': [{ var: 'accountants' }, 3] }, { var: 'approvedBy.ceo' }] },
+    {
+      approvedBy: {
+        ceo: true
+      },
+      accountants: 10
+    }
+  ],
+  [
+    { '+': [{ var: '' }, 1] },
+    5,
+    6
+  ],
+  [
+    { '-': [{ var: '' }, 1] },
+    7,
+    6
+  ],
+  [
+    { '*': [{ var: 'x' }, { var: 'y' }] },
+    { x: 1, y: 3 },
+    3
+  ]
+]
+const tests = defined || compatible
 
 const other = tests || traverseCopy(tests, [], {
   mutateKey: i => {

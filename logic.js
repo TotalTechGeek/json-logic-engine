@@ -8,6 +8,7 @@ const EngineObject = require('./structures/EngineObject')
 // const { Override } = require('./constants')
 const { build } = require('./compiler')
 const declareSync = require('./utilities/declareSync')
+const omitUndefined = require('./utilities/omitUndefined')
 
 /**
  * An engine capable of running synchronous JSON Logic.
@@ -55,8 +56,8 @@ class LogicEngine {
    * @param {Function|{ traverse?: Boolean, method: Function, deterministic?: Function | Boolean }} method
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod (name, method, { deterministic = false, yields = false, useContext = false } = {}) {
-    Object.assign(method, { yields, useContext, deterministic })
+  addMethod (name, method, { deterministic, yields, useContext } = {}) {
+    Object.assign(method, omitUndefined({ yields, useContext, deterministic }))
     this.methods[name] = declareSync(method)
   }
 

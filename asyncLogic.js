@@ -10,6 +10,7 @@ const asyncPool = require('./asyncPool')
 const { Sync, isSync } = require('./constants')
 const declareSync = require('./utilities/declareSync')
 const { buildAsync } = require('./compiler')
+const omitUndefined = require('./utilities/omitUndefined')
 
 /**
  * An engine capable of running asynchronous JSON Logic.
@@ -61,8 +62,8 @@ class AsyncLogicEngine {
    * @param {Function|{ traverse?: Boolean, method?: Function, asyncMethod?: Function, deterministic?: Function | Boolean }} method
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod (name, method, { deterministic = false, async = true, sync = !async, yields = false, useContext = false } = {}) {
-    Object.assign(method, { yields, deterministic, useContext })
+  addMethod (name, method, { deterministic, async = true, sync = !async, yields, useContext } = {}) {
+    Object.assign(method, omitUndefined({ yields, deterministic, useContext }))
     this.methods[name] = declareSync(method, sync)
   }
 
