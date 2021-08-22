@@ -213,10 +213,13 @@ function createArrayIterativeMethod (name, method, asyncMethod, defaultInitializ
     deterministic: (data, buildState) => {
       return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
     },
-    build: (input, context, above, engine) => {
+    build: (input, context, above, engine, buildState) => {
+      buildState.useContext = true
       return declareSync(() => result.method(input, context, above, engine))
     },
-    asyncBuild: (input, context, above, engine) => {
+    asyncBuild: (input, context, above, engine, buildState) => {
+      buildState.useContext = true
+
       const [selector, mapper] = input
 
       // const selectFunction = engine.build(selector, {}, { top: EfficientTop })

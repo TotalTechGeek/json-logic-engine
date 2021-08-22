@@ -202,7 +202,9 @@ const defaultMethods = {
       selector = buildString(selector, buildState)
       if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
 
-      mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
+      const mapState = { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true }
+      mapper = build(mapper, mapState)
+      buildState.useContext = buildState.useContext || mapState.useContext
       buildState.methods.push(mapper)
 
       if (async) {
@@ -336,21 +338,6 @@ function createArrayIterativeMethod (name) {
     deterministic: (data, buildState) => {
       return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
     },
-    // build: ([selector, mapper], context, above, engine) => {
-    //   selector = build(selector, {
-    //     above: [selector, context, ...above],
-    //     engine,
-    //     avoidInlineAsync: true
-    //   }) || []
-
-    //   mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], avoidInlineAsync: true })
-
-    //   return () => {
-    //     return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
-    //       return typeof mapper === 'function' ? mapper(i) : mapper
-    //     })
-    //   }
-    // },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
 
@@ -386,7 +373,10 @@ function createArrayIterativeMethod (name) {
       let [selector, mapper] = data
 
       selector = buildString(selector, buildState)
-      mapper = build(mapper, { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true })
+
+      const mapState = { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true }
+      mapper = build(mapper, mapState)
+      buildState.useContext = buildState.useContext || mapState.useContext
       buildState.methods.push(mapper)
 
       if (async) {
@@ -398,30 +388,6 @@ function createArrayIterativeMethod (name) {
 
       return `(${selector} || []).${name}(methods[${buildState.methods.length - 1}])`
     },
-    // asyncBuild: ([selector, mapper], context, above, engine) => {
-    //   selector = build(selector, {
-    //     above,
-    //     engine,
-    //     async: true,
-    //     avoidInlineAsync: true
-    //   }) || []
-
-    //   mapper = build(mapper, { engine, state: {}, above: [selector, context, ...above], async: true, avoidInlineAsync: true })
-
-    //   if (isSync(selector) && isSync(mapper)) {
-    //     return declareSync(() => {
-    //       return (typeof selector === 'function' ? selector(context) || [] : selector)[name](i => {
-    //         return typeof mapper === 'function' ? mapper(i) : mapper
-    //       })
-    //     })
-    //   }
-
-    //   return async () => {
-    //     return asyncIterators[name](typeof selector === 'function' ? await selector(context) || [] : selector, i => {
-    //       return typeof mapper === 'function' ? mapper(i) : mapper
-    //     })
-    //   }
-    // },
     traverse: false
   }
 }
@@ -442,12 +408,9 @@ defaultMethods.var.deterministic = (data, buildState) => {
   return buildState.insideIterator && !String(data).includes('../')
 }
 
-// @ts-ignore Allow custom attribute
-defaultMethods.var.traverse = false
-// @ts-ignore Allow custom attribute
-defaultMethods.missing.deterministic = false
-// @ts-ignore Allow custom attribute
-defaultMethods.missing_some.deterministic = false
+Object.assign(defaultMethods.var, { traverse: false })
+Object.assign(defaultMethods.missing, { deterministic: false, useContext: true })
+Object.assign(defaultMethods.missing_some, { deterministic: false, useContext: true })
 
 // @ts-ignore Allow custom attribute
 defaultMethods['<'].compile = function (data, buildState) {
@@ -691,18 +654,6 @@ defaultMethods['!!'].compile = function (data, buildState) {
   return `(!!(${buildString(data, buildState)}))`
 }
 
-// @ts-ignore Allow custom attribute
-defaultMethods.missing.compile = function (data, buildState) {
-  buildState.missingUsed = true
-  return false
-}
-
-// @ts-ignore Allow custom attribute
-defaultMethods.missing_some.compile = function (data, buildState) {
-  buildState.missingUsed = true
-  return false
-}
-
 defaultMethods.none.deterministic = defaultMethods.some.deterministic
 
 defaultMethods.get.compile = function (data, buildState) {
@@ -733,9 +684,6 @@ defaultMethods.get.compile = function (data, buildState) {
 defaultMethods.var.compile = function (data, buildState) {
   let key = data
   let defaultValue = null
-  buildState.varAccesses = (buildState.varAccesses || 0) + 1
-  buildState.varFallbacks = (buildState.varFallbacks || 0)
-  buildState.varUseOverride = (buildState.varUseOverride || 0)
   buildState.varTop = buildState.varTop || new Set()
   if (!key || typeof data === 'string' || typeof data === 'number' || (Array.isArray(data) && data.length <= 2)) {
     if (Array.isArray(data)) {
@@ -746,18 +694,17 @@ defaultMethods.var.compile = function (data, buildState) {
     if (typeof key === 'undefined' || key === null || key === '') {
       // this counts the number of var accesses to determine if they're all just using this override.
       // this allows for a small optimization :)
-      buildState.varUseOverride++
       return 'state[Override]'
     }
 
     if (typeof key !== 'string' && typeof key !== 'number') {
-      buildState.varFallbacks++
+      buildState.useContext = true
       return false
     }
     key = key.toString()
 
     if (key.includes('../')) {
-      buildState.varFallbacks++
+      buildState.useContext = true
       return false
     }
 
@@ -774,7 +721,8 @@ defaultMethods.var.compile = function (data, buildState) {
 
     return `(context${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
   }
-  buildState.varFallbacks++
+
+  buildState.useContext = true
   return false
 }
 

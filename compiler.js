@@ -22,9 +22,6 @@ const asyncIterators = require('./async_iterators')
  * @property {*} [values]
  * @property {*} [yieldUsed]
  * @property {Boolean} [useContext]
- * @property {Number} [varAccesses]
- * @property {Number} [varUseOverride]
- * @property {Boolean} [missingUsed]
  * @property {Boolean} [avoidInlineAsync]
  *
  */
@@ -130,13 +127,16 @@ function buildYield (method, buildState = {}) {
 
   let asyncDetected = false
 
+  buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
+
   if (typeof engine.methods[func] === 'function') {
     functions[func] = 1
 
-    buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
-
     asyncDetected = !isSync(engine.methods[func])
-    const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
+
+    const stringBuildState = { ...buildState, avoidInlineAsync: true }
+    const inputStr = buildString(method[func], stringBuildState)
+    buildState.useContext = buildState.useContext || stringBuildState.useContext
 
     if (asyncDetected || inputStr.includes('await')) {
       buildState.asyncDetected = buildState.asyncDetected || asyncDetected
@@ -148,7 +148,9 @@ function buildYield (method, buildState = {}) {
       functions[func] = 1
       // console.log(async)
       asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-      const inputStr = buildString(method[func], { ...buildState, avoidInlineAsync: true })
+      const stringBuildState = { ...buildState, avoidInlineAsync: true }
+      const inputStr = buildString(method[func], stringBuildState)
+      buildState.useContext = buildState.useContext || stringBuildState.useContext
 
       if (asyncDetected || inputStr.startsWith('await')) {
         buildState.asyncDetected = buildState.asyncDetected || asyncDetected
@@ -162,6 +164,7 @@ function buildYield (method, buildState = {}) {
       asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
       functions[func] = 1
       notTraversed.push(method[func])
+      buildState.useContext = true
 
       if (asyncDetected) {
         buildState.asyncDetected = buildState.asyncDetected || asyncDetected
@@ -199,8 +202,11 @@ function buildString (method, buildState = {}) {
     return result
   }
 
+  const func = method && Object.keys(method)[0]
+
+  buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
+
   if (method && typeof method === 'object') {
-    const func = Object.keys(method)[0]
     functions[func] = functions[func] || 2
 
     if (!buildState.engine.disableInline && engine.methods[func] && isDeterministic(method, engine, buildState)) {
@@ -240,14 +246,14 @@ function buildString (method, buildState = {}) {
           if (async) {
             if ((engine.methods[func].asyncBuild || engine.methods[func].build)) {
               const builder = engine.methods[func].asyncBuild || engine.methods[func].build
-              const result = builder(method[func], state, above, engine)
+              const result = builder(method[func], state, above, engine, buildState)
               methods.push(result)
               asyncDetected = !isSync(result)
               return makeAsync(`methods[${methods.length - 1}]()`)
             }
           } else {
             if (engine.methods[func].build) {
-              methods.push(engine.methods[func].build(method[func], state, above, engine))
+              methods.push(engine.methods[func].build(method[func], state, above, engine, buildState))
               return makeAsync(`methods[${methods.length - 1}]()`)
             }
           }
@@ -270,8 +276,8 @@ function buildString (method, buildState = {}) {
  * @param {BuildState} [buildState]
  * @returns
  */
-function build (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
-  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
+function build (method, buildState = {}) {
+  Object.assign(buildState, Object.assign({ notTraversed: [], functions: {}, methods: [], state: {}, processing: [], async: buildState.engine.async, above: [], asyncDetected: false, values: [] }, buildState))
   const str = buildString(method, buildState)
   return processBuiltString(method, str, buildState)
 }
@@ -282,11 +288,10 @@ function build (method, { notTraversed = [], functions = {}, methods = [], state
  * @param {BuildState} [buildState]
  * @returns
  */
-async function buildAsync (method, { notTraversed = [], functions = {}, methods = [], state = {}, engine, processing = [], async = engine.async, above = [], asyncDetected = false, values = [] } = {}) {
-  const buildState = { notTraversed, functions, methods, state, async, engine, above, processing, asyncDetected, values }
+async function buildAsync (method, buildState = {}) {
+  Object.assign(buildState, Object.assign({ notTraversed: [], functions: {}, methods: [], state: {}, processing: [], async: buildState.engine.async, above: [], asyncDetected: false, values: [] }, buildState))
   const str = buildString(method, buildState)
   buildState.processing = await Promise.all(buildState.processing)
-  // console.log(buildState.processing)
   return processBuiltString(method, str, buildState)
 }
 
@@ -326,20 +331,16 @@ function processBuiltString (method, str, buildState) {
   }
 
   let copyStateCall = 'state[Override] = context;'
-
-  if (!buildState.useContext && buildState.varUseOverride === buildState.varAccesses && buildState.varUseOverride) {
+  // console.log(buildState.useContext)
+  if (!buildState.useContext) {
     copyStateCall = ''
     while (str.includes('state[Override]')) { str = str.replace('state[Override]', 'context') }
-  }
-
-  if (!buildState.useContext && !notTraversed.length && !buildState.varAccesses && !buildState.missingUsed && !Object.keys(buildState.methods).length) {
-    copyStateCall = ''
   }
 
   const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
-  // console.log(final)
+  console.log(final)
 
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
