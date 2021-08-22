@@ -340,7 +340,7 @@ function processBuiltString (method, str, buildState) {
   const final = `${buildState.asyncDetected ? 'async' : ''} (context ${buildState.yieldUsed ? ', resumable = {}' : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
-  console.log(final)
+  // console.log(final)
 
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
