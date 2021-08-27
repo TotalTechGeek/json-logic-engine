@@ -21,8 +21,8 @@ class LogicEngine {
    */
   constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
     this.disableInline = options.disableInline
-    this.methods = methods
-    this.options = options
+    this.methods = { ...methods }
+    this.options = { ...options }
   }
 
   /**

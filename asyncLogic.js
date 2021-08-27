@@ -22,8 +22,8 @@ class AsyncLogicEngine {
    * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
    */
   constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
-    this.methods = methods
-    this.options = options
+    this.methods = { ...methods }
+    this.options = { ...options }
     this.disableInline = options.disableInline
     this.async = true
     this.fallback = new LogicEngine(methods, options)
