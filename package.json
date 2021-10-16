@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "nyc jest --coverage",
+    "test": "NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
     "coverage": "coveralls < coverage/lcov.info"
   },
   "devDependencies": {

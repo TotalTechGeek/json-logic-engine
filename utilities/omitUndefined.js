@@ -1,10 +1,10 @@
 // @ts-check
-'use strict';
+"use strict";
 export default (function omitUndefined(obj) {
-    Object.keys(obj).forEach(key => {
-        if (obj[key] === undefined) {
-            delete obj[key];
-        }
-    });
-    return obj;
+  Object.keys(obj).forEach((key) => {
+    if (obj[key] === undefined) {
+      delete obj[key];
+    }
+  });
+  return obj;
 });
