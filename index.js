@@ -1,6 +1,5 @@
 // @ts-check
-'use strict'
-module.exports = {
-  LogicEngine: require('./logic'),
-  AsyncLogicEngine: require('./asyncLogic')
-}
+"use strict";
+
+export { default as LogicEngine } from "./logic";
+export { default as AsyncLogicEngine } from "./asyncLogic";
