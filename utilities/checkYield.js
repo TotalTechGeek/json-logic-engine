@@ -1,16 +1,16 @@
-import Yield from "../structures/Yield.js";
-import EngineObject from "../structures/EngineObject.js";
+import Yield from '../structures/Yield.js'
+import EngineObject from '../structures/EngineObject.js';
 // @ts-check
-("use strict");
+('use strict')
 /**
  * Checks if the item that's passed in is or contains a Yield / EngineObject (signifying a Yield)
  * @param {*} item
  * @returns {Boolean}
  */
-function checkYield(item) {
+function checkYield (item) {
   if (Array.isArray(item)) {
-    return item.some((i) => i instanceof Yield || i instanceof EngineObject);
+    return item.some((i) => i instanceof Yield || i instanceof EngineObject)
   }
-  return item instanceof Yield || item instanceof EngineObject;
+  return item instanceof Yield || item instanceof EngineObject
 }
-export default checkYield;
+export default checkYield

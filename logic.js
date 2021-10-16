@@ -1,12 +1,12 @@
-import checkYield from "./utilities/checkYield.js";
-import defaultMethods from "./defaultMethods.js";
-import Yield from "./structures/Yield.js";
-import EngineObject from "./structures/EngineObject.js";
-import { build } from "./compiler.js";
-import declareSync from "./utilities/declareSync.js";
-import omitUndefined from "./utilities/omitUndefined.js";
+import checkYield from './utilities/checkYield.js'
+import defaultMethods from './defaultMethods.js'
+import Yield from './structures/Yield.js'
+import EngineObject from './structures/EngineObject.js'
+import { build } from './compiler.js'
+import declareSync from './utilities/declareSync.js'
+import omitUndefined from './utilities/omitUndefined.js';
 // @ts-check
-("use strict");
+('use strict')
 /**
  * An engine capable of running synchronous JSON Logic.
  */
@@ -16,14 +16,15 @@ class LogicEngine {
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
    * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
    */
-  constructor(
+  constructor (
     methods = defaultMethods,
     options = { yieldSupported: false, disableInline: false }
   ) {
-    this.disableInline = options.disableInline;
-    this.methods = { ...methods };
-    this.options = { ...options };
+    this.disableInline = options.disableInline
+    this.methods = { ...methods }
+    this.options = { ...options }
   }
+
   /**
    * An internal method used to parse through the JSON Logic at a lower level.
    * @param {String} func The name of the function being executed
@@ -32,53 +33,55 @@ class LogicEngine {
    * @param {*} above The context above (can be used for handlebars-style data traversal.)
    * @returns {*}
    */
-  _parse(func, data, context, above) {
+  _parse (func, data, context, above) {
     if (this.methods[func]) {
-      if (typeof this.methods[func] === "function") {
-        const input = this.run(data, context, { above });
-        if (this.options.yieldSupported && checkYield(input)) return input;
-        return this.methods[func](input, context, above, this);
+      if (typeof this.methods[func] === 'function') {
+        const input = this.run(data, context, { above })
+        if (this.options.yieldSupported && checkYield(input)) return input
+        return this.methods[func](input, context, above, this)
       }
-      if (typeof this.methods[func] === "object") {
-        const { method, traverse } = this.methods[func];
+      if (typeof this.methods[func] === 'object') {
+        const { method, traverse } = this.methods[func]
         const shouldTraverse =
-          typeof traverse === "undefined" ? true : traverse;
+          typeof traverse === 'undefined' ? true : traverse
         const parsedData = shouldTraverse
           ? this.run(data, context, { above })
-          : data;
-        if (this.options.yieldSupported && checkYield(parsedData))
-          return parsedData;
-        return method(parsedData, context, above, this);
+          : data
+        if (this.options.yieldSupported && checkYield(parsedData)) { return parsedData }
+        return method(parsedData, context, above, this)
       }
     }
   }
+
   /**
    *
    * @param {String} name The name of the method being added.
    * @param {Function|{ traverse?: Boolean, method: Function, deterministic?: Function | Boolean }} method
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod(name, method, { deterministic, yields, useContext } = {}) {
-    Object.assign(method, omitUndefined({ yields, useContext, deterministic }));
-    this.methods[name] = declareSync(method);
+  addMethod (name, method, { deterministic, yields, useContext } = {}) {
+    Object.assign(method, omitUndefined({ yields, useContext, deterministic }))
+    this.methods[name] = declareSync(method)
   }
+
   /**
    * Adds a batch of functions to the engine
    * @param {String} name
    * @param {Object} obj
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
    */
-  addModule(name, obj, annotations) {
+  addModule (name, obj, annotations) {
     Object.getOwnPropertyNames(obj).forEach((key) => {
-      if (typeof obj[key] === "function" || typeof obj[key] === "object") {
+      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
         this.addMethod(
-          `${name}${name ? "." : ""}${key}`,
+          `${name}${name ? '.' : ''}${key}`,
           obj[key],
           annotations
-        );
+        )
       }
-    });
+    })
   }
+
   /**
    *
    * @param {*} logic The logic to be executed
@@ -86,62 +89,63 @@ class LogicEngine {
    * @param {{ above?: any }} options Options for the invocation
    * @returns {*}
    */
-  run(logic, data = {}, options = {}) {
-    const { above = [] } = options;
+  run (logic, data = {}, options = {}) {
+    const { above = [] } = options
     if (Array.isArray(logic)) {
-      const result = logic.map((i) => this.run(i, data, { above }));
+      const result = logic.map((i) => this.run(i, data, { above }))
       if (this.options.yieldSupported && checkYield(result)) {
         return new EngineObject({
-          result,
-        });
+          result
+        })
       }
-      return result;
+      return result
     }
-    if (logic && typeof logic === "object") {
-      const [func] = Object.keys(logic);
-      const result = this._parse(func, logic[func], data, above);
+    if (logic && typeof logic === 'object') {
+      const [func] = Object.keys(logic)
+      const result = this._parse(func, logic[func], data, above)
       if (this.options.yieldSupported && checkYield(result)) {
         if (result instanceof Yield) {
           if (result._input) {
-            result._logic = { [func]: result._input };
+            result._logic = { [func]: result._input }
           }
           if (!result._logic) {
-            result._logic = logic;
+            result._logic = logic
           }
-          return result;
+          return result
         }
         return new EngineObject({
-          result: { [func]: result.data.result },
-        });
+          result: { [func]: result.data.result }
+        })
       }
-      return result;
+      return result
     }
-    return logic;
+    return logic
   }
+
   /**
    *
    * @param {*} logic The logic to be built.
    * @param {{ top?: Boolean, above?: any }} options
    * @returns {Function}
    */
-  build(logic, options = {}) {
-    const { above = [], top = true } = options;
+  build (logic, options = {}) {
+    const { above = [], top = true } = options
     if (top) {
       const constructedFunction = build(logic, {
         state: {},
         engine: this,
-        above,
-      });
-      if (typeof constructedFunction === "function" || top === true) {
+        above
+      })
+      if (typeof constructedFunction === 'function' || top === true) {
         return (...args) => {
-          return typeof constructedFunction === "function"
+          return typeof constructedFunction === 'function'
             ? constructedFunction(...args)
-            : constructedFunction;
-        };
+            : constructedFunction
+        }
       }
-      return constructedFunction;
+      return constructedFunction
     }
-    return logic;
+    return logic
   }
 }
-export default LogicEngine;
+export default LogicEngine

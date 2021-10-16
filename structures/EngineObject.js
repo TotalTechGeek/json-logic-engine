@@ -1,42 +1,44 @@
-import traverseCopy from "../utilities/traverseCopy.js";
-import Yield from "./Yield.js";
+import traverseCopy from '../utilities/traverseCopy.js'
+import Yield from './Yield.js';
 // @ts-check
-("use strict");
-function fetchYields(obj, arr = []) {
+('use strict')
+function fetchYields (obj, arr = []) {
   if (obj instanceof Yield) {
-    arr.push(obj);
-    return arr;
+    arr.push(obj)
+    return arr
   }
   if (Array.isArray(obj)) {
-    obj.forEach((i) => fetchYields(i, arr));
-  } else if (typeof obj === "object") {
+    obj.forEach((i) => fetchYields(i, arr))
+  } else if (typeof obj === 'object') {
     Object.keys(obj || {}).forEach((key) => {
-      fetchYields(obj[key], arr);
-    });
+      fetchYields(obj[key], arr)
+    })
   }
-  return arr;
+  return arr
 }
 class EngineObject {
-  constructor(data) {
-    this.data = data;
+  constructor (data) {
+    this.data = data
   }
-  yields() {
-    return fetchYields(this.data.result, []);
+
+  yields () {
+    return fetchYields(this.data.result, [])
   }
-  logic() {
+
+  logic () {
     return traverseCopy(
       this.data.result,
       {},
       {
         mutateValue: (i) => {
           if (i instanceof Yield) {
-            return i.logic();
+            return i.logic()
           }
-          return i;
+          return i
         },
-        skipCopy: (i) => i instanceof Yield,
+        skipCopy: (i) => i instanceof Yield
       }
-    );
+    )
   }
 }
-export default EngineObject;
+export default EngineObject
