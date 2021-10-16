@@ -1,5 +1,6 @@
 // @ts-check
 'use strict'
+
 function timeout (n) {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -7,6 +8,7 @@ function timeout (n) {
     }, n)
   })
 }
+
 function asyncPool ({
   free = [],
   max = 10,
@@ -39,4 +41,5 @@ function asyncPool ({
   }
   return pool
 }
+
 export default asyncPool

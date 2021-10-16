@@ -1,3 +1,6 @@
+// @ts-check
+'use strict'
+
 import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
 import Yield from './structures/Yield.js'
@@ -7,9 +10,8 @@ import asyncPool from './asyncPool.js'
 import { Sync, isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { buildAsync } from './compiler.js'
-import omitUndefined from './utilities/omitUndefined.js';
-// @ts-check
-('use strict')
+import omitUndefined from './utilities/omitUndefined.js'
+
 /**
  * An engine capable of running asynchronous JSON Logic.
  */
@@ -42,10 +44,14 @@ class AsyncLogicEngine {
     if (this.methods[func]) {
       if (typeof this.methods[func] === 'function') {
         const input = await this.run(data, context, { above })
-        if (this.options.yieldSupported && (await checkYield(input))) { return input }
+        if (this.options.yieldSupported && (await checkYield(input))) {
+          return input
+        }
         const result = await this.methods[func](input, context, above, this)
+
         return Array.isArray(result) ? await Promise.all(result) : result
       }
+
       if (typeof this.methods[func] === 'object') {
         const { asyncMethod, method, traverse } = this.methods[func]
         const shouldTraverse =
@@ -53,7 +59,11 @@ class AsyncLogicEngine {
         const parsedData = shouldTraverse
           ? await this.run(data, context, { above })
           : data
-        if (this.options.yieldSupported && (await checkYield(parsedData))) { return parsedData }
+
+        if (this.options.yieldSupported && (await checkYield(parsedData))) {
+          return parsedData
+        }
+
         const result = await (asyncMethod || method)(
           parsedData,
           context,
@@ -111,16 +121,20 @@ class AsyncLogicEngine {
       const result = await Promise.all(
         logic.map((i) => this.run(i, data, { above }))
       )
+
       if (this.options.yieldSupported && (await checkYield(result))) {
         return new EngineObject({
           result
         })
       }
+
       return result
     }
+
     if (logic && typeof logic === 'object') {
       const [func] = Object.keys(logic)
       const result = await this._parse(func, logic[func], data, above)
+
       if (this.options.yieldSupported && (await checkYield(result))) {
         if (result instanceof Yield) {
           if (result._input) {
@@ -131,12 +145,15 @@ class AsyncLogicEngine {
           }
           return result
         }
+
         return new EngineObject({
           result: { [func]: result.data.result }
         })
       }
+
       return result
     }
+
     return logic
   }
 
@@ -155,6 +172,7 @@ class AsyncLogicEngine {
         async: true,
         state: {}
       })
+
       const result = declareSync((...args) => {
         if (top === true) {
           try {
@@ -167,10 +185,12 @@ class AsyncLogicEngine {
             return Promise.reject(err)
           }
         }
+
         const result =
           typeof constructedFunction === 'function'
             ? constructedFunction(...args)
             : constructedFunction
+
         return result
       }, top !== true && isSync(constructedFunction))
       // we can avoid the async pool if the constructed function is synchronous since the data
@@ -189,7 +209,9 @@ class AsyncLogicEngine {
           : constructedFunction
       }
     }
+
     return logic
   }
 }
+
 export default AsyncLogicEngine

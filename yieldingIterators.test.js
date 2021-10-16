@@ -2,8 +2,11 @@ import { LogicEngine, AsyncLogicEngine } from './index.js'
 import Yield from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 import { Override } from './constants.js'
+
 const sync = new LogicEngine(undefined, { yieldSupported: true })
+
 const nosync = new AsyncLogicEngine(undefined, { yieldSupported: true })
+
 const yieldVar = (key, context, above, engine) => {
   if (Array.isArray(key)) {
     key = key[0]
@@ -35,12 +38,15 @@ const yieldVar = (key, context, above, engine) => {
   }
   return null
 }
+
 sync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
+
 nosync.addMethod('yieldVar', yieldVar, {
   yields: true,
   useContext: true,
   sync: true
 })
+
 describe('Sync Yielding Iterator Test', () => {
   test('someYield', () => {
     const script = {
@@ -57,6 +63,7 @@ describe('Sync Yielding Iterator Test', () => {
     expect(sync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(sync.run(instance.logic(), { a: 0 })).toBe(false)
   })
+
   test('someYield (built)', () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
@@ -74,6 +81,7 @@ describe('Sync Yielding Iterator Test', () => {
       expect(instance({ a: 0 })).toBe(false)
     }
   })
+
   test('everyYield', () => {
     const script = {
       everyYield: [[true, true, true], { var: '' }]
@@ -90,20 +98,25 @@ describe('Sync Yielding Iterator Test', () => {
     expect(sync.run(instance.logic(), { a: true })).toBe(true)
   })
 })
+
 describe('ifYield', () => {
   test('it should take the first branch if the first value is truthy', () => {
     const answer = sync.run({
       ifYield: [1, 2, 3]
     })
+
     expect(answer).toBe(2)
   })
+
   test('it should take the second branch if the first value is falsey', () => {
     const answer = sync.run({
       ifYield: [0, 2, 3]
     })
+
     expect(answer).toBe(3)
   })
 })
+
 describe('iterators', () => {
   test('some false', async () => {
     const answer = sync.run({
@@ -119,8 +132,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(false)
   })
+
   test('some true', async () => {
     const answer = sync.run({
       someYield: [
@@ -135,8 +150,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(true)
   })
+
   test('every false', async () => {
     const answer = sync.run({
       everyYield: [
@@ -151,8 +168,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(false)
   })
+
   test('every true', async () => {
     const answer = sync.run({
       everyYield: [
@@ -167,8 +186,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(true)
   })
+
   test('map +1', async () => {
     const answer = sync.run({
       mapYield: [
@@ -183,8 +204,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toStrictEqual([2, 3, 4])
   })
+
   test('filter evens', async () => {
     const answer = sync.run({
       filterYield: [
@@ -199,8 +222,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toStrictEqual([1, 3])
   })
+
   test('map +above', () => {
     const answer = sync.run(
       {
@@ -224,6 +249,7 @@ describe('iterators', () => {
     )
     expect(answer).toStrictEqual([2, 3, 4])
   })
+
   test('yielded selector map +above', () => {
     const instance = sync.run(
       {
@@ -252,6 +278,7 @@ describe('iterators', () => {
       2, 3, 4, 5
     ])
   })
+
   test('yielded iterator map +above', () => {
     const instance = sync.run(
       {
@@ -284,6 +311,7 @@ describe('iterators', () => {
     ])
   })
 })
+
 describe('Async Yielding Iterator Test', () => {
   test('someYield', async () => {
     const script = {
@@ -300,6 +328,7 @@ describe('Async Yielding Iterator Test', () => {
     expect(await nosync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(await nosync.run(instance.logic(), { a: 0 })).toBe(false)
   })
+
   test('someYield (built)', async () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
@@ -317,6 +346,7 @@ describe('Async Yielding Iterator Test', () => {
       expect(await instance({ a: 0 })).toBe(false)
     }
   })
+
   test('everyYield', async () => {
     const script = {
       everyYield: [[true, true, true], { var: '' }]
@@ -333,20 +363,25 @@ describe('Async Yielding Iterator Test', () => {
     expect(await nosync.run(instance.logic(), { a: true })).toBe(true)
   })
 })
+
 describe('ifYield', () => {
   test('it should take the first branch if the first value is truthy', async () => {
     const answer = await nosync.run({
       ifYield: [1, 2, 3]
     })
+
     expect(answer).toBe(2)
   })
+
   test('it should take the second branch if the first value is falsey', async () => {
     const answer = await nosync.run({
       ifYield: [0, 2, 3]
     })
+
     expect(answer).toBe(3)
   })
 })
+
 describe('iterators', () => {
   test('some false', async () => {
     const answer = await nosync.run({
@@ -362,8 +397,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(false)
   })
+
   test('some true', async () => {
     const answer = await nosync.run({
       someYield: [
@@ -378,8 +415,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(true)
   })
+
   test('every false', async () => {
     const answer = await nosync.run({
       everyYield: [
@@ -394,8 +433,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(false)
   })
+
   test('every true', async () => {
     const answer = await nosync.run({
       everyYield: [
@@ -410,8 +451,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toBe(true)
   })
+
   test('map +1', async () => {
     const answer = await nosync.run({
       mapYield: [
@@ -426,8 +469,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toStrictEqual([2, 3, 4])
   })
+
   test('filter evens', async () => {
     const answer = await nosync.run({
       filterYield: [
@@ -442,8 +487,10 @@ describe('iterators', () => {
         }
       ]
     })
+
     expect(answer).toStrictEqual([1, 3])
   })
+
   test('map +above', async () => {
     const answer = await nosync.run(
       {
@@ -467,6 +514,7 @@ describe('iterators', () => {
     )
     expect(answer).toStrictEqual([2, 3, 4])
   })
+
   test('yielded selector map +above', async () => {
     const instance = await nosync.run(
       {
@@ -495,6 +543,7 @@ describe('iterators', () => {
       [2, 3, 4, 5]
     )
   })
+
   test('yielded iterator map +above', async () => {
     const instance = await nosync.run(
       {
@@ -527,11 +576,13 @@ describe('iterators', () => {
     ).toStrictEqual([2, 3, 4, 5])
   })
 })
+
 describe('Test of multi-step yield', () => {
   test('multi-step yield array', () => {
     const testFunction = sync.build([{ yieldVar: 'a' }, { yieldVar: 'b' }])
     try {
       testFunction({})
+
       expect(true).toBe(false)
     } catch (err) {
       try {

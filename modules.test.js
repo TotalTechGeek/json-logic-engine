@@ -7,6 +7,7 @@ describe('Trying out adding modules to the engine', () => {
       expect(await engine.run({ 'Math.ceil': 2.5 })).toBe(3)
       expect(await engine.run({ 'Math.floor': 2.5 })).toBe(2)
     })
+
     test('Add math module with empty name', async () => {
       engine.addModule('', Math, { deterministic: true, sync: true })
       expect(await engine.run({ ceil: 2.5 })).toBe(3)

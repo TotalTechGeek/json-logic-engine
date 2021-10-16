@@ -9,18 +9,21 @@ async function filter (arr, iter) {
   }
   return result
 }
+
 async function some (arr, iter) {
   for (const item of arr) {
     if (await iter(item)) return true
   }
   return false
 }
+
 async function every (arr, iter) {
   for (const item of arr) {
     if (!(await iter(item))) return false
   }
   return true
 }
+
 async function map (arr, iter) {
   const result = []
   for (const item of arr) {
@@ -28,6 +31,7 @@ async function map (arr, iter) {
   }
   return result
 }
+
 async function reduce (arr, iter, defaultValue) {
   if (arr.length === 0) {
     if (typeof defaultValue !== 'undefined') {
@@ -35,13 +39,17 @@ async function reduce (arr, iter, defaultValue) {
     }
     throw new Error('Array has no elements.')
   }
+
   const start = typeof defaultValue === 'undefined' ? 1 : 0
   let data = start ? arr[0] : defaultValue
+
   for (let i = start; i < arr.length; i++) {
     data = await iter(data, arr[i])
   }
+
   return data
 }
+
 export { filter }
 export { some }
 export { every }

@@ -1,7 +1,9 @@
 import fs from 'fs'
 import { LogicEngine, AsyncLogicEngine } from './index.js'
 import traverseCopy from './utilities/traverseCopy.js'
+
 const tests = JSON.parse(fs.readFileSync('./bench/compatible.json').toString())
+
 const other = traverseCopy(tests, [], {
   mutateKey: (i) => {
     if (i === 'map') {
@@ -22,6 +24,7 @@ const other = traverseCopy(tests, [], {
     return i
   }
 })
+
 // eslint-disable-next-line no-labels
 inline: {
   const logic = new LogicEngine()
@@ -33,6 +36,7 @@ inline: {
       )}`, () => {
         expect(logic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
       })
+
       test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
         testCase[1]
       )} (async)`, async () => {
@@ -40,12 +44,14 @@ inline: {
           testCase[2]
         )
       })
+
       test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
         testCase[1]
       )} (built)`, () => {
         const f = logic.build(testCase[0])
         expect(f(testCase[1])).toStrictEqual(testCase[2])
       })
+
       test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
         testCase[1]
       )} (asyncBuilt)`, async () => {
@@ -54,18 +60,21 @@ inline: {
       })
     })
   })
+
   describe('All of the compatible tests with yielded iterators', () => {
     test('All of the compatible tests', () => {
       other.forEach((test) => {
         expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
       })
     })
+
     test('All of the compatible tests (async)', async () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]
         expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
       }
     })
+
     test('All of the compatible tests (built)', () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]
@@ -74,6 +83,7 @@ inline: {
         expect(f(test[1])).toStrictEqual(test[2])
       }
     })
+
     test('All of the compatible tests (asyncBuilt)', async () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]
@@ -96,6 +106,7 @@ notInline: {
     )}`, () => {
       expect(logic.run(testCase[0], testCase[1])).toStrictEqual(testCase[2])
     })
+
     test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
       testCase[1]
     )} (async)`, async () => {
@@ -103,12 +114,14 @@ notInline: {
         testCase[2]
       )
     })
+
     test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
       testCase[1]
     )} (built)`, () => {
       const f = logic.build(testCase[0])
       expect(f(testCase[1])).toStrictEqual(testCase[2])
     })
+
     test(`${JSON.stringify(testCase[0])} ${JSON.stringify(
       testCase[1]
     )} (asyncBuilt)`, async () => {
@@ -116,18 +129,21 @@ notInline: {
       expect(await f(testCase[1])).toStrictEqual(testCase[2])
     })
   })
+
   describe('All of the compatible tests with yielded iterators', () => {
     test('All of the compatible tests', () => {
       other.forEach((test) => {
         expect(logic.run(test[0], test[1])).toStrictEqual(test[2])
       })
     })
+
     test('All of the compatible tests (async)', async () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]
         expect(await asyncLogic.run(test[0], test[1])).toStrictEqual(test[2])
       }
     })
+
     test('All of the compatible tests (built)', () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]
@@ -136,6 +152,7 @@ notInline: {
         expect(f(test[1])).toStrictEqual(test[2])
       }
     })
+
     test('All of the compatible tests (asyncBuilt)', async () => {
       for (let i = 0; i < other.length; i++) {
         const test = other[i]

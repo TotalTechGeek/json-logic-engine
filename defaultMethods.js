@@ -1,13 +1,14 @@
+// @ts-check
+'use strict'
+
 import asyncIterators from './async_iterators.js'
 import { Sync, Override, isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
 import InvalidControlInput from './errors/InvalidControlInput.js'
-import YieldingIterators from './yieldingIterators';
+import YieldingIterators from './yieldingIterators'
 
-// @ts-check
-('use strict')
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
     return method.every((i) => isDeterministic(i, engine, buildState))
@@ -128,7 +129,9 @@ const defaultMethods = {
       context = above[iter++]
       key = key.substring(3)
     }
-    if (context && typeof context[Override] !== 'undefined') { context = context[Override] }
+    if (context && typeof context[Override] !== 'undefined') {
+      context = context[Override]
+    }
     const notFound = b === undefined ? null : b
     if (typeof key === 'undefined' || key === '' || key === null) {
       if (engine.allowFunctions || typeof context[key] !== 'function') {

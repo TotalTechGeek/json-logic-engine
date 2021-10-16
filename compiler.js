@@ -1,9 +1,11 @@
+// @ts-check
+'use strict'
+
 import { isSync, Override } from './constants.js'
 import Yield from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
-import asyncIterators from './async_iterators.js';
-// @ts-check
-('use strict')
+import asyncIterators from './async_iterators.js'
+
 /**
  * @typedef BuildState
  * Used to keep track of the compilation.
@@ -22,6 +24,7 @@ import asyncIterators from './async_iterators.js';
  * @property {Boolean} [avoidInlineAsync]
  *
  */
+
 /**
  * Checks if the value passed in is a primitive JS object / value.
  * @param {*} x
@@ -34,6 +37,7 @@ function isPrimitive (x) {
     ['Number', 'String', 'Boolean', 'Object'].includes(x.constructor.name)
   )
 }
+
 /**
  * Checks if the method & its inputs are deterministic.
  * @param {*} method
@@ -45,21 +49,26 @@ function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
     return method.every((i) => isDeterministic(i, engine, buildState))
   }
+
   if (method && typeof method === 'object') {
     const func = Object.keys(method)[0]
     const lower = method[func]
+
     if (engine.methods[func].traverse === false) {
       return typeof engine.methods[func].deterministic === 'function'
         ? engine.methods[func].deterministic(lower, buildState)
         : engine.methods[func].deterministic
     }
+
     return typeof engine.methods[func].deterministic === 'function'
       ? engine.methods[func].deterministic(lower, buildState)
       : engine.methods[func].deterministic &&
           isDeterministic(lower, engine, buildState)
   }
+
   return true
 }
+
 /**
  * A function that handles yields by caching the values to resumable object.
  * @param {Function} func
@@ -75,6 +84,7 @@ function r (func, input, name, resumable) {
   const result = resumable[name + '_input']
     ? func(resumable[name + '_input'])
     : func(typeof input === 'function' ? input() : input)
+
   if (result instanceof Yield) {
     if (result._input) {
       resumable[name + '_input'] = result._input
@@ -84,8 +94,10 @@ function r (func, input, name, resumable) {
   } else {
     resumable[name] = result
   }
+
   return result
 }
+
 /**
  * A function that handles async yields by caching the values to resumable object.
  * @param {Function} func
@@ -98,18 +110,22 @@ async function rAsync (func, input, name, resumable) {
   if (resumable[name]) {
     return resumable[name]
   }
+
   const result = resumable[name + '_input']
     ? await func(resumable[name + '_input'])
     : await func(typeof input === 'function' ? await input() : input)
+
   if (result instanceof Yield) {
     if (result._input) {
       resumable[name + '_input'] = result._input
     }
+
     result.resumable = resumable
     throw result
   } else {
     resumable[name] = result
   }
+
   return result
 }
 /**
@@ -126,6 +142,7 @@ function buildYield (method, buildState = {}) {
   let asyncDetected = false
   buildState.useContext =
     buildState.useContext || (engine.methods[func] || {}).useContext
+
   if (typeof engine.methods[func] === 'function') {
     functions[func] = 1
     asyncDetected = !isSync(engine.methods[func])
@@ -133,10 +150,12 @@ function buildYield (method, buildState = {}) {
     const inputStr = buildString(method[func], stringBuildState)
     buildState.useContext =
       buildState.useContext || stringBuildState.useContext
+
     if (asyncDetected || inputStr.includes('await')) {
       buildState.asyncDetected = buildState.asyncDetected || asyncDetected
       return `await rAsync(gen["${func}"], async () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
     }
+
     return `r(gen["${func}"], () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
   } else {
     if (engine.methods[func] && engine.methods[func].traverse) {
@@ -145,10 +164,13 @@ function buildYield (method, buildState = {}) {
       asyncDetected = Boolean(
         async && engine.methods[func] && engine.methods[func].asyncMethod
       )
+
       const stringBuildState = { ...buildState, avoidInlineAsync: true }
       const inputStr = buildString(method[func], stringBuildState)
+
       buildState.useContext =
         buildState.useContext || stringBuildState.useContext
+
       if (asyncDetected || inputStr.startsWith('await')) {
         buildState.asyncDetected = buildState.asyncDetected || asyncDetected
         return `await rAsync(gen["${func}"], async () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
@@ -162,6 +184,7 @@ function buildYield (method, buildState = {}) {
       functions[func] = 1
       notTraversed.push(method[func])
       buildState.useContext = true
+
       if (asyncDetected) {
         buildState.asyncDetected = buildState.asyncDetected || asyncDetected
         return `await rAsync(gen["${func}"], notTraversed[${
@@ -197,36 +220,46 @@ function buildString (method, buildState = {}) {
     values.push(value)
     return `values[${values.length - 1}]`
   }
+
   if (Array.isArray(method)) {
     return '[' + method.map((i) => buildString(i, buildState)).join(', ') + ']'
   }
+
   let asyncDetected = false
+
   function makeAsync (result) {
     buildState.asyncDetected = buildState.asyncDetected || asyncDetected
+
     if (async && asyncDetected) {
       return `await ${result}`
     }
     return result
   }
+
   const func = method && Object.keys(method)[0]
   buildState.useContext =
     buildState.useContext || (engine.methods[func] || {}).useContext
+
   if (method && typeof method === 'object') {
     functions[func] = functions[func] || 2
+
     if (
       !buildState.engine.disableInline &&
       engine.methods[func] &&
       isDeterministic(method, engine, buildState)
     ) {
       // console.log(method)
+
       if (isSync(engine.methods[func])) {
         return pushValue((engine.fallback || engine).run(method))
       }
+
       if (async && !buildState.avoidInlineAsync) {
         processing.push(engine.run(method).then((i) => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
       }
     }
+
     if (
       engine.options.yieldSupported &&
       engine.methods[func] &&
@@ -234,14 +267,19 @@ function buildString (method, buildState = {}) {
     ) {
       return buildYield(method, buildState)
     }
+
     if (engine.methods[func] && engine.methods[func].compile) {
       const str = engine.methods[func].compile(method[func], buildState)
+
       if ((str || '').startsWith('await')) buildState.asyncDetected = true
+
       if (str !== false) return str
     }
+
     if (typeof engine.methods[func] === 'function') {
       functions[func] = 1
       asyncDetected = !isSync(engine.methods[func])
+
       return makeAsync(
         `gen["${func}"](` + buildString(method[func], buildState) + ')'
       )
@@ -251,6 +289,7 @@ function buildString (method, buildState = {}) {
         asyncDetected = Boolean(
           async && engine.methods[func] && engine.methods[func].asyncMethod
         )
+
         return makeAsync(
           `gen["${func}"](` + buildString(method[func], buildState) + ')'
         )
@@ -286,11 +325,14 @@ function buildString (method, buildState = {}) {
             }
           }
         }
+
         asyncDetected = Boolean(
           async && engine.methods[func] && engine.methods[func].asyncMethod
         )
+
         functions[func] = 1
         notTraversed.push(method[func])
+
         return makeAsync(
           `gen["${func}"](` + `notTraversed[${notTraversed.length - 1}]` + ')'
         )
@@ -299,6 +341,7 @@ function buildString (method, buildState = {}) {
   }
   return pushValue(method)
 }
+
 /**
  * Synchronously compiles the logic to a function that can run the logic more optimally.
  * @param {*} method
@@ -326,6 +369,7 @@ function build (method, buildState = {}) {
   const str = buildString(method, buildState)
   return processBuiltString(method, str, buildState)
 }
+
 /**
  * Asynchronously compiles the logic to a function that can run the logic more optimally. Also supports async logic methods.
  * @param {*} method
@@ -354,6 +398,7 @@ async function buildAsync (method, buildState = {}) {
   buildState.processing = await Promise.all(buildState.processing)
   return processBuiltString(method, str, buildState)
 }
+
 /**
  * Takes the string that's been generated and does some post-processing on it to be evaluated.
  * @param {*} method
@@ -380,6 +425,7 @@ function processBuiltString (method, str, buildState) {
   })
   Object.keys(functions).forEach((key) => {
     if (functions[key] === 2) return
+
     if (typeof engine.methods[key] === 'function') {
       gen[key] = (input) => engine.methods[key](input, state, above, engine)
     } else {
@@ -393,25 +439,31 @@ function processBuiltString (method, str, buildState) {
       }
     }
   })
+
   if (!Object.keys(functions).length) {
     return method
   }
+
   let copyStateCall = 'state[Override] = context;'
   // console.log(buildState.useContext)
+
   if (!buildState.useContext) {
     copyStateCall = ''
     while (str.includes('state[Override]')) {
       str = str.replace('state[Override]', 'context')
     }
   }
+
   const final = `${buildState.asyncDetected ? 'async' : ''} (context ${
     buildState.yieldUsed ? ', resumable = {}' : ''
   }) => { ${copyStateCall} const result = ${str}; return result }`
+
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
   return declareSync(eval(final), !buildState.asyncDetected)
 }
+
 export { build }
 export { buildAsync }
 export { buildString }
