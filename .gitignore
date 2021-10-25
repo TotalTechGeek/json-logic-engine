@@ -4,3 +4,4 @@ coverage
 .vscode
 .npmrc
 bench/node_modules/
+dist/

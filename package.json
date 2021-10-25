@@ -1,8 +1,9 @@
 {
   "name": "json-logic-engine",
-  "version": "1.1.6",
+  "version": "1.1.8",
   "description": "Construct complex rules with JSON & process them.",
-  "main": "index.js",
+  "main": "./dist/cjs.js",
+  "module": "./index.js",
   "author": "Jesse Daniel Mitchell",
   "repository": {
     "url": "https://github.com/TotalTechGeek/json-logic-engine"
@@ -10,7 +11,9 @@
   "license": "MIT",
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
-    "coverage": "coveralls < coverage/lcov.info"
+    "coverage": "coveralls < coverage/lcov.info",
+    "prepublish": "npm run build",
+    "build": "rm -rf dist && rollup index.js --file dist/cjs.js --format cjs --exports named && cd dist && standard --fix cjs.js"
   },
   "devDependencies": {
     "coveralls": "^3.1.1",
@@ -21,7 +24,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "jest": "^27.3.1",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "rollup": "^2.58.3"
   },
   "engines": {
     "node": ">=12.22.7"
@@ -30,6 +34,10 @@
     "testPathIgnorePatterns": [
       "./bench"
     ]
+  },
+  "exports": {
+    "require": "./dist/cjs.js",
+    "import": "./index.js"
   },
   "type": "module"
 }

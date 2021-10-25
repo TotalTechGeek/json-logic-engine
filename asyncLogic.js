@@ -49,7 +49,7 @@ class AsyncLogicEngine {
         }
         const result = await this.methods[func](input, context, above, this)
 
-        return Array.isArray(result) ? await Promise.all(result) : result
+        return Array.isArray(result) ? Promise.all(result) : result
       }
 
       if (typeof this.methods[func] === 'object') {
@@ -70,7 +70,7 @@ class AsyncLogicEngine {
           above,
           this
         )
-        return Array.isArray(result) ? await Promise.all(result) : result
+        return Array.isArray(result) ? Promise.all(result) : result
       }
     }
   }
