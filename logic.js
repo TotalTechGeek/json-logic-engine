@@ -1,12 +1,14 @@
+// @ts-check
+'use strict'
+
 import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
 import Yield from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 import { build } from './compiler.js'
 import declareSync from './utilities/declareSync.js'
-import omitUndefined from './utilities/omitUndefined.js';
-// @ts-check
-('use strict')
+import omitUndefined from './utilities/omitUndefined.js'
+
 /**
  * An engine capable of running synchronous JSON Logic.
  */
@@ -47,7 +49,9 @@ class LogicEngine {
         const parsedData = shouldTraverse
           ? this.run(data, context, { above })
           : data
-        if (this.options.yieldSupported && checkYield(parsedData)) { return parsedData }
+        if (this.options.yieldSupported && checkYield(parsedData)) {
+          return parsedData
+        }
         return method(parsedData, context, above, this)
       }
     }

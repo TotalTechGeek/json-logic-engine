@@ -1,6 +1,7 @@
-import { AsyncLogicEngine } from './index.js';
 // @ts-check
-('use strict')
+'use strict'
+
+import { AsyncLogicEngine } from './index.js'
 
 const x = new AsyncLogicEngine(undefined)
 async function main () {

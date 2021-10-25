@@ -1,7 +1,9 @@
-import traverseCopy from '../utilities/traverseCopy.js'
-import Yield from './Yield.js';
 // @ts-check
-('use strict')
+'use strict'
+
+import traverseCopy from '../utilities/traverseCopy.js'
+import Yield from './Yield.js'
+
 function fetchYields (obj, arr = []) {
   if (obj instanceof Yield) {
     arr.push(obj)

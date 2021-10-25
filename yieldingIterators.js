@@ -1,3 +1,6 @@
+// @ts-check
+'use strict'
+
 import {
   ReduceIterator,
   AsyncReduceIterator
@@ -6,9 +9,8 @@ import Yield from './structures/Yield.js'
 import checkYield from './utilities/checkYield.js'
 import { isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
-import { build } from './compiler.js';
-// @ts-check
-('use strict')
+import { build } from './compiler.js'
+
 // Todo: Pursue support for yielding within the built functions.
 // It will be extremely difficult to leverage the yields here.
 function isDeterministic (method, engine, buildState) {
@@ -274,7 +276,9 @@ function createArrayIterativeMethod (
     },
     method: (input, context, above, engine) => {
       let defaultCur = defaultInitializer
-      if (typeof defaultInitializer === 'function') { defaultCur = defaultInitializer() }
+      if (typeof defaultInitializer === 'function') {
+        defaultCur = defaultInitializer()
+      }
       let arr
       let cur
       let map = null
@@ -320,7 +324,9 @@ function createArrayIterativeMethod (
     },
     asyncMethod: async (input, context, above, engine) => {
       let defaultCur = defaultInitializer
-      if (typeof defaultInitializer === 'function') { defaultCur = defaultInitializer() }
+      if (typeof defaultInitializer === 'function') {
+        defaultCur = defaultInitializer()
+      }
       let arr
       let cur
       let map = null

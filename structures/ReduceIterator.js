@@ -1,7 +1,9 @@
-import Yield from './Yield.js'
-import EngineObject from './EngineObject.js';
 // @ts-check
-('use strict')
+'use strict'
+
+import Yield from './Yield.js'
+import EngineObject from './EngineObject.js'
+
 // works fine for arrays, may need to create a more general version though
 class ReduceIterator {
   constructor (arr, cur, next) {

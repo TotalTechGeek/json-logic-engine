@@ -1,7 +1,9 @@
-import Yield from '../structures/Yield.js'
-import EngineObject from '../structures/EngineObject.js';
 // @ts-check
-('use strict')
+'use strict'
+
+import Yield from '../structures/Yield.js'
+import EngineObject from '../structures/EngineObject.js'
+
 /**
  * Checks if the item that's passed in is or contains a Yield / EngineObject (signifying a Yield)
  * @param {*} item
