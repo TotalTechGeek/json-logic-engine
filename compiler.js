@@ -1,10 +1,9 @@
 // @ts-check
 'use strict'
 
-import { isSync, Override } from './constants.js'
+import { isSync } from './constants.js'
 import Yield from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
-import asyncIterators from './async_iterators.js'
 
 /**
  * @typedef BuildState
@@ -408,16 +407,18 @@ async function buildAsync (method, buildState = {}) {
  */
 function processBuiltString (method, str, buildState) {
   const gen = {}
-  // eslint-disable-next-line no-unused-vars
   const {
     functions,
     state,
     async,
     engine,
     above,
+    // eslint-disable-next-line no-unused-vars
     methods,
+    // eslint-disable-next-line no-unused-vars
     notTraversed,
     processing,
+    // eslint-disable-next-line no-unused-vars
     values
   } = buildState
   processing.forEach((item, x) => {

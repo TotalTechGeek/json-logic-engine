@@ -1,6 +1,6 @@
 {
   "name": "json-logic-engine",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Construct complex rules with JSON & process them.",
   "main": "index.js",
   "author": "Jesse Daniel Mitchell",
@@ -9,17 +9,18 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
     "coverage": "coveralls < coverage/lcov.info"
   },
   "devDependencies": {
     "coveralls": "^3.1.1",
+    "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.24.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
-    "jest": "^26.6.3",
+    "jest": "^27.3.1",
     "nyc": "^15.1.0"
   },
   "engines": {

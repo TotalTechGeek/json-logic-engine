@@ -7,7 +7,7 @@ import declareSync from './utilities/declareSync.js'
 import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
 import InvalidControlInput from './errors/InvalidControlInput.js'
-import YieldingIterators from './yieldingIterators'
+import YieldingIterators from './yieldingIterators.js'
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
@@ -33,11 +33,12 @@ const defaultMethods = {
   '+': (data) => [].concat(data).reduce((a, b) => +a + +b, 0),
   '*': (data) => data.reduce((a, b) => +a * +b),
   '/': (data) => data.reduce((a, b) => +a / +b),
-  // @ts-ignore Type checking is incorrect on the following line.
-  // eslint-disable-next-line no-return-assign
+
   '-': (data) =>
+  // @ts-ignore Type checking is incorrect on the following line.
     ((a) => (a.length === 1 ? (a[0] = -a[0]) : a) & 0 || a)(
       [].concat(data)
+      // @ts-ignore Type checking is incorrect on the following line.
     ).reduce((a, b) => +a - +b),
   '%': (data) => data.reduce((a, b) => +a % +b),
   max: (data) => Math.max(...data),
