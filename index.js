@@ -1,5 +1,10 @@
 // @ts-check
-'use strict'
+"use strict";
 
-export { default as LogicEngine } from './logic'
-export { default as AsyncLogicEngine } from './asyncLogic'
+import LogicEngine from "./logic";
+import AsyncLogicEngine from "./asyncLogic";
+
+export { LogicEngine };
+export { AsyncLogicEngine };
+
+export default { LogicEngine, AsyncLogicEngine };
