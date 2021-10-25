@@ -1,24 +1,23 @@
 // @ts-check
 'use strict'
-const traverseCopy = require('../utilities/traverseCopy')
-const Yield = require('./Yield')
+
+import traverseCopy from '../utilities/traverseCopy.js'
+import Yield from './Yield.js'
 
 function fetchYields (obj, arr = []) {
   if (obj instanceof Yield) {
     arr.push(obj)
     return arr
   }
-
   if (Array.isArray(obj)) {
-    obj.forEach(i => fetchYields(i, arr))
+    obj.forEach((i) => fetchYields(i, arr))
   } else if (typeof obj === 'object') {
-    Object.keys(obj || {}).forEach(key => {
+    Object.keys(obj || {}).forEach((key) => {
       fetchYields(obj[key], arr)
     })
   }
   return arr
 }
-
 class EngineObject {
   constructor (data) {
     this.data = data
@@ -29,17 +28,19 @@ class EngineObject {
   }
 
   logic () {
-    return traverseCopy(this.data.result, {}, {
-      mutateValue: i => {
-        if (i instanceof Yield) {
-          return i.logic()
-        }
-
-        return i
-      },
-      skipCopy: i => i instanceof Yield
-    })
+    return traverseCopy(
+      this.data.result,
+      {},
+      {
+        mutateValue: (i) => {
+          if (i instanceof Yield) {
+            return i.logic()
+          }
+          return i
+        },
+        skipCopy: (i) => i instanceof Yield
+      }
+    )
   }
 }
-
-module.exports = EngineObject
+export default EngineObject

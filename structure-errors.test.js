@@ -1,12 +1,13 @@
-const InvalidControlInput = require('./errors/InvalidControlInput')
-const {
-  LogicEngine, AsyncLogicEngine
-} = require('./index')
-
-const engines = [new LogicEngine(), new AsyncLogicEngine(), new LogicEngine(undefined, { yieldSupported: true }), new AsyncLogicEngine(undefined, { yieldSupported: true })]
-
+import InvalidControlInput from './errors/InvalidControlInput.js'
+import { LogicEngine, AsyncLogicEngine } from './index.js'
+const engines = [
+  new LogicEngine(),
+  new AsyncLogicEngine(),
+  new LogicEngine(undefined, { yieldSupported: true }),
+  new AsyncLogicEngine(undefined, { yieldSupported: true })
+]
 describe('Test throwing errors for dynamic control structures', () => {
-  engines.forEach(engine => {
+  engines.forEach((engine) => {
     test('map (normal)', async () => {
       expect(async () => {
         await engine.run({ map: { preserve: [[1, 2, 3], { var: '' }] } })

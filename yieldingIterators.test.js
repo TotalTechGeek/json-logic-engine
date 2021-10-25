@@ -1,29 +1,24 @@
-const {
-  LogicEngine, AsyncLogicEngine
-} = require('./index')
-
-const Yield = require('./structures/Yield')
-const EngineObject = require('./structures/EngineObject')
-const { Override } = require('./constants')
+import { LogicEngine, AsyncLogicEngine } from './index.js'
+import Yield from './structures/Yield.js'
+import EngineObject from './structures/EngineObject.js'
+import { Override } from './constants.js'
 
 const sync = new LogicEngine(undefined, { yieldSupported: true })
+
 const nosync = new AsyncLogicEngine(undefined, { yieldSupported: true })
 
 const yieldVar = (key, context, above, engine) => {
   if (Array.isArray(key)) {
     key = key[0]
   }
-
   let iter = 0
   while (key.startsWith('../') && iter < above.length) {
     context = above[iter++]
     key = key.substring(3)
   }
-
   if (context && typeof context[Override] !== 'undefined') {
     context = context[Override]
   }
-
   if (typeof key === 'undefined' || key === '' || key === null) {
     return context
   }
@@ -38,27 +33,33 @@ const yieldVar = (key, context, above, engine) => {
       return new Yield({ message: 'Data is not found.' })
     }
   }
-
-  if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
+  if (engine.allowFunctions || typeof context[key] !== 'function') {
+    return context
+  }
   return null
 }
 
 sync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true })
-nosync.addMethod('yieldVar', yieldVar, { yields: true, useContext: true, sync: true })
+
+nosync.addMethod('yieldVar', yieldVar, {
+  yields: true,
+  useContext: true,
+  sync: true
+})
 
 describe('Sync Yielding Iterator Test', () => {
   test('someYield', () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
     }
-
     expect(sync.run(script)).toBe(true)
-
     const script2 = {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = sync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
     expect(sync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(sync.run(instance.logic(), { a: 0 })).toBe(false)
   })
@@ -67,14 +68,11 @@ describe('Sync Yielding Iterator Test', () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
     }
-
     expect(sync.build(script)()).toBe(true)
-
     const script2 = {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = sync.build(script2)
-
     try {
       instance()
       expect(false).toBe(true) // this should never be hit
@@ -88,14 +86,14 @@ describe('Sync Yielding Iterator Test', () => {
     const script = {
       everyYield: [[true, true, true], { var: '' }]
     }
-
     expect(sync.run(script)).toBe(true)
-
     const script2 = {
       everyYield: [[true, true, { yieldVar: 'a' }], { var: '' }]
     }
     const instance = sync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
     expect(sync.run(instance.logic(), { a: false })).toBe(false)
     expect(sync.run(instance.logic(), { a: true })).toBe(true)
   })
@@ -123,10 +121,14 @@ describe('iterators', () => {
   test('some false', async () => {
     const answer = sync.run({
       someYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -137,10 +139,14 @@ describe('iterators', () => {
   test('some true', async () => {
     const answer = sync.run({
       someYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 2]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            2
+          ]
         }
       ]
     })
@@ -151,10 +157,14 @@ describe('iterators', () => {
   test('every false', async () => {
     const answer = sync.run({
       everyYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -165,10 +175,14 @@ describe('iterators', () => {
   test('every true', async () => {
     const answer = sync.run({
       everyYield: [
-        [1, 2, 3], {
-          '<': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '<': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -179,10 +193,14 @@ describe('iterators', () => {
   test('map +1', async () => {
     const answer = sync.run({
       mapYield: [
-        [1, 2, 3], {
-          '+': [{
-            var: ''
-          }, 1]
+        [1, 2, 3],
+        {
+          '+': [
+            {
+              var: ''
+            },
+            1
+          ]
         }
       ]
     })
@@ -193,10 +211,14 @@ describe('iterators', () => {
   test('filter evens', async () => {
     const answer = sync.run({
       filterYield: [
-        [1, 2, 3], {
-          '%': [{
-            var: ''
-          }, 2]
+        [1, 2, 3],
+        {
+          '%': [
+            {
+              var: ''
+            },
+            2
+          ]
         }
       ]
     })
@@ -205,61 +227,88 @@ describe('iterators', () => {
   })
 
   test('map +above', () => {
-    const answer = sync.run({
-      mapYield: [
-        [1, 2, 3], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
+    const answer = sync.run(
+      {
+        mapYield: [
+          [1, 2, 3],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
     expect(answer).toStrictEqual([2, 3, 4])
   })
 
   test('yielded selector map +above', () => {
-    const instance = sync.run({
-      mapYield: [
-        [1, 2, 3, { yieldVar: 'x' }], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
-    expect(sync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([2, 3, 4, 5])
+    const instance = sync.run(
+      {
+        mapYield: [
+          [1, 2, 3, { yieldVar: 'x' }],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
+    expect(sync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([
+      2, 3, 4, 5
+    ])
   })
 
   test('yielded iterator map +above', () => {
-    const instance = sync.run({
-      mapYield: [
-        [1, 2, 3, 4], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }, {
-            yieldVar: '../../x'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
-    expect(sync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([2, 3, 4, 5])
+    const instance = sync.run(
+      {
+        mapYield: [
+          [1, 2, 3, 4],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              },
+              {
+                yieldVar: '../../x'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
+    expect(sync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([
+      2, 3, 4, 5
+    ])
   })
 })
 
@@ -268,14 +317,14 @@ describe('Async Yielding Iterator Test', () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
     }
-
     expect(await nosync.run(script)).toBe(true)
-
     const script2 = {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = await nosync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
     expect(await nosync.run(instance.logic(), { a: 10 })).toBe(10)
     expect(await nosync.run(instance.logic(), { a: 0 })).toBe(false)
   })
@@ -284,14 +333,11 @@ describe('Async Yielding Iterator Test', () => {
     const script = {
       someYield: [[true, false, true], { var: '' }]
     }
-
     expect(await (await nosync.build(script))()).toBe(true)
-
     const script2 = {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = await nosync.build(script2)
-
     try {
       await instance()
       expect(false).toBe(true) // this should never be hit
@@ -305,14 +351,14 @@ describe('Async Yielding Iterator Test', () => {
     const script = {
       everyYield: [[true, true, true], { var: '' }]
     }
-
     expect(await nosync.run(script)).toBe(true)
-
     const script2 = {
       everyYield: [[true, true, { yieldVar: 'a' }], { var: '' }]
     }
     const instance = await nosync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
     expect(await nosync.run(instance.logic(), { a: false })).toBe(false)
     expect(await nosync.run(instance.logic(), { a: true })).toBe(true)
   })
@@ -340,10 +386,14 @@ describe('iterators', () => {
   test('some false', async () => {
     const answer = await nosync.run({
       someYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -354,10 +404,14 @@ describe('iterators', () => {
   test('some true', async () => {
     const answer = await nosync.run({
       someYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 2]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            2
+          ]
         }
       ]
     })
@@ -368,10 +422,14 @@ describe('iterators', () => {
   test('every false', async () => {
     const answer = await nosync.run({
       everyYield: [
-        [1, 2, 3], {
-          '>': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '>': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -382,10 +440,14 @@ describe('iterators', () => {
   test('every true', async () => {
     const answer = await nosync.run({
       everyYield: [
-        [1, 2, 3], {
-          '<': [{
-            var: ''
-          }, 5]
+        [1, 2, 3],
+        {
+          '<': [
+            {
+              var: ''
+            },
+            5
+          ]
         }
       ]
     })
@@ -396,10 +458,14 @@ describe('iterators', () => {
   test('map +1', async () => {
     const answer = await nosync.run({
       mapYield: [
-        [1, 2, 3], {
-          '+': [{
-            var: ''
-          }, 1]
+        [1, 2, 3],
+        {
+          '+': [
+            {
+              var: ''
+            },
+            1
+          ]
         }
       ]
     })
@@ -410,10 +476,14 @@ describe('iterators', () => {
   test('filter evens', async () => {
     const answer = await nosync.run({
       filterYield: [
-        [1, 2, 3], {
-          '%': [{
-            var: ''
-          }, 2]
+        [1, 2, 3],
+        {
+          '%': [
+            {
+              var: ''
+            },
+            2
+          ]
         }
       ]
     })
@@ -422,70 +492,97 @@ describe('iterators', () => {
   })
 
   test('map +above', async () => {
-    const answer = await nosync.run({
-      mapYield: [
-        [1, 2, 3], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
+    const answer = await nosync.run(
+      {
+        mapYield: [
+          [1, 2, 3],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
     expect(answer).toStrictEqual([2, 3, 4])
   })
 
   test('yielded selector map +above', async () => {
-    const instance = await nosync.run({
-      mapYield: [
-        [1, 2, 3, { yieldVar: 'x' }], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
-    expect(await nosync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([2, 3, 4, 5])
+    const instance = await nosync.run(
+      {
+        mapYield: [
+          [1, 2, 3, { yieldVar: 'x' }],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
+    expect(await nosync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual(
+      [2, 3, 4, 5]
+    )
   })
 
   test('yielded iterator map +above', async () => {
-    const instance = await nosync.run({
-      mapYield: [
-        [1, 2, 3, 4], {
-          '+': [{
-            var: ''
-          }, {
-            var: '../../data'
-          }, {
-            yieldVar: '../../x'
-          }]
-        }
-      ]
-    }, {
-      data: 1
-    })
-
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(true)
-    expect(await nosync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([2, 3, 4, 5])
+    const instance = await nosync.run(
+      {
+        mapYield: [
+          [1, 2, 3, 4],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              {
+                var: '../../data'
+              },
+              {
+                yieldVar: '../../x'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        data: 1
+      }
+    )
+    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+      true
+    )
+    expect(
+      await nosync.run(instance.logic(), { data: 0.5, x: 0.5 })
+    ).toStrictEqual([2, 3, 4, 5])
   })
 })
 
 describe('Test of multi-step yield', () => {
   test('multi-step yield array', () => {
     const testFunction = sync.build([{ yieldVar: 'a' }, { yieldVar: 'b' }])
-
     try {
       testFunction({})
+
       expect(true).toBe(false)
     } catch (err) {
       try {

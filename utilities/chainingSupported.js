@@ -1,6 +1,5 @@
 // @ts-check
 'use strict'
-
 /**
  * Checks if optional chaining is supported for the compiler
  * @returns {Boolean}
@@ -16,5 +15,4 @@ const getIsOptionalChainingSupported = () => {
     return false
   }
 }
-
-module.exports = getIsOptionalChainingSupported()
+export default getIsOptionalChainingSupported()

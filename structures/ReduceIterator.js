@@ -1,7 +1,8 @@
 // @ts-check
 'use strict'
-const Yield = require('./Yield')
-const EngineObject = require('./EngineObject')
+
+import Yield from './Yield.js'
+import EngineObject from './EngineObject.js'
 
 // works fine for arrays, may need to create a more general version though
 class ReduceIterator {
@@ -21,7 +22,6 @@ class ReduceIterator {
     if (cur instanceof Yield || cur instanceof EngineObject) {
       return cur
     }
-
     // commit
     this.position = this._position
     this.cur = cur
@@ -49,7 +49,6 @@ class ReduceIterator {
     return this.position >= this.arr.length
   }
 }
-
 class AsyncReduceIterator extends ReduceIterator {
   async next () {
     const item = this.arr[this.position]
@@ -58,7 +57,6 @@ class AsyncReduceIterator extends ReduceIterator {
     if (cur instanceof Yield || cur instanceof EngineObject) {
       return cur
     }
-
     // commit
     this.position = this._position
     this.cur = cur
@@ -66,5 +64,9 @@ class AsyncReduceIterator extends ReduceIterator {
     return this.cur
   }
 }
-
-module.exports = { AsyncReduceIterator, ReduceIterator }
+export { AsyncReduceIterator }
+export { ReduceIterator }
+export default {
+  AsyncReduceIterator,
+  ReduceIterator
+}

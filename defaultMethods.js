@@ -1,59 +1,62 @@
 // @ts-check
 'use strict'
 
-const asyncIterators = require('./async_iterators')
-const { Sync, Override, isSync } = require('./constants')
-const declareSync = require('./utilities/declareSync')
-const { build, buildString } = require('./compiler')
-const chainingSupported = require('./utilities/chainingSupported')
-const InvalidControlInput = require('./errors/InvalidControlInput')
+import asyncIterators from './async_iterators.js'
+import { Sync, Override, isSync } from './constants.js'
+import declareSync from './utilities/declareSync.js'
+import { build, buildString } from './compiler.js'
+import chainingSupported from './utilities/chainingSupported.js'
+import InvalidControlInput from './errors/InvalidControlInput.js'
+import YieldingIterators from './yieldingIterators'
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
-    return method.every(i => isDeterministic(i, engine, buildState))
+    return method.every((i) => isDeterministic(i, engine, buildState))
   }
-
   if (method && typeof method === 'object') {
     const func = Object.keys(method)[0]
     const lower = method[func]
-
     if (engine.methods[func].traverse === false) {
-      return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic
+      return typeof engine.methods[func].deterministic === 'function'
+        ? engine.methods[func].deterministic(lower, buildState)
+        : engine.methods[func].deterministic
     }
-    return typeof engine.methods[func].deterministic === 'function' ? engine.methods[func].deterministic(lower, buildState) : engine.methods[func].deterministic && isDeterministic(lower, engine, buildState)
+    return typeof engine.methods[func].deterministic === 'function'
+      ? engine.methods[func].deterministic(lower, buildState)
+      : engine.methods[func].deterministic &&
+          isDeterministic(lower, engine, buildState)
   }
-
   return true
 }
 
 const defaultMethods = {
-  '+': data => ([].concat(data)).reduce((a, b) => (+a) + (+b), 0),
-  '*': data => data.reduce((a, b) => (+a) * (+b)),
-  '/': data => data.reduce((a, b) => (+a) / (+b)),
+  '+': (data) => [].concat(data).reduce((a, b) => +a + +b, 0),
+  '*': (data) => data.reduce((a, b) => +a * +b),
+  '/': (data) => data.reduce((a, b) => +a / +b),
   // @ts-ignore Type checking is incorrect on the following line.
   // eslint-disable-next-line no-return-assign
-  '-': data => ((a => (a.length === 1 ? a[0] = -a[0] : a) & 0 || a)([].concat(data))).reduce((a, b) => (+a) - (+b)),
-  '%': data => data.reduce((a, b) => (+a) % (+b)),
-  max: data => Math.max(...data),
-  min: data => Math.min(...data),
+  '-': (data) =>
+    ((a) => (a.length === 1 ? (a[0] = -a[0]) : a) & 0 || a)(
+      [].concat(data)
+    ).reduce((a, b) => +a - +b),
+  '%': (data) => data.reduce((a, b) => +a % +b),
+  max: (data) => Math.max(...data),
+  min: (data) => Math.min(...data),
   in: ([item, array]) => array.includes(item),
   '>': ([a, b]) => a > b,
-  '<': ([a, b, c]) => c === undefined ? a < b : (a < b) && (b < c),
+  '<': ([a, b, c]) => (c === undefined ? a < b : a < b && b < c),
   preserve: {
     traverse: false,
-    method: declareSync(i => i)
+    method: declareSync((i) => i)
   },
   if: {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-
       const [check, onTrue, onFalse] = input
       const test = engine.run(check, context, {
-
         above
       })
       return engine.run(test ? onTrue : onFalse, context, {
-
         above
       })
     },
@@ -62,21 +65,17 @@ const defaultMethods = {
     },
     asyncMethod: async (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-
       const [check, onTrue, onFalse] = input
       const test = await engine.run(check, context, {
-
         above
       })
-
       return engine.run(test ? onTrue : onFalse, context, {
-
         above
       })
     },
     traverse: false
   },
-  '<=': ([a, b, c]) => c === undefined ? a <= b : (a <= b) && (b <= c),
+  '<=': ([a, b, c]) => (c === undefined ? a <= b : a <= b && b <= c),
   '>=': ([a, b]) => a >= b,
   // eslint-disable-next-line eqeqeq
   '==': ([a, b]) => a == b,
@@ -92,14 +91,12 @@ const defaultMethods = {
       const result = string.substr(from)
       return result.substr(0, result.length + end)
     }
-
     return string.substr(from, end)
   },
-  length: i => i.length,
+  length: (i) => i.length,
   get: {
     method: ([data, key, defaultValue], context, above, engine) => {
-      const notFound = (defaultValue === undefined) ? null : defaultValue
-
+      const notFound = defaultValue === undefined ? null : defaultValue
       const subProps = String(key).split('.')
       for (let i = 0; i < subProps.length; i++) {
         if (data === null || data === undefined) {
@@ -111,36 +108,37 @@ const defaultMethods = {
           return notFound
         }
       }
-
-      if (engine.allowFunctions || typeof data[key] !== 'function') { return data }
+      if (engine.allowFunctions || typeof data[key] !== 'function') {
+        return data
+      }
     }
   },
   var: (key, context, above, engine) => {
     let b
-
     if (Array.isArray(key)) {
       b = key[1]
       key = key[0]
     }
-
     // if (!key && context && context[Override]) return context[Override]
-
     let iter = 0
-    while (typeof key === 'string' && key.startsWith('../') && iter < above.length) {
+    while (
+      typeof key === 'string' &&
+      key.startsWith('../') &&
+      iter < above.length
+    ) {
       context = above[iter++]
       key = key.substring(3)
     }
-    if (context && typeof context[Override] !== 'undefined') context = context[Override]
-
-    const notFound = (b === undefined) ? null : b
-
+    if (context && typeof context[Override] !== 'undefined') {
+      context = context[Override]
+    }
+    const notFound = b === undefined ? null : b
     if (typeof key === 'undefined' || key === '' || key === null) {
       if (engine.allowFunctions || typeof context[key] !== 'function') {
         return context
       }
       return null
     }
-
     const subProps = String(key).split('.')
     for (let i = 0; i < subProps.length; i++) {
       if (context === null || context === undefined) {
@@ -152,12 +150,13 @@ const defaultMethods = {
         return notFound
       }
     }
-
-    if (engine.allowFunctions || typeof context[key] !== 'function') { return context }
+    if (engine.allowFunctions || typeof context[key] !== 'function') {
+      return context
+    }
     return null
   },
   missing: (checked, context, above, engine) => {
-    return (Array.isArray(checked) ? checked : [checked]).filter(key => {
+    return (Array.isArray(checked) ? checked : [checked]).filter((key) => {
       return defaultMethods.var(key, context, above, engine) === null
     })
   },
@@ -179,109 +178,131 @@ const defaultMethods = {
       return !defaultMethods.some.method(val, context, above, engine)
     },
     asyncMethod: async (val, context, above, engine) => {
-      return !await defaultMethods.some.asyncMethod(val, context, above, engine)
+      return !(await defaultMethods.some.asyncMethod(
+        val,
+        context,
+        above,
+        engine
+      ))
     },
     compile: (data, buildState) => {
       const result = `${defaultMethods.some.compile(data, buildState)}`
       return result ? `!(${result})` : false
     }
   },
-  merge: arrays => Array.isArray(arrays) ? ([].concat(...arrays)) : [arrays],
+  merge: (arrays) => (Array.isArray(arrays) ? [].concat(...arrays) : [arrays]),
   every: createArrayIterativeMethod('every'),
   filter: createArrayIterativeMethod('filter'),
   reduce: {
     deterministic: (data, buildState) => {
-      return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
+      return (
+        isDeterministic(data[0], buildState.engine, buildState) &&
+        isDeterministic(data[1], buildState.engine, {
+          ...buildState,
+          insideIterator: true
+        })
+      )
     },
     compile: (data, buildState) => {
       if (!Array.isArray(data)) throw new InvalidControlInput(data)
-
       const { above = [], state, async } = buildState
       let [selector, mapper, defaultValue] = data
-
       selector = buildString(selector, buildState)
-      if (typeof defaultValue !== 'undefined') { defaultValue = buildString(defaultValue, buildState) }
-
-      const mapState = { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true }
+      if (typeof defaultValue !== 'undefined') {
+        defaultValue = buildString(defaultValue, buildState)
+      }
+      const mapState = {
+        ...buildState,
+        state: {},
+        above: [selector, state, ...above],
+        avoidInlineAsync: true
+      }
       mapper = build(mapper, mapState)
       buildState.useContext = buildState.useContext || mapState.useContext
       buildState.methods.push(mapper)
-
       if (async) {
         if (!isSync(mapper) || selector.includes('await')) {
           buildState.detectAsync = true
           if (typeof defaultValue !== 'undefined') {
-            return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
+            return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
+              buildState.methods.length - 1
+            }]({ accumulator: a, current: b }), ${defaultValue})`
           }
-          return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
+          return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
+            buildState.methods.length - 1
+          }]({ accumulator: a, current: b }))`
         }
       }
-
       if (typeof defaultValue !== 'undefined') {
-        return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }), ${defaultValue})`
+        return `(${selector} || []).reduce((a,b) => methods[${
+          buildState.methods.length - 1
+        }]({ accumulator: a, current: b }), ${defaultValue})`
       }
-
-      return `(${selector} || []).reduce((a,b) => methods[${buildState.methods.length - 1}]({ accumulator: a, current: b }))`
+      return `(${selector} || []).reduce((a,b) => methods[${
+        buildState.methods.length - 1
+      }]({ accumulator: a, current: b }))`
     },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
       defaultValue = engine.run(defaultValue, context, {
-
         above
       })
-
-      selector = engine.run(selector, context, {
-
-        above
-      }) || []
-
+      selector =
+        engine.run(selector, context, {
+          above
+        }) || []
       const func = (accumulator, current) => {
-        return engine.run(mapper, {
-          accumulator,
-          current
-        }, {
-
-          above: [selector, context, ...above]
-        })
+        return engine.run(
+          mapper,
+          {
+            accumulator,
+            current
+          },
+          {
+            above: [selector, context, ...above]
+          }
+        )
       }
-
       if (typeof defaultValue === 'undefined') {
         return selector.reduce(func)
       }
-
       return selector.reduce(func, defaultValue)
     },
     asyncMethod: async (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
       defaultValue = await engine.run(defaultValue, context, {
-
         above
       })
-
-      selector = await engine.run(selector, context, {
-
-        above
-      }) || []
-
-      return asyncIterators.reduce(selector, (accumulator, current) => {
-        return engine.run(mapper, {
-          accumulator,
-          current
-        }, {
-
-          above: [selector, context, ...above]
-        })
-      }, defaultValue)
+      selector =
+        (await engine.run(selector, context, {
+          above
+        })) || []
+      return asyncIterators.reduce(
+        selector,
+        (accumulator, current) => {
+          return engine.run(
+            mapper,
+            {
+              accumulator,
+              current
+            },
+            {
+              above: [selector, context, ...above]
+            }
+          )
+        },
+        defaultValue
+      )
     },
     traverse: false
   },
-  not: value => !value,
-  '!': value => !value,
-  '!!': value => Boolean(value),
-  cat: arr => typeof arr === 'string' ? arr : arr.join(''),
-  keys: obj => Object.keys(obj),
+  not: (value) => !value,
+  '!': (value) => !value,
+  '!!': (value) => Boolean(value),
+  cat: (arr) => (typeof arr === 'string' ? arr : arr.join('')),
+  keys: (obj) => Object.keys(obj),
   eachKey: {
     traverse: false,
     method: (object, context, above, engine) => {
@@ -298,55 +319,64 @@ const defaultMethods = {
     useContext: true,
     deterministic: (data, buildState) => {
       if (data && typeof data === 'object') {
-        return Object.values(data).every(i => {
+        return Object.values(data).every((i) => {
           return isDeterministic(i, buildState.engine, buildState)
         })
       }
-
       throw new InvalidControlInput(data)
     },
     compile: (data, buildState) => {
       // what's nice about this is that I don't have to worry about whether it's async or not, the lower entries take care of that ;)
       // however, this is not engineered support yields, I will have to make a note of that & possibly support it at a later point.
-
       if (data && typeof data === 'object') {
-        const result = `({ ${Object.keys(data).reduce((accumulator, key) => {
-          accumulator.push(`${JSON.stringify(key)}: ${buildString(data[key], buildState)}`)
-          return accumulator
-        }, []).join(',')} })`
+        const result = `({ ${Object.keys(data)
+          .reduce((accumulator, key) => {
+            accumulator.push(
+              `${JSON.stringify(key)}: ${buildString(data[key], buildState)}`
+            )
+            return accumulator
+          }, [])
+          .join(',')} })`
         return result
       }
-
       throw new InvalidControlInput(data)
     },
     asyncMethod: async (object, context, above, engine) => {
-      const result = await asyncIterators.reduce(Object.keys(object), async (accumulator, key) => {
-        const item = object[key]
-        Object.defineProperty(accumulator, key, {
-          enumerable: true,
-          value: await engine.run(item, context, { above })
-        })
-        return accumulator
-      }, {})
+      const result = await asyncIterators.reduce(
+        Object.keys(object),
+        async (accumulator, key) => {
+          const item = object[key]
+          Object.defineProperty(accumulator, key, {
+            enumerable: true,
+            value: await engine.run(item, context, { above })
+          })
+          return accumulator
+        },
+        {}
+      )
       return result
     }
   }
 }
-
 function createArrayIterativeMethod (name) {
   return {
     deterministic: (data, buildState) => {
-      return isDeterministic(data[0], buildState.engine, buildState) && isDeterministic(data[1], buildState.engine, { ...buildState, insideIterator: true })
+      return (
+        isDeterministic(data[0], buildState.engine, buildState) &&
+        isDeterministic(data[1], buildState.engine, {
+          ...buildState,
+          insideIterator: true
+        })
+      )
     },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-
       let [selector, mapper] = input
-      selector = engine.run(selector, context, {
-        above
-      }) || []
-
-      return selector[name](i => {
+      selector =
+        engine.run(selector, context, {
+          above
+        }) || []
+      return selector[name]((i) => {
         return engine.run(mapper, i, {
           above: [selector, context, ...above]
         })
@@ -354,13 +384,12 @@ function createArrayIterativeMethod (name) {
     },
     asyncMethod: async (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-
       let [selector, mapper] = input
-      selector = (await engine.run(selector, context, {
-        above
-      })) || []
-
-      return asyncIterators[name](selector, i => {
+      selector =
+        (await engine.run(selector, context, {
+          above
+        })) || []
+      return asyncIterators[name](selector, (i) => {
         return engine.run(mapper, i, {
           above: [selector, context, ...above]
         })
@@ -368,57 +397,69 @@ function createArrayIterativeMethod (name) {
     },
     compile: (data, buildState) => {
       if (!Array.isArray(data)) throw new InvalidControlInput(data)
-
       const { above = [], state, async } = buildState
       let [selector, mapper] = data
-
       selector = buildString(selector, buildState)
-
-      const mapState = { ...buildState, state: {}, above: [selector, state, ...above], avoidInlineAsync: true }
+      const mapState = {
+        ...buildState,
+        state: {},
+        above: [selector, state, ...above],
+        avoidInlineAsync: true
+      }
       mapper = build(mapper, mapState)
       buildState.useContext = buildState.useContext || mapState.useContext
       buildState.methods.push(mapper)
-
       if (async) {
         if (!isSync(mapper) || selector.includes('await')) {
           buildState.detectAsync = true
-          return `await asyncIterators.${name}(${selector} || [], methods[${buildState.methods.length - 1}])`
+          return `await asyncIterators.${name}(${selector} || [], methods[${
+            buildState.methods.length - 1
+          }])`
         }
       }
-
-      return `(${selector} || []).${name}(methods[${buildState.methods.length - 1}])`
+      return `(${selector} || []).${name}(methods[${
+        buildState.methods.length - 1
+      }])`
     },
     traverse: false
   }
 }
-
 defaultMethods['?:'] = defaultMethods.if
-
 // declare all of the functions here synchronous
-Object.keys(defaultMethods).forEach(item => {
+Object.keys(defaultMethods).forEach((item) => {
   if (typeof defaultMethods[item] === 'function') {
     defaultMethods[item][Sync] = true
   }
-
-  defaultMethods[item].deterministic = typeof defaultMethods[item].deterministic === 'undefined' ? true : defaultMethods[item].deterministic
+  defaultMethods[item].deterministic =
+    typeof defaultMethods[item].deterministic === 'undefined'
+      ? true
+      : defaultMethods[item].deterministic
 })
-
 // @ts-ignore Allow custom attribute
 defaultMethods.var.deterministic = (data, buildState) => {
   return buildState.insideIterator && !String(data).includes('../')
 }
-
 Object.assign(defaultMethods.var, { traverse: false })
-Object.assign(defaultMethods.missing, { deterministic: false, useContext: true })
-Object.assign(defaultMethods.missing_some, { deterministic: false, useContext: true })
-
+Object.assign(defaultMethods.missing, {
+  deterministic: false,
+  useContext: true
+})
+Object.assign(defaultMethods.missing_some, {
+  deterministic: false,
+  useContext: true
+})
 // @ts-ignore Allow custom attribute
 defaultMethods['<'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' < ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' < ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
-
     if (data.length === 3) {
       const a = buildString(data[0], buildState)
       const b = buildString(data[1], buildState)
@@ -428,14 +469,18 @@ defaultMethods['<'].compile = function (data, buildState) {
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['<='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' <= ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' <= ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
-
     if (data.length === 3) {
       const a = buildString(data[0], buildState)
       const b = buildString(data[1], buildState)
@@ -445,121 +490,163 @@ defaultMethods['<='].compile = function (data, buildState) {
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.min.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `Math.min(${data.map(i => buildString(i, buildState)).join(', ')})`
+    return `Math.min(${data
+      .map((i) => buildString(i, buildState))
+      .join(', ')})`
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.max.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `Math.max(${data.map(i => buildString(i, buildState)).join(', ')})`
+    return `Math.max(${data
+      .map((i) => buildString(i, buildState))
+      .join(', ')})`
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['>'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' > ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' > ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['>='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' >= ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' >= ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['=='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' == ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' == ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['!='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' != ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' != ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.if.compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return `((${buildString(data[0], buildState)}) && ${buildString(data[1], buildState)})`
+      return `((${buildString(data[0], buildState)}) && ${buildString(
+        data[1],
+        buildState
+      )})`
     }
     if (data.length === 3) {
-      return `((${buildString(data[0], buildState)}) ? ${buildString(data[1], buildState)} : ${buildString(data[2], buildState)})`
+      return `((${buildString(data[0], buildState)}) ? ${buildString(
+        data[1],
+        buildState
+      )} : ${buildString(data[2], buildState)})`
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['!=='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' !== ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' !== ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['==='].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     if (data.length === 2) {
-      return '(' + buildString(data[0], buildState) + ' === ' + buildString(data[1], buildState) + ')'
+      return (
+        '(' +
+        buildString(data[0], buildState) +
+        ' === ' +
+        buildString(data[1], buildState) +
+        ')'
+      )
     }
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['+'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => {
-      if (typeof i === 'number' || typeof i === 'string') {
-        return i
-      }
-      return `(+${buildString(i, buildState)})`
-    }).join(' + ')})`
+    return `(${data
+      .map((i) => {
+        if (typeof i === 'number' || typeof i === 'string') {
+          return i
+        }
+        return `(+${buildString(i, buildState)})`
+      })
+      .join(' + ')})`
   } else if (typeof data === 'string' || typeof data === 'number') {
     return `+${data}`
   } else {
-    return `([].concat(${buildString(data, buildState)})).reduce((a,b) => (+a)+(+b), 0)`
+    return `([].concat(${buildString(
+      data,
+      buildState
+    )})).reduce((a,b) => (+a)+(+b), 0)`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['%'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => {
-      if (typeof i === 'number' || typeof i === 'string') {
-        return i
-      }
-      return `(+${buildString(i, buildState)})`
-    }).join(' % ')})`
+    return `(${data
+      .map((i) => {
+        if (typeof i === 'number' || typeof i === 'string') {
+          return i
+        }
+        return `(+${buildString(i, buildState)})`
+      })
+      .join(' % ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
   }
@@ -567,164 +654,177 @@ defaultMethods['%'].compile = function (data, buildState) {
 // @ts-ignore Allow custom attribute
 defaultMethods.or.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' || ')})`
+    return `(${data.map((i) => buildString(i, buildState)).join(' || ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => a||b, false)`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${buildString(data[1], buildState)}).includes(${buildString(data[0], buildState)})`
+    return `(${buildString(data[1], buildState)}).includes(${buildString(
+      data[0],
+      buildState
+    )})`
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.and.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => buildString(i, buildState)).join(' && ')})`
+    return `(${data.map((i) => buildString(i, buildState)).join(' && ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => a&&b, true)`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['-'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `${data.length === 1 ? '-' : ''}(${data.map(i => {
-      if (typeof i === 'number' || typeof i === 'string') {
-        return i
-      }
-      return `(+${buildString(i, buildState)})`
-    }).join(' - ')})`
-  } if (typeof data === 'string' || typeof data === 'number') {
+    return `${data.length === 1 ? '-' : ''}(${data
+      .map((i) => {
+        if (typeof i === 'number' || typeof i === 'string') {
+          return i
+        }
+        return `(+${buildString(i, buildState)})`
+      })
+      .join(' - ')})`
+  }
+  if (typeof data === 'string' || typeof data === 'number') {
     return `-${data}`
   } else {
-    return `((a=>(a.length===1?a[0]=-a[0]:a)&0||a)([].concat(${buildString(data, buildState)}))).reduce((a,b) => (+a)-(+b))`
+    return `((a=>(a.length===1?a[0]=-a[0]:a)&0||a)([].concat(${buildString(
+      data,
+      buildState
+    )}))).reduce((a,b) => (+a)-(+b))`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['/'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => {
-      if (typeof i === 'number' || typeof i === 'string') {
-        return i
-      }
-      return `(+${buildString(i, buildState)})`
-    }).join(' / ')})`
+    return `(${data
+      .map((i) => {
+        if (typeof i === 'number' || typeof i === 'string') {
+          return i
+        }
+        return `(+${buildString(i, buildState)})`
+      })
+      .join(' / ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)/(+b))`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['*'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${data.map(i => {
-      if (typeof i === 'number' || typeof i === 'string') {
-        return i
-      }
-      return `(+${buildString(i, buildState)})`
-    }).join(' * ')})`
+    return `(${data
+      .map((i) => {
+        if (typeof i === 'number' || typeof i === 'string') {
+          return i
+        }
+        return `(+${buildString(i, buildState)})`
+      })
+      .join(' * ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)*(+b))`
   }
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.cat.compile = function (data, buildState) {
   if (typeof data === 'string') {
     return JSON.stringify(data)
   } else if (Array.isArray(data)) {
-    return `(${['', ...data].map(i => buildString(i, buildState)).join(' + ')})`
+    return `(${['', ...data]
+      .map((i) => buildString(i, buildState))
+      .join(' + ')})`
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
-defaultMethods.not.compile = defaultMethods['!'].compile = function (data, buildState) {
+defaultMethods.not.compile = defaultMethods['!'].compile = function (
+  data,
+  buildState
+) {
   return `(!(${buildString(data, buildState)}))`
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods['!!'].compile = function (data, buildState) {
   return `(!!(${buildString(data, buildState)}))`
 }
-
 defaultMethods.none.deterministic = defaultMethods.some.deterministic
-
 defaultMethods.get.compile = function (data, buildState) {
   let defaultValue = null
   let key = data
   let obj = null
-
   if (Array.isArray(data) && data.length <= 3) {
     obj = data[0]
     key = data[1]
     defaultValue = typeof data[2] === 'undefined' ? null : data[2]
-
     key = key.toString()
     const pieces = key.split('.')
-
     if (!chainingSupported) {
-      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce((text, i) => {
-      return `(${text}||0)[${JSON.stringify(i)}]`
-    }, `(${buildString(obj, buildState)}||0)`)}, ${JSON.stringify(defaultValue)}))`
+      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
+        (text, i) => {
+          return `(${text}||0)[${JSON.stringify(i)}]`
+        },
+        `(${buildString(obj, buildState)}||0)`
+      )}, ${JSON.stringify(defaultValue)}))`
     }
-
-    return `((${buildString(obj, buildState)})${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
+    return `((${buildString(obj, buildState)})${pieces
+      .map((i) => `?.[${JSON.stringify(i)}]`)
+      .join('')} ?? ${JSON.stringify(defaultValue)})`
   }
   return false
 }
-
 // @ts-ignore Allow custom attribute
 defaultMethods.var.compile = function (data, buildState) {
   let key = data
   let defaultValue = null
   buildState.varTop = buildState.varTop || new Set()
-  if (!key || typeof data === 'string' || typeof data === 'number' || (Array.isArray(data) && data.length <= 2)) {
+  if (
+    !key ||
+    typeof data === 'string' ||
+    typeof data === 'number' ||
+    (Array.isArray(data) && data.length <= 2)
+  ) {
     if (Array.isArray(data)) {
       key = data[0]
       defaultValue = typeof data[1] === 'undefined' ? null : data[1]
     }
-
     if (typeof key === 'undefined' || key === null || key === '') {
       // this counts the number of var accesses to determine if they're all just using this override.
       // this allows for a small optimization :)
       return 'state[Override]'
     }
-
     if (typeof key !== 'string' && typeof key !== 'number') {
       buildState.useContext = true
       return false
     }
     key = key.toString()
-
     if (key.includes('../')) {
       buildState.useContext = true
       return false
     }
-
     const pieces = key.split('.')
     const [top] = pieces
     buildState.varTop.add(top)
-
     // support older versions of node
     if (!chainingSupported) {
-      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce((text, i) => {
-        return `(${text}||0)[${JSON.stringify(i)}]`
-      }, '(context||0)')}, ${JSON.stringify(defaultValue)}))`
+      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
+        (text, i) => {
+          return `(${text}||0)[${JSON.stringify(i)}]`
+        },
+        '(context||0)'
+      )}, ${JSON.stringify(defaultValue)}))`
     }
-
-    return `(context${pieces.map(i => `?.[${JSON.stringify(i)}]`).join('')} ?? ${JSON.stringify(defaultValue)})`
+    return `(context${pieces
+      .map((i) => `?.[${JSON.stringify(i)}]`)
+      .join('')} ?? ${JSON.stringify(defaultValue)})`
   }
-
   buildState.useContext = true
   return false
 }
 
-// include the yielding iterators as well
-module.exports = { ...defaultMethods, ...require('./yieldingIterators') }
+export default {
+  ...defaultMethods,
+  ...YieldingIterators
+}

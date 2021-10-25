@@ -1,9 +1,7 @@
-const { LogicEngine, AsyncLogicEngine } = require('.')
-
+import { LogicEngine, AsyncLogicEngine } from './index.js'
 const engines = [new LogicEngine(), new AsyncLogicEngine()]
-
 describe('Trying out adding modules to the engine', () => {
-  engines.forEach(engine => {
+  engines.forEach((engine) => {
     test('Add Math Module', async () => {
       engine.addModule('Math', Math, { deterministic: true, sync: true })
       expect(await engine.run({ 'Math.ceil': 2.5 })).toBe(3)

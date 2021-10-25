@@ -2,14 +2,11 @@
 'use strict'
 // Note: Each of these iterators executes synchronously, and will not "run in parallel"
 // I am supporting filter, reduce, some, every, map
-
 async function filter (arr, iter) {
   const result = []
-
   for (const item of arr) {
     if (await iter(item)) result.push(item)
   }
-
   return result
 }
 
@@ -22,7 +19,7 @@ async function some (arr, iter) {
 
 async function every (arr, iter) {
   for (const item of arr) {
-    if (!await iter(item)) return false
+    if (!(await iter(item))) return false
   }
   return true
 }
@@ -45,6 +42,7 @@ async function reduce (arr, iter, defaultValue) {
 
   const start = typeof defaultValue === 'undefined' ? 1 : 0
   let data = start ? arr[0] : defaultValue
+
   for (let i = start; i < arr.length; i++) {
     data = await iter(data, arr[i])
   }
@@ -52,7 +50,12 @@ async function reduce (arr, iter, defaultValue) {
   return data
 }
 
-module.exports = {
+export { filter }
+export { some }
+export { every }
+export { map }
+export { reduce }
+export default {
   filter,
   some,
   every,

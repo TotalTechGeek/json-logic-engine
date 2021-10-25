@@ -1,14 +1,13 @@
 // @ts-check
 'use strict'
 
-const checkYield = require('./utilities/checkYield')
-const defaultMethods = require('./defaultMethods')
-const Yield = require('./structures/Yield')
-const EngineObject = require('./structures/EngineObject')
-// const { Override } = require('./constants')
-const { build } = require('./compiler')
-const declareSync = require('./utilities/declareSync')
-const omitUndefined = require('./utilities/omitUndefined')
+import checkYield from './utilities/checkYield.js'
+import defaultMethods from './defaultMethods.js'
+import Yield from './structures/Yield.js'
+import EngineObject from './structures/EngineObject.js'
+import { build } from './compiler.js'
+import declareSync from './utilities/declareSync.js'
+import omitUndefined from './utilities/omitUndefined.js'
 
 /**
  * An engine capable of running synchronous JSON Logic.
@@ -19,7 +18,10 @@ class LogicEngine {
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
    * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
    */
-  constructor (methods = defaultMethods, options = { yieldSupported: false, disableInline: false }) {
+  constructor (
+    methods = defaultMethods,
+    options = { yieldSupported: false, disableInline: false }
+  ) {
     this.disableInline = options.disableInline
     this.methods = { ...methods }
     this.options = { ...options }
@@ -40,12 +42,16 @@ class LogicEngine {
         if (this.options.yieldSupported && checkYield(input)) return input
         return this.methods[func](input, context, above, this)
       }
-
       if (typeof this.methods[func] === 'object') {
         const { method, traverse } = this.methods[func]
-        const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
-        const parsedData = shouldTraverse ? this.run(data, context, { above }) : data
-        if (this.options.yieldSupported && checkYield(parsedData)) return parsedData
+        const shouldTraverse =
+          typeof traverse === 'undefined' ? true : traverse
+        const parsedData = shouldTraverse
+          ? this.run(data, context, { above })
+          : data
+        if (this.options.yieldSupported && checkYield(parsedData)) {
+          return parsedData
+        }
         return method(parsedData, context, above, this)
       }
     }
@@ -69,9 +75,13 @@ class LogicEngine {
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
    */
   addModule (name, obj, annotations) {
-    Object.getOwnPropertyNames(obj).forEach(key => {
+    Object.getOwnPropertyNames(obj).forEach((key) => {
       if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
-        this.addMethod(`${name}${name ? '.' : ''}${key}`, obj[key], annotations)
+        this.addMethod(
+          `${name}${name ? '.' : ''}${key}`,
+          obj[key],
+          annotations
+        )
       }
     })
   }
@@ -85,19 +95,15 @@ class LogicEngine {
    */
   run (logic, data = {}, options = {}) {
     const { above = [] } = options
-
     if (Array.isArray(logic)) {
-      const result = logic.map(i => this.run(i, data, { above }))
-
+      const result = logic.map((i) => this.run(i, data, { above }))
       if (this.options.yieldSupported && checkYield(result)) {
         return new EngineObject({
           result
         })
       }
-
       return result
     }
-
     if (logic && typeof logic === 'object') {
       const [func] = Object.keys(logic)
       const result = this._parse(func, logic[func], data, above)
@@ -111,14 +117,12 @@ class LogicEngine {
           }
           return result
         }
-
         return new EngineObject({
           result: { [func]: result.data.result }
         })
       }
       return result
     }
-
     return logic
   }
 
@@ -128,26 +132,24 @@ class LogicEngine {
    * @param {{ top?: Boolean, above?: any }} options
    * @returns {Function}
    */
-  build (logic, options = { }) {
+  build (logic, options = {}) {
     const { above = [], top = true } = options
-
     if (top) {
       const constructedFunction = build(logic, {
         state: {},
         engine: this,
         above
       })
-
       if (typeof constructedFunction === 'function' || top === true) {
         return (...args) => {
-          return typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
+          return typeof constructedFunction === 'function'
+            ? constructedFunction(...args)
+            : constructedFunction
         }
       }
       return constructedFunction
     }
-
     return logic
   }
 }
-
-module.exports = LogicEngine
+export default LogicEngine

@@ -1,6 +1,5 @@
 // @ts-check
 'use strict'
-
 /**
  * A class that handles the Yielding logic & helps generate replacement logic.
  */
@@ -16,9 +15,7 @@ class Yield {
     // if (this._input && !this._logic) {
     // return { [this._name]: this._input }
     // }
-
     return this._logic
   }
 }
-
-module.exports = Yield
+export default Yield

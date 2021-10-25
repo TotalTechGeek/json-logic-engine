@@ -1,15 +1,15 @@
-const {
-  LogicEngine
-} = require('./index')
+import { LogicEngine } from './index.js'
+import Yield from './structures/Yield.js'
+import EngineObject from './structures/EngineObject.js'
 
-const Yield = require('./structures/Yield')
-const EngineObject = require('./structures/EngineObject')
+const modes = [
+  new LogicEngine(),
+  new LogicEngine(undefined, {
+    yieldSupported: true
+  })
+]
 
-const modes = [new LogicEngine(), new LogicEngine(undefined, {
-  yieldSupported: true
-})]
-
-modes.forEach(logic => {
+modes.forEach((logic) => {
   describe('+', () => {
     test('it should be able to add two numbers together', () => {
       const answer = logic.run({
@@ -96,71 +96,84 @@ modes.forEach(logic => {
         '%': [5, 3, 7]
       })
 
-      expect(answer).toBe(5 % 3 % 7)
+      expect(answer).toBe((5 % 3) % 7)
     })
   })
 
   describe('var', () => {
     test('it should be able to access a variable', () => {
-      const answer = logic.run({
-        var: 'a'
-      }, {
-        a: 7
-      })
-
+      const answer = logic.run(
+        {
+          var: 'a'
+        },
+        {
+          a: 7
+        }
+      )
       expect(answer).toBe(7)
     })
 
     test('it should be able to access a nested variable', () => {
-      const answer = logic.run({
-        var: 'a.b'
-      }, {
-        a: {
-          b: 7
+      const answer = logic.run(
+        {
+          var: 'a.b'
+        },
+        {
+          a: {
+            b: 7
+          }
         }
-      })
-
+      )
       expect(answer).toBe(7)
     })
 
     test('it should be able to access a deeply nested variable', () => {
-      const answer = logic.run({
-        var: 'a.b.c'
-      }, {
-        a: {
-          b: {
-            c: 7
+      const answer = logic.run(
+        {
+          var: 'a.b.c'
+        },
+        {
+          a: {
+            b: {
+              c: 7
+            }
           }
         }
-      })
-
+      )
       expect(answer).toBe(7)
     })
 
     test('it should be able to access the entire variable', () => {
-      const answer = logic.run({
-        var: ''
-      }, {
-        a: 7
-      })
-
+      const answer = logic.run(
+        {
+          var: ''
+        },
+        {
+          a: 7
+        }
+      )
       expect(answer).toStrictEqual({
         a: 7
       })
     })
 
     test('it should be able to access the variable in a nested command', () => {
-      const answer = logic.run({
-        '+': [{
-          var: 'a'
-        }, {
-          var: 'b'
-        }]
-      }, {
-        a: 7,
-        b: 3
-      })
-
+      const answer = logic.run(
+        {
+          '+': [
+            {
+              var: 'a'
+            },
+            {
+              var: 'b'
+            }
+          ]
+        },
+        {
+          a: 7,
+          b: 3
+        }
+      )
       expect(answer).toBe(10)
     })
   })
@@ -274,7 +287,6 @@ modes.forEach(logic => {
         ['0', '1'],
         [0, '1']
       ]
-
       const operators = {
         // eslint-disable-next-line eqeqeq
         '!=': (a, b) => a != b,
@@ -290,12 +302,13 @@ modes.forEach(logic => {
         and: (a, b) => a && b,
         xor: (a, b) => a ^ b
       }
-
-      Object.keys(operators).forEach(i => {
-        vectors.forEach(vector => {
-          expect(logic.run({
-            [i]: vector
-          })).toBe(operators[i](...vector))
+      Object.keys(operators).forEach((i) => {
+        vectors.forEach((vector) => {
+          expect(
+            logic.run({
+              [i]: vector
+            })
+          ).toBe(operators[i](...vector))
         })
       })
     })
@@ -305,12 +318,16 @@ modes.forEach(logic => {
     test('it should be possible to perform reduce and add an array', () => {
       const answer = logic.run({
         reduce: [
-          [1, 2, 3, 4, 5], {
-            '+': [{
-              var: 'accumulator'
-            }, {
-              var: 'current'
-            }]
+          [1, 2, 3, 4, 5],
+          {
+            '+': [
+              {
+                var: 'accumulator'
+              },
+              {
+                var: 'current'
+              }
+            ]
           }
         ]
       })
@@ -319,32 +336,44 @@ modes.forEach(logic => {
     })
 
     test('it should be possible to perform reduce and add an array from data', () => {
-      const answer = logic.run({
-        reduce: [{
-          var: 'a'
-        }, {
-          '+': [{
-            var: 'accumulator'
-          }, {
-            var: 'current'
-          }]
-        }]
-      }, {
-        a: [1, 2, 3, 4, 5]
-      })
-
+      const answer = logic.run(
+        {
+          reduce: [
+            {
+              var: 'a'
+            },
+            {
+              '+': [
+                {
+                  var: 'accumulator'
+                },
+                {
+                  var: 'current'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          a: [1, 2, 3, 4, 5]
+        }
+      )
       expect(answer).toBe(15)
     })
 
     test('it should be possible to perform reduce and add an array with a default value', () => {
       const answer = logic.run({
         reduce: [
-          [1, 2, 3, 4, 5], {
-            '+': [{
-              var: 'accumulator'
-            }, {
-              var: 'current'
-            }]
+          [1, 2, 3, 4, 5],
+          {
+            '+': [
+              {
+                var: 'accumulator'
+              },
+              {
+                var: 'current'
+              }
+            ]
           },
           10
         ]
@@ -354,23 +383,32 @@ modes.forEach(logic => {
     })
 
     test('it should be possible to access data from an above layer in a reduce', () => {
-      const answer = logic.run({
-        reduce: [{
-          var: 'a'
-        }, {
-          '+': [{
-            var: 'accumulator'
-          }, {
-            var: 'current'
-          }, {
-            var: '../../adder'
-          }]
-        }]
-      }, {
-        a: [1, 2, 3, 4, 5],
-        adder: 10
-      })
-
+      const answer = logic.run(
+        {
+          reduce: [
+            {
+              var: 'a'
+            },
+            {
+              '+': [
+                {
+                  var: 'accumulator'
+                },
+                {
+                  var: 'current'
+                },
+                {
+                  var: '../../adder'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          a: [1, 2, 3, 4, 5],
+          adder: 10
+        }
+      )
       expect(answer).toBe(55)
     })
   })
@@ -379,10 +417,14 @@ modes.forEach(logic => {
     test('some false', () => {
       const answer = logic.run({
         some: [
-          [1, 2, 3], {
-            '>': [{
-              var: ''
-            }, 5]
+          [1, 2, 3],
+          {
+            '>': [
+              {
+                var: ''
+              },
+              5
+            ]
           }
         ]
       })
@@ -393,10 +435,14 @@ modes.forEach(logic => {
     test('some true', () => {
       const answer = logic.run({
         some: [
-          [1, 2, 3], {
-            '>': [{
-              var: ''
-            }, 2]
+          [1, 2, 3],
+          {
+            '>': [
+              {
+                var: ''
+              },
+              2
+            ]
           }
         ]
       })
@@ -407,10 +453,14 @@ modes.forEach(logic => {
     test('every false', () => {
       const answer = logic.run({
         every: [
-          [1, 2, 3], {
-            '>': [{
-              var: ''
-            }, 5]
+          [1, 2, 3],
+          {
+            '>': [
+              {
+                var: ''
+              },
+              5
+            ]
           }
         ]
       })
@@ -421,10 +471,14 @@ modes.forEach(logic => {
     test('every true', () => {
       const answer = logic.run({
         every: [
-          [1, 2, 3], {
-            '<': [{
-              var: ''
-            }, 5]
+          [1, 2, 3],
+          {
+            '<': [
+              {
+                var: ''
+              },
+              5
+            ]
           }
         ]
       })
@@ -435,10 +489,14 @@ modes.forEach(logic => {
     test('map +1', () => {
       const answer = logic.run({
         map: [
-          [1, 2, 3], {
-            '+': [{
-              var: ''
-            }, 1]
+          [1, 2, 3],
+          {
+            '+': [
+              {
+                var: ''
+              },
+              1
+            ]
           }
         ]
       })
@@ -447,30 +505,40 @@ modes.forEach(logic => {
     })
 
     test('map +above', () => {
-      const answer = logic.run({
-        map: [
-          [1, 2, 3], {
-            '+': [{
-              var: ''
-            }, {
-              var: '../../data'
-            }]
-          }
-        ]
-      }, {
-        data: 1
-      })
-
+      const answer = logic.run(
+        {
+          map: [
+            [1, 2, 3],
+            {
+              '+': [
+                {
+                  var: ''
+                },
+                {
+                  var: '../../data'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          data: 1
+        }
+      )
       expect(answer).toStrictEqual([2, 3, 4])
     })
 
     test('filter evens', () => {
       const answer = logic.run({
         filter: [
-          [1, 2, 3], {
-            '%': [{
-              var: ''
-            }, 2]
+          [1, 2, 3],
+          {
+            '%': [
+              {
+                var: ''
+              },
+              2
+            ]
           }
         ]
       })
@@ -517,18 +585,23 @@ modes.forEach(logic => {
     })
 
     test('check if able to traverse up', () => {
-      const answer = logic.run({
-        eachKey: {
-          a: {
-            '+': [{
-              var: 'test'
-            }, 3]
+      const answer = logic.run(
+        {
+          eachKey: {
+            a: {
+              '+': [
+                {
+                  var: 'test'
+                },
+                3
+              ]
+            }
           }
+        },
+        {
+          test: 7
         }
-      }, {
-        test: 7
-      })
-
+      )
       expect(answer).toStrictEqual({
         a: 10
       })
@@ -540,6 +613,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         cat: ['hello ', 'world']
       })
+
       expect(answer).toBe('hello world')
     })
 
@@ -552,6 +626,7 @@ modes.forEach(logic => {
           }
         }
       })
+
       expect(answer).toStrictEqual(['a', 'b'])
     })
 
@@ -559,11 +634,12 @@ modes.forEach(logic => {
       const answer = logic.run({
         substr: ['hello', 0, 3]
       })
-      expect(answer).toBe('hel')
 
+      expect(answer).toBe('hel')
       const answer2 = logic.run({
         substr: ['hello', 0, -2]
       })
+
       expect(answer2).toBe('hel')
     })
 
@@ -571,13 +647,16 @@ modes.forEach(logic => {
       const answer = logic.run({
         missing: ['a']
       })
-      expect(answer).toStrictEqual(['a'])
 
-      const answer2 = logic.run({
-        missing: ['a']
-      }, {
-        a: 1
-      })
+      expect(answer).toStrictEqual(['a'])
+      const answer2 = logic.run(
+        {
+          missing: ['a']
+        },
+        {
+          a: 1
+        }
+      )
       expect(answer2).toStrictEqual([])
     })
 
@@ -585,6 +664,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         get: ['hello', 'length']
       })
+
       expect(answer).toStrictEqual(5)
     })
 
@@ -592,6 +672,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         length: 'hello'
       })
+
       expect(answer).toStrictEqual(5)
     })
 
@@ -599,6 +680,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         length: ['hello']
       })
+
       expect(answer).toStrictEqual(1)
     })
 
@@ -606,6 +688,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         get: [['hi'], 'length']
       })
+
       expect(answer).toStrictEqual(1)
     })
 
@@ -613,13 +696,15 @@ modes.forEach(logic => {
       const answer = logic.run({
         get: [{ preserve: { a: 1 } }, 'a']
       })
+
       expect(answer).toStrictEqual(1)
     })
 
     test('get from object default', () => {
       const answer = logic.run({
-        get: [{ preserve: { } }, 'a', 5]
+        get: [{ preserve: {} }, 'a', 5]
       })
+
       expect(answer).toStrictEqual(5)
     })
 
@@ -627,6 +712,7 @@ modes.forEach(logic => {
       const answer = logic.run({
         merge: [{ preserve: ['b'] }, { preserve: ['c'] }]
       })
+
       expect(answer).toStrictEqual(['b', 'c'])
     })
 
@@ -634,11 +720,12 @@ modes.forEach(logic => {
       const answer = logic.run({
         not: true
       })
-      expect(answer).toBe(false)
 
+      expect(answer).toBe(false)
       const answer2 = logic.run({
         not: false
       })
+
       expect(answer2).toBe(true)
     })
 
@@ -646,11 +733,12 @@ modes.forEach(logic => {
       const answer = logic.run({
         '!': true
       })
-      expect(answer).toBe(false)
 
+      expect(answer).toBe(false)
       const answer2 = logic.run({
         '!': false
       })
+
       expect(answer2).toBe(true)
     })
 
@@ -658,21 +746,24 @@ modes.forEach(logic => {
       const answer = logic.run({
         '!!': 0
       })
-      expect(answer).toBe(false)
 
+      expect(answer).toBe(false)
       const answer2 = logic.run({
         '!!': 1
       })
+
       expect(answer2).toBe(true)
     })
   })
 
   describe('addMethod', () => {
     test('adding a method works', () => {
-      logic.addMethod('+1', item => item + 1)
-      expect(logic.run({
-        '+1': 7
-      })).toBe(8)
+      logic.addMethod('+1', (item) => item + 1)
+      expect(
+        logic.run({
+          '+1': 7
+        })
+      ).toBe(8)
     })
   })
 
@@ -701,19 +792,28 @@ modes.forEach(logic => {
   //     })).toThrow()
   //   })
   // })
-
   describe('prevent access to data that should not be accessed', () => {
     test('prevent access to functions on objects', () => {
-      expect(logic.run({
-        var: 'toString'
-      }, 'hello')).toBe(null)
+      expect(
+        logic.run(
+          {
+            var: 'toString'
+          },
+          'hello'
+        )
+      ).toBe(null)
     })
 
     test('allow access to functions on objects when enabled', () => {
       logic.allowFunctions = true
-      expect(logic.run({
-        var: 'toString'
-      }, 'hello')).toBe('hello'.toString)
+      expect(
+        logic.run(
+          {
+            var: 'toString'
+          },
+          'hello'
+        )
+      ).toBe('hello'.toString)
     })
   })
 
@@ -723,7 +823,12 @@ modes.forEach(logic => {
         logic.addMethod('yieldVar', (key, context, above, engine) => {
           if (!key) return context
           if (typeof context !== 'object' && key.startsWith('../')) {
-            return engine.methods.var(key.substring(3), above, undefined, engine)
+            return engine.methods.var(
+              key.substring(3),
+              above,
+              undefined,
+              engine
+            )
           }
           if (engine.allowFunctions || typeof context[key] !== 'function') {
             if (!(key in context)) {
@@ -739,22 +844,24 @@ modes.forEach(logic => {
           '+': [1, { '+': [1, 2, 3] }, { yieldVar: 'a' }]
         }
         const instance = logic.run(script)
-
         expect(instance instanceof EngineObject).toBe(true)
-        expect(instance.yields().map(i => ({ ...i }))).toStrictEqual([{
-          _input: null,
-          message: 'Data does not exist in context.',
-          _logic: { yieldVar: 'a' },
-          resumable: null
-        }])
-
+        expect(instance.yields().map((i) => ({ ...i }))).toStrictEqual([
+          {
+            _input: null,
+            message: 'Data does not exist in context.',
+            _logic: { yieldVar: 'a' },
+            resumable: null
+          }
+        ])
         expect(instance.logic()).toStrictEqual({
           '+': [1, 6, { yieldVar: 'a' }]
         })
 
-        expect(logic.run(instance.logic(), {
-          a: 1
-        })).toBe(8)
+        expect(
+          logic.run(instance.logic(), {
+            a: 1
+          })
+        ).toBe(8)
         expect(logic.run(script, { a: 1 })).toBe(8)
       })
     })

@@ -1,26 +1,32 @@
 // @ts-check
 'use strict'
+
 function timeout (n) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(() => {
       resolve()
     }, n)
   })
 }
 
-function asyncPool ({ free = [], max = 10, created = free.length, create = () => {} } = {}) {
+function asyncPool ({
+  free = [],
+  max = 10,
+  created = free.length,
+  create = () => {}
+} = {}) {
   const pool = async function () {
     if (free.length) {
       const func = free.pop()
       const promise = func(...arguments)
-
       // return the stateful function
-      promise.then(() => {
-        free.push(func)
-      }).catch(() => {
-        free.push(func)
-      })
-
+      promise
+        .then(() => {
+          free.push(func)
+        })
+        .catch(() => {
+          free.push(func)
+        })
       return promise
     } else {
       if (created < max) {
@@ -33,8 +39,7 @@ function asyncPool ({ free = [], max = 10, created = free.length, create = () =>
       return pool(...arguments)
     }
   }
-
   return pool
 }
 
-module.exports = asyncPool
+export default asyncPool
