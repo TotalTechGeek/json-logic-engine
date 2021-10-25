@@ -1,9 +1,9 @@
 {
   "name": "json-logic-engine",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Construct complex rules with JSON & process them.",
-  "main": "./dist/cjs.js",
-  "module": "./index.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
   "author": "Jesse Daniel Mitchell",
   "repository": {
     "url": "https://github.com/TotalTechGeek/json-logic-engine"
@@ -13,7 +13,7 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
     "coverage": "coveralls < coverage/lcov.info",
     "prepublish": "npm run build",
-    "build": "rm -rf dist && rollup index.js --file dist/cjs.js --format cjs --exports named && cd dist && standard --fix cjs.js"
+    "build": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo { \"type\": \"module\" } > dist/esm/package.json && echo { \"type\": \"commonjs\" } > dist/cjs/package.json && cd dist && standard --fix */*.js"
   },
   "devDependencies": {
     "coveralls": "^3.1.1",
@@ -37,8 +37,10 @@
     ]
   },
   "exports": {
-    "require": "./dist/cjs.js",
-    "import": "./index.js"
+    ".": {
+      "import": "./dist/esm",
+      "require": "./dist/cjs"
+    }
   },
   "type": "module"
 }
