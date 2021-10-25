@@ -11,5 +11,6 @@
   "dependencies": {
     "json-logic-js": "^2.0.1",
     "json-rules-engine": "^6.0.1"
-  }
+  },
+  "type": "module"
 }
