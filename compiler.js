@@ -1,9 +1,18 @@
 // @ts-check
 'use strict'
 
-import { isSync } from './constants.js'
+import {
+  isSync,
+  // Override is required for the compiler to operate as intended.
+  // eslint-disable-next-line no-unused-vars
+  Override
+} from './constants.js'
 import Yield from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
+
+// asyncIterators is required for the compiler to operate as intended.
+// eslint-disable-next-line no-unused-vars
+import asyncIterators from './async_iterators.js'
 
 /**
  * @typedef BuildState
