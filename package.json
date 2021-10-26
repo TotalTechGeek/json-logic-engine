@@ -13,7 +13,9 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules nyc jest --coverage",
     "coverage": "coveralls < coverage/lcov.info",
     "prepublish": "npm run build",
-    "build": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo { \"type\": \"module\" } > dist/esm/package.json && echo { \"type\": \"commonjs\" } > dist/cjs/package.json && cd dist && standard --fix */*.js"
+    "build": "run-script-os",
+    "build:win32": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo { \"type\": \"module\" } > dist/esm/package.json && echo { \"type\": \"commonjs\" } > dist/cjs/package.json && cd dist && standard --fix */*.js",
+    "build:default": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo '{ \"type\": \"module\" }' > dist/esm/package.json && echo '{ \"type\": \"commonjs\" }' > dist/cjs/package.json && cd dist && standard --fix */*.js"
   },
   "devDependencies": {
     "coveralls": "^3.1.1",
@@ -26,6 +28,7 @@
     "jest": "^27.3.1",
     "nyc": "^15.1.0",
     "rollup": "^2.58.3",
+    "run-script-os": "^1.1.6",
     "standard": "^16.0.4"
   },
   "engines": {
