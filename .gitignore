@@ -5,3 +5,4 @@ coverage
 .npmrc
 bench/node_modules/
 dist/
+*.d.ts
