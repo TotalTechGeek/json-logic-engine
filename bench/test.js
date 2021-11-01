@@ -3,6 +3,7 @@ import fs from 'fs'
 import { isDeepStrictEqual } from 'util'
 import traverseCopy from '../utilities/traverseCopy.js'
 import jl from 'json-logic-js'
+
 const x = new LogicEngine()
 const y = new AsyncLogicEngine()
 const compatible = []

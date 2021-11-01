@@ -1272,6 +1272,16 @@
     [
         {
             "if": [
+                false,
+                "apple"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
                 true,
                 "apple",
                 "banana"
@@ -1626,6 +1636,30 @@
     [
         {
             "if": [
+                false,
+                "apple",
+                true,
+                "banana"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
                 true,
                 "apple",
                 true,
@@ -1648,6 +1682,106 @@
         },
         null,
         "apple"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                "carrot"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                "carrot"
+            ]
+        },
+        null,
+        "carrot"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                false,
+                "carrot"
+            ]
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                false,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "date"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                false,
+                "banana",
+                true,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "carrot"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                false,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                false,
+                "apple",
+                true,
+                "banana",
+                true,
+                "carrot",
+                "date"
+            ]
+        },
+        null,
+        "banana"
     ],
     [
         {

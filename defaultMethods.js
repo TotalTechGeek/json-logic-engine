@@ -53,11 +53,39 @@ const defaultMethods = {
   if: {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-      const [check, onTrue, onFalse] = input
-      const test = engine.run(check, context, {
-        above
-      })
-      return engine.run(test ? onTrue : onFalse, context, {
+
+      // check the bounds
+      if (input.length < 2) {
+        throw new InvalidControlInput(input)
+      }
+
+      input = [...input]
+
+      if (input.length % 2 !== 1) {
+        input.push(null)
+      }
+
+      // fallback to the default if the condition is false
+      const onFalse = input.pop()
+
+      // while there are still conditions
+      while (input.length) {
+        const check = input.shift()
+        const onTrue = input.shift()
+
+        const test = engine.run(check, context, {
+          above
+        })
+
+        // if the condition is true, run the true branch
+        if (test) {
+          return engine.run(onTrue, context, {
+            above
+          })
+        }
+      }
+
+      return engine.run(onFalse, context, {
         above
       })
     },
@@ -66,11 +94,39 @@ const defaultMethods = {
     },
     asyncMethod: async (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
-      const [check, onTrue, onFalse] = input
-      const test = await engine.run(check, context, {
-        above
-      })
-      return engine.run(test ? onTrue : onFalse, context, {
+
+      // check the bounds
+      if (input.length < 2) {
+        throw new InvalidControlInput(input)
+      }
+
+      input = [...input]
+
+      if (input.length % 2 !== 1) {
+        input.push(null)
+      }
+
+      // fallback to the default if the condition is false
+      const onFalse = input.pop()
+
+      // while there are still conditions
+      while (input.length) {
+        const check = input.shift()
+        const onTrue = input.shift()
+
+        const test = await engine.run(check, context, {
+          above
+        })
+
+        // if the condition is true, run the true branch
+        if (test) {
+          return engine.run(onTrue, context, {
+            above
+          })
+        }
+      }
+
+      return engine.run(onFalse, context, {
         above
       })
     },
@@ -572,17 +628,23 @@ defaultMethods['!='].compile = function (data, buildState) {
 // @ts-ignore Allow custom attribute
 defaultMethods.if.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return `((${buildString(data[0], buildState)}) && ${buildString(
-        data[1],
-        buildState
-      )})`
-    }
-    if (data.length === 3) {
-      return `((${buildString(data[0], buildState)}) ? ${buildString(
-        data[1],
-        buildState
-      )} : ${buildString(data[2], buildState)})`
+    if (data.length >= 3) {
+      data = [...data]
+
+      if (data.length % 2 !== 1) {
+        data.push(null)
+      }
+
+      const onFalse = data.pop()
+
+      let str = ''
+      while (data.length) {
+        const condition = data.shift()
+        const onTrue = data.shift()
+        str += `(${buildString(condition, buildState)}) ? ${buildString(onTrue, buildState)} : `
+      }
+
+      return '(' + str + `${buildString(onFalse, buildState)}` + ')'
     }
   }
   return false

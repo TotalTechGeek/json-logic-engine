@@ -83,7 +83,11 @@ function createYieldingControl (name, method, asyncMethod) {
 const ifYield = createYieldingControl(
   'ifYield',
   (input, context, above, engine) => (cur, item, arr, iter) => {
-    if (iter._position === 0) {
+    if (arr.length % 2 === 0) {
+      arr.push(null)
+    }
+    // if it's an even spot, and not the last item, run the condition.
+    if ((iter._position & 1) === 0 && iter._position !== arr.length - 1) {
       const test = engine.run(item, context, {
         above
       })
@@ -91,15 +95,21 @@ const ifYield = createYieldingControl(
         iter.skip()
       }
       return test
-    } else if (iter._position === 1) {
+    } else if (iter._position & 1) {
+      // if it's odd, then we are done.
       iter.dump()
     }
+
     return engine.run(item, context, {
       above
     })
   },
   (input, context, above, engine) => async (cur, item, arr, iter) => {
-    if (iter._position === 0) {
+    if (arr.length % 2 === 0) {
+      arr.push(null)
+    }
+    // if it's an even spot, and not the last item, run the condition.
+    if ((iter._position & 1) === 0 && iter._position !== arr.length - 1) {
       const test = await engine.run(item, context, {
         above
       })
@@ -107,9 +117,11 @@ const ifYield = createYieldingControl(
         iter.skip()
       }
       return test
-    } else if (iter._position === 1) {
+    } else if (iter._position & 1) {
+      // if it's odd, then we are done.
       iter.dump()
     }
+
     return engine.run(item, context, {
       above
     })
