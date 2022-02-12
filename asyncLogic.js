@@ -87,6 +87,8 @@ class AsyncLogicEngine {
     { deterministic, async = true, sync = !async, yields, useContext } = {}
   ) {
     Object.assign(method, omitUndefined({ yields, deterministic, useContext }))
+    // @ts-ignore
+    this.fallback.addMethod(name, method, { deterministic, yields, useContext })
     this.methods[name] = declareSync(method, sync)
   }
 

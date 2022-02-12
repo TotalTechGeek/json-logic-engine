@@ -78,6 +78,27 @@ function isDeterministic (method, engine, buildState) {
 }
 
 /**
+ * Checks if the method & its inputs are synchronous.
+ * @param {*} method
+ * @param {*} engine
+ */
+function isDeepSync (method, engine) {
+  if (Array.isArray(method)) {
+    return method.every(i => isDeepSync(i, engine))
+  }
+
+  if (typeof method === 'object') {
+    const func = Object.keys(method)[0]
+
+    const lower = method[func]
+    if (!isSync(engine.methods[func])) return false
+    return isDeepSync(lower, engine)
+  }
+
+  return true
+}
+
+/**
  * A function that handles yields by caching the values to resumable object.
  * @param {Function} func
  * @param {*} input
@@ -256,13 +277,9 @@ function buildString (method, buildState = {}) {
       engine.methods[func] &&
       isDeterministic(method, engine, buildState)
     ) {
-      // console.log(method)
-
-      if (isSync(engine.methods[func])) {
+      if (isDeepSync(method, engine)) {
         return pushValue((engine.fallback || engine).run(method))
-      }
-
-      if (async && !buildState.avoidInlineAsync) {
+      } else if (!buildState.avoidInlineAsync) {
         processing.push(engine.run(method).then((i) => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
       }
