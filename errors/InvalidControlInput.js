@@ -1,6 +1,6 @@
 // @ts-check
 'use strict'
-class InvalidControlInput extends Error {
+export default class InvalidControlInput extends Error {
   constructor (input) {
     super()
     this.message =
@@ -8,4 +8,3 @@ class InvalidControlInput extends Error {
     this.input = input
   }
 }
-export default InvalidControlInput
