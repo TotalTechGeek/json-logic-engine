@@ -83,6 +83,8 @@ function isDeterministic (method, engine, buildState) {
  * @param {*} engine
  */
 function isDeepSync (method, engine) {
+  if (!engine.async) return true
+
   if (Array.isArray(method)) {
     return method.every(i => isDeepSync(i, engine))
   }
