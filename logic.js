@@ -64,6 +64,12 @@ class LogicEngine {
    * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
   addMethod (name, method, { deterministic, yields, useContext } = {}) {
+    if (typeof method === 'function') {
+      method = { method, traverse: true }
+    } else {
+      method = { ...method }
+    }
+
     Object.assign(method, omitUndefined({ yields, useContext, deterministic }))
     this.methods[name] = declareSync(method)
   }

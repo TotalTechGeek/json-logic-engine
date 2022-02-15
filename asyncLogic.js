@@ -84,8 +84,22 @@ class AsyncLogicEngine {
   addMethod (
     name,
     method,
-    { deterministic, async = true, sync = !async, yields, useContext } = {}
+    { deterministic, async, sync, yields, useContext } = {}
   ) {
+    if (typeof async === 'undefined' && typeof sync === 'undefined') sync = false
+    if (typeof sync !== 'undefined') async = !sync
+    if (typeof async !== 'undefined') sync = !async
+
+    if (typeof method === 'function') {
+      if (async) {
+        method = { asyncMethod: method, traverse: true }
+      } else {
+        method = { method, traverse: true }
+      }
+    } else {
+      method = { ...method }
+    }
+
     Object.assign(method, omitUndefined({ yields, deterministic, useContext }))
     // @ts-ignore
     this.fallback.addMethod(name, method, { deterministic, yields, useContext })
