@@ -272,6 +272,7 @@ function buildString (method, buildState = {}) {
     buildState.useContext || (engine.methods[func] || {}).useContext
 
   if (method && typeof method === 'object') {
+    if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
     functions[func] = functions[func] || 2
 
     if (
@@ -455,16 +456,19 @@ function processBuiltString (method, str, buildState) {
   Object.keys(functions).forEach((key) => {
     if (functions[key] === 2) return
 
+    if (!engine.methods[key]) throw new Error(`Method '${key}' was not found in the Logic Engine.`)
+
     if (typeof engine.methods[key] === 'function') {
-      gen[key] = (input) => engine.methods[key](input, state, above, engine)
+      const method = engine.methods[key]
+      gen[key] = (input) => method(input, state, above, engine)
     } else {
       if (async && engine.methods[key].asyncMethod) {
         buildState.asyncDetected = true
-        gen[key] = (input) =>
-          engine.methods[key].asyncMethod(input, state, above, engine)
+        const method = engine.methods[key].asyncMethod
+        gen[key] = (input) => method(input, state, above, engine)
       } else {
-        gen[key] = (input) =>
-          engine.methods[key].method(input, state, above, engine)
+        const method = engine.methods[key].method
+        gen[key] = (input) => method(input, state, above, engine)
       }
     }
   })
