@@ -683,15 +683,10 @@ defaultMethods['==='].compile = function (data, buildState) {
 defaultMethods['+'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data
-      .map((i) => {
-        if (typeof i === 'number' || typeof i === 'string') {
-          return i
-        }
-        return `(+${buildString(i, buildState)})`
-      })
+      .map((i) => `(+${buildString(i, buildState)})`)
       .join(' + ')})`
   } else if (typeof data === 'string' || typeof data === 'number') {
-    return `+${data}`
+    return `(+${buildString(data, buildState)})`
   } else {
     return `([].concat(${buildString(
       data,
@@ -699,16 +694,12 @@ defaultMethods['+'].compile = function (data, buildState) {
     )})).reduce((a,b) => (+a)+(+b), 0)`
   }
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods['%'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data
-      .map((i) => {
-        if (typeof i === 'number' || typeof i === 'string') {
-          return i
-        }
-        return `(+${buildString(i, buildState)})`
-      })
+      .map((i) => `(+${buildString(i, buildState)})`)
       .join(' % ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
@@ -744,16 +735,11 @@ defaultMethods.and.compile = function (data, buildState) {
 defaultMethods['-'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `${data.length === 1 ? '-' : ''}(${data
-      .map((i) => {
-        if (typeof i === 'number' || typeof i === 'string') {
-          return i
-        }
-        return `(+${buildString(i, buildState)})`
-      })
+      .map((i) => `(+${buildString(i, buildState)})`)
       .join(' - ')})`
   }
   if (typeof data === 'string' || typeof data === 'number') {
-    return `-${data}`
+    return `(-${buildString(data, buildState)})`
   } else {
     return `((a=>(a.length===1?a[0]=-a[0]:a)&0||a)([].concat(${buildString(
       data,
@@ -765,12 +751,7 @@ defaultMethods['-'].compile = function (data, buildState) {
 defaultMethods['/'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data
-      .map((i) => {
-        if (typeof i === 'number' || typeof i === 'string') {
-          return i
-        }
-        return `(+${buildString(i, buildState)})`
-      })
+      .map((i) => `(+${buildString(i, buildState)})`)
       .join(' / ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)/(+b))`
@@ -780,12 +761,7 @@ defaultMethods['/'].compile = function (data, buildState) {
 defaultMethods['*'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
     return `(${data
-      .map((i) => {
-        if (typeof i === 'number' || typeof i === 'string') {
-          return i
-        }
-        return `(+${buildString(i, buildState)})`
-      })
+      .map((i) => `(+${buildString(i, buildState)})`)
       .join(' * ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)*(+b))`
