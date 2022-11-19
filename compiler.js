@@ -4,14 +4,12 @@
 import {
   isSync,
   // Override is required for the compiler to operate as intended.
-  // eslint-disable-next-line no-unused-vars
   Override
 } from './constants.js'
 import Yield from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
 
 // asyncIterators is required for the compiler to operate as intended.
-// eslint-disable-next-line no-unused-vars
 import asyncIterators from './async_iterators.js'
 
 /**
@@ -442,12 +440,9 @@ function processBuiltString (method, str, buildState) {
     async,
     engine,
     above,
-    // eslint-disable-next-line no-unused-vars
     methods,
-    // eslint-disable-next-line no-unused-vars
     notTraversed,
     processing,
-    // eslint-disable-next-line no-unused-vars
     values
   } = buildState
   processing.forEach((item, x) => {
@@ -487,14 +482,14 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
-  const final = `${buildState.asyncDetected ? 'async' : ''} (context ${
+  const final = `(values, methods, notTraversed, Override, asyncIterators) => ${buildState.asyncDetected ? 'async' : ''} (context ${
     buildState.yieldUsed ? ', resumable = {}' : ''
   }) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync(eval(final), !buildState.asyncDetected)
+  return declareSync(eval(final)(values, methods, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
 }
 
 export { build }
