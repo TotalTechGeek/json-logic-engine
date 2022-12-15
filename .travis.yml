@@ -1,6 +1,6 @@
 language: node_js
-node_js:
-- node
+node_js: "stable"
+dist: bionic
 after_success: npm run coverage
 env:
   global:
