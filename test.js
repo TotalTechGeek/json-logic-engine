@@ -44,6 +44,30 @@ modes.forEach((logic) => {
 
       expect(answer).toBe(-4)
     })
+
+    test('it should be able to negate a single number', () => {
+      const answer = logic.run({
+        '-': [1]
+      })
+
+      expect(answer).toBe(-1)
+    })
+
+    test('it should be able to negate a single number in an array', () => {
+      const answer = logic.run({
+        '-': 1
+      })
+
+      expect(answer).toBe(-1)
+    })
+
+    test('it should be able to negate Infinity', () => {
+      const answer = logic.run({
+        '-': Infinity
+      })
+
+      expect(answer).toBe(-Infinity)
+    })
   })
 
   describe('*', () => {

@@ -37,6 +37,7 @@ import asyncIterators from './async_iterators.js'
  * @returns
  */
 function isPrimitive (x) {
+  if (typeof x === 'number' && (x === Infinity || x === -Infinity || Number.isNaN(x))) return false
   return (
     x === null ||
     x === undefined ||

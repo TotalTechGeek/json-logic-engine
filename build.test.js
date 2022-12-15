@@ -40,10 +40,22 @@ function timeout (n, x) {
       expect(await f()).toEqual(-5)
     })
 
+    test('Minus operator w/ Infinity', async () => {
+      const f = await logic.build({ '-': Infinity })
+
+      expect(await f()).toEqual(-Infinity)
+    })
+
     test('Minus operator w/ array w/ variable input', async () => {
       const f = await logic.build({ '-': [{ preserve: 5 }] })
 
       expect(await f()).toEqual(-5)
+    })
+
+    test('Minus operator w/ array w/ variable input (Infinity)', async () => {
+      const f = await logic.build({ '-': [{ preserve: Infinity }] })
+
+      expect(await f()).toEqual(-Infinity)
     })
 
     test('Minus operator w/ variable input', async () => {
