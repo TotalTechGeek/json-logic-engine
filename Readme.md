@@ -110,7 +110,7 @@ logic.run({
 --- 
 
 
-This library was developed to be (for the most part) a drop-in replacement for the popular npm module [`json-logic-js`](https://github.com/jwadhams/json-logic-js), which at the time of writing has an vulnerability with prototype pollution.
+This library was developed to be (for the most part) a drop-in replacement for the popular npm module [`json-logic-js`](https://github.com/jwadhams/json-logic-js).
 
-The intention of the library is to keep the functionality very similar to the original, while adding a few new notable features.
+The intention of the library is to keep the functionality very similar to the original, while adding a few useful utilities.
 
