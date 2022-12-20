@@ -1,5 +1,5 @@
 import { LogicEngine, AsyncLogicEngine } from './index.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 import { Override } from './constants.js'
 
@@ -25,12 +25,12 @@ const yieldVar = (key, context, above, engine) => {
   const subProps = String(key).split('.')
   for (let i = 0; i < subProps.length; i++) {
     if (context === null || context === undefined) {
-      return new Yield({ message: 'Data is not found.' })
+      return new YieldStructure({ message: 'Data is not found.' })
     }
     // Descending into context
     context = context[subProps[i]]
     if (context === undefined) {
-      return new Yield({ message: 'Data is not found.' })
+      return new YieldStructure({ message: 'Data is not found.' })
     }
   }
   if (engine.allowFunctions || typeof context[key] !== 'function') {
@@ -57,7 +57,7 @@ describe('Sync Yielding Iterator Test', () => {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = sync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(sync.run(instance.logic(), { a: 10 })).toBe(10)
@@ -91,7 +91,7 @@ describe('Sync Yielding Iterator Test', () => {
       everyYield: [[true, true, { yieldVar: 'a' }], { var: '' }]
     }
     const instance = sync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(sync.run(instance.logic(), { a: false })).toBe(false)
@@ -271,7 +271,7 @@ describe('iterators', () => {
         data: 1
       }
     )
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(sync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual([
@@ -303,7 +303,7 @@ describe('iterators', () => {
         data: 1
       }
     )
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(sync.run(instance.logic(), { data: 0.5, x: 0.5 })).toStrictEqual([
@@ -322,7 +322,7 @@ describe('Async Yielding Iterator Test', () => {
       someYield: [[{ yieldVar: 'a' }, false, false], { var: '' }]
     }
     const instance = await nosync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(await nosync.run(instance.logic(), { a: 10 })).toBe(10)
@@ -356,7 +356,7 @@ describe('Async Yielding Iterator Test', () => {
       everyYield: [[true, true, { yieldVar: 'a' }], { var: '' }]
     }
     const instance = await nosync.run(script2)
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(await nosync.run(instance.logic(), { a: false })).toBe(false)
@@ -536,7 +536,7 @@ describe('iterators', () => {
         data: 1
       }
     )
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(await nosync.run(instance.logic(), { data: 1, x: 4 })).toStrictEqual(
@@ -568,7 +568,7 @@ describe('iterators', () => {
         data: 1
       }
     )
-    expect(instance instanceof EngineObject || instance instanceof Yield).toBe(
+    expect(instance instanceof EngineObject || instance instanceof YieldStructure).toBe(
       true
     )
     expect(
@@ -578,7 +578,7 @@ describe('iterators', () => {
 })
 
 describe('Test of multi-step yield', () => {
-  test('multi-step yield array', () => {
+  test('multi-step YieldStructure array', () => {
     const testFunction = sync.build([{ yieldVar: 'a' }, { yieldVar: 'b' }])
     try {
       testFunction({})

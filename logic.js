@@ -3,7 +3,7 @@
 
 import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 import { build } from './compiler.js'
 import declareSync from './utilities/declareSync.js'
@@ -114,7 +114,7 @@ class LogicEngine {
       const [func] = Object.keys(logic)
       const result = this._parse(func, logic[func], data, above)
       if (this.options.yieldSupported && checkYield(result)) {
-        if (result instanceof Yield) {
+        if (result instanceof YieldStructure) {
           if (result._input) {
             result._logic = { [func]: result._input }
           }

@@ -1,7 +1,7 @@
 // @ts-check
 'use strict'
 
-import Yield from './Yield.js'
+import YieldStructure from './Yield.js'
 import EngineObject from './EngineObject.js'
 
 // works fine for arrays, may need to create a more general version though
@@ -19,7 +19,7 @@ class ReduceIterator {
     const item = this.arr[this.position]
     this._position = this.position
     const cur = this.nextCall(this.cur, item, this.arr, this)
-    if (cur instanceof Yield || cur instanceof EngineObject) {
+    if (cur instanceof YieldStructure || cur instanceof EngineObject) {
       return cur
     }
     // commit
@@ -54,7 +54,7 @@ class AsyncReduceIterator extends ReduceIterator {
     const item = this.arr[this.position]
     this._position = this.position
     const cur = await this.nextCall(this.cur, item, this.arr, this)
-    if (cur instanceof Yield || cur instanceof EngineObject) {
+    if (cur instanceof YieldStructure || cur instanceof EngineObject) {
       return cur
     }
     // commit

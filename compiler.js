@@ -6,7 +6,7 @@ import {
   // Override is required for the compiler to operate as intended.
   Override
 } from './constants.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
 
 // asyncIterators is required for the compiler to operate as intended.
@@ -115,7 +115,7 @@ function r (func, input, name, resumable) {
     ? func(resumable[name + '_input'])
     : func(typeof input === 'function' ? input() : input)
 
-  if (result instanceof Yield) {
+  if (result instanceof YieldStructure) {
     if (result._input) {
       resumable[name + '_input'] = result._input
     }
@@ -145,7 +145,7 @@ async function rAsync (func, input, name, resumable) {
     ? await func(resumable[name + '_input'])
     : await func(typeof input === 'function' ? await input() : input)
 
-  if (result instanceof Yield) {
+  if (result instanceof YieldStructure) {
     if (result._input) {
       resumable[name + '_input'] = result._input
     }

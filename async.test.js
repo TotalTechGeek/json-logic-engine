@@ -1,5 +1,5 @@
 import { AsyncLogicEngine } from './index.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 
 const modes = [
@@ -780,7 +780,7 @@ modes.forEach((logic) => {
 
             if (engine.allowFunctions || typeof context[key] !== 'function') {
               if (!(key in context)) {
-                return new Yield({
+                return new YieldStructure({
                   message: 'Data does not exist in context.'
                 })
               }

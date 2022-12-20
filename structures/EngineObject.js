@@ -2,10 +2,10 @@
 'use strict'
 
 import traverseCopy from '../utilities/traverseCopy.js'
-import Yield from './Yield.js'
+import YieldStructure from './Yield.js'
 
 function fetchYields (obj, arr = []) {
-  if (obj instanceof Yield) {
+  if (obj instanceof YieldStructure) {
     arr.push(obj)
     return arr
   }
@@ -33,12 +33,12 @@ class EngineObject {
       {},
       {
         mutateValue: (i) => {
-          if (i instanceof Yield) {
+          if (i instanceof YieldStructure) {
             return i.logic()
           }
           return i
         },
-        skipCopy: (i) => i instanceof Yield
+        skipCopy: (i) => i instanceof YieldStructure
       }
     )
   }

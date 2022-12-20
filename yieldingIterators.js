@@ -5,7 +5,7 @@ import {
   ReduceIterator,
   AsyncReduceIterator
 } from './structures/ReduceIterator.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import checkYield from './utilities/checkYield.js'
 import { isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
@@ -47,7 +47,7 @@ function createYieldingControl (name, method, asyncMethod) {
       while (!iter.done()) {
         const cur = iter.next()
         if (checkYield(cur)) {
-          return new Yield({
+          return new YieldStructure({
             yield: cur,
             _name: name,
             _input: iter.state()
@@ -68,7 +68,7 @@ function createYieldingControl (name, method, asyncMethod) {
       while (!iter.done()) {
         const cur = await iter.next()
         if (checkYield(cur)) {
-          return new Yield({
+          return new YieldStructure({
             yield: cur,
             _name: name,
             _input: iter.state()
@@ -302,7 +302,7 @@ function createArrayIterativeMethod (
           }) || []
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
-          return new Yield({
+          return new YieldStructure({
             _input: [selector, mapper, defaultValue],
             _name: name,
             yields: selected.yields()
@@ -322,7 +322,7 @@ function createArrayIterativeMethod (
       while (!iter.done()) {
         const cur = iter.next()
         if (checkYield(cur)) {
-          return new Yield({
+          return new YieldStructure({
             yields: cur.yields(),
             _name: name,
             _input: {
@@ -350,7 +350,7 @@ function createArrayIterativeMethod (
           })) || []
         if (checkYield(selected)) {
           // todo: add extraction of the existing yields.
-          return new Yield({
+          return new YieldStructure({
             _name: name,
             _input: [selector, mapper, defaultValue],
             yields: selected.yields()
@@ -370,7 +370,7 @@ function createArrayIterativeMethod (
       while (!iter.done()) {
         const cur = await iter.next()
         if (checkYield(cur)) {
-          return new Yield({
+          return new YieldStructure({
             yields: cur.yields(),
             _name: name,
             _input: {

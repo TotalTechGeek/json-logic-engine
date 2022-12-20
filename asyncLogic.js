@@ -3,7 +3,7 @@
 
 import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
-import Yield from './structures/Yield.js'
+import YieldStructure from './structures/Yield.js'
 import EngineObject from './structures/EngineObject.js'
 import LogicEngine from './logic.js'
 import asyncPool from './asyncPool.js'
@@ -152,7 +152,7 @@ class AsyncLogicEngine {
       const result = await this._parse(func, logic[func], data, above)
 
       if (this.options.yieldSupported && (await checkYield(result))) {
-        if (result instanceof Yield) {
+        if (result instanceof YieldStructure) {
           if (result._input) {
             result._logic = { [func]: result._input }
           }

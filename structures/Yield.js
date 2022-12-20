@@ -3,7 +3,7 @@
 /**
  * A class that handles the Yielding logic & helps generate replacement logic.
  */
-class Yield {
+class YieldStructure {
   constructor (data) {
     this._logic = null
     this.resumable = null
@@ -18,4 +18,4 @@ class Yield {
     return this._logic
   }
 }
-export default Yield
+export default YieldStructure
