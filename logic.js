@@ -16,45 +16,46 @@ class LogicEngine {
   /**
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
+   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
-    options = { yieldSupported: false, disableInline: false }
+    options = { yieldSupported: false, disableInline: false, permissive: false }
   ) {
     this.disableInline = options.disableInline
     this.methods = { ...methods }
+    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean}} */
     this.options = { ...options }
   }
 
   /**
    * An internal method used to parse through the JSON Logic at a lower level.
-   * @param {String} func The name of the function being executed
-   * @param {*} data The data to traverse / execute upon
+   * @param {*} logic The logic being executed.
    * @param {*} context The context of the logic being run (input to the function.)
    * @param {*} above The context above (can be used for handlebars-style data traversal.)
-   * @returns {*}
+   * @returns {{ result: *, func: string }}
    */
-  _parse (func, data, context, above) {
+  _parse (logic, context, above) {
+    const [func] = Object.keys(logic)
+    const data = logic[func]
     if (this.methods[func]) {
       if (typeof this.methods[func] === 'function') {
         const input = this.run(data, context, { above })
-        if (this.options.yieldSupported && checkYield(input)) return input
-        return this.methods[func](input, context, above, this)
+        if (this.options.yieldSupported && checkYield(input)) return { result: input, func }
+        return { result: this.methods[func](input, context, above, this), func }
       }
       if (typeof this.methods[func] === 'object') {
         const { method, traverse } = this.methods[func]
-        const shouldTraverse =
-          typeof traverse === 'undefined' ? true : traverse
+        const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
         const parsedData = shouldTraverse
           ? this.run(data, context, { above })
           : data
-        if (this.options.yieldSupported && checkYield(parsedData)) {
-          return parsedData
-        }
-        return method(parsedData, context, above, this)
+        if (this.options.yieldSupported && checkYield(parsedData)) return { result: parsedData, func }
+        return { result: method(parsedData, context, above, this), func }
       }
     }
+    if (this.options.permissive) return { result: logic, func }
+    throw new Error(`Method '${func}' was not found in the Logic Engine.`)
   }
 
   /**
@@ -111,8 +112,7 @@ class LogicEngine {
       return result
     }
     if (logic && typeof logic === 'object') {
-      const [func] = Object.keys(logic)
-      const result = this._parse(func, logic[func], data, above)
+      const { func, result } = this._parse(logic, data, above)
       if (this.options.yieldSupported && checkYield(result)) {
         if (result instanceof YieldStructure) {
           if (result._input) {
