@@ -16,7 +16,7 @@ const permissiveEngines = [
   new AsyncLogicEngine(undefined, { yieldSupported: true, permissive: true })
 ]
 
-async function testEngineAsync (engine, rule, data, expected) {
+async function testEngineAsync (engine, rule, data, expected, matcher = 'deepStrictEqual') {
   // run
   if (expected === Error) {
     try {
@@ -25,7 +25,7 @@ async function testEngineAsync (engine, rule, data, expected) {
     } catch (e) {}
   } else {
     const result = await engine.run(rule, data)
-    assert.deepStrictEqual(result, expected)
+    assert[matcher](result, expected)
   }
 
   // build
@@ -38,13 +38,13 @@ async function testEngineAsync (engine, rule, data, expected) {
   } else {
     const built = await engine.build(rule)
     const builtResult = await built(data)
-    assert.deepStrictEqual(builtResult, expected)
+    assert[matcher](builtResult, expected)
   }
 }
 
-function testEngine (engine, rule, data, expected) {
+function testEngine (engine, rule, data, expected, matcher = 'deepStrictEqual') {
   if (engine instanceof AsyncLogicEngine) {
-    return testEngineAsync(engine, rule, data, expected)
+    return testEngineAsync(engine, rule, data, expected, matcher)
   }
 
   // run
@@ -55,7 +55,7 @@ function testEngine (engine, rule, data, expected) {
     } catch (e) {}
   } else {
     const result = engine.run(rule, data)
-    assert.deepStrictEqual(result, expected)
+    assert[matcher](result, expected)
   }
 
   // build
@@ -68,7 +68,7 @@ function testEngine (engine, rule, data, expected) {
   } else {
     const built = engine.build(rule)
     const builtResult = built(data)
-    assert.deepStrictEqual(builtResult, expected)
+    assert[matcher](builtResult, expected)
   }
 }
 
@@ -84,6 +84,12 @@ describe('Various Test Cases', () => {
       await testEngine(engine, {
         if: [true, { unknown: true, unknown2: 2 }, 5]
       }, {}, { unknown: true, unknown2: 2 })
+
+      const obj = { unknown: true, unknown2: 2 }
+
+      await testEngine(engine, {
+        if: [true, obj, 5]
+      }, {}, obj, 'equal')
     }
   })
 })

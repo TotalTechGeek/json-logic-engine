@@ -36,12 +36,13 @@ import asyncIterators from './async_iterators.js'
  * @param {*} x
  * @returns
  */
-function isPrimitive (x) {
+function isPrimitive (x, preserveObject) {
   if (typeof x === 'number' && (x === Infinity || x === -Infinity || Number.isNaN(x))) return false
   return (
     x === null ||
     x === undefined ||
-    ['Number', 'String', 'Boolean', 'Object'].includes(x.constructor.name)
+    ['Number', 'String', 'Boolean'].includes(x.constructor.name) ||
+    (!preserveObject && x.constructor.name === 'Object')
   )
 }
 
@@ -245,8 +246,8 @@ function buildString (method, buildState = {}) {
     values = [],
     engine
   } = buildState
-  function pushValue (value) {
-    if (isPrimitive(value)) return JSON.stringify(value)
+  function pushValue (value, preserveObject = false) {
+    if (isPrimitive(value, preserveObject)) return JSON.stringify(value)
     values.push(value)
     return `values[${values.length - 1}]`
   }
@@ -273,7 +274,7 @@ function buildString (method, buildState = {}) {
   if (method && typeof method === 'object') {
     if (!engine.methods[func]) {
       // If we are in permissive mode, we will just return the object.
-      if (engine.options.permissive) return pushValue(method)
+      if (engine.options.permissive) return pushValue(method, true)
       throw new Error(`Method '${func}' was not found in the Logic Engine.`)
     }
     functions[func] = functions[func] || 2
@@ -284,7 +285,7 @@ function buildString (method, buildState = {}) {
       isDeterministic(method, engine, buildState)
     ) {
       if (isDeepSync(method, engine)) {
-        return pushValue((engine.fallback || engine).run(method))
+        return pushValue((engine.fallback || engine).run(method), true)
       } else if (!buildState.avoidInlineAsync) {
         processing.push(engine.run(method).then((i) => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
