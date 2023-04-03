@@ -19,13 +19,14 @@ class AsyncLogicEngine {
   /**
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
+   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
-    options = { yieldSupported: false, disableInline: false }
+    options = { yieldSupported: false, disableInline: false, permissive: false }
   ) {
     this.methods = { ...methods }
+    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean}} */
     this.options = { ...options }
     this.disableInline = options.disableInline
     this.async = true
@@ -73,6 +74,8 @@ class AsyncLogicEngine {
         return Array.isArray(result) ? Promise.all(result) : result
       }
     }
+    if (this.options.permissive) return { [func]: data }
+    throw new Error(`Method '${func}' was not found in the Logic Engine.`)
   }
 
   /**

@@ -16,14 +16,15 @@ class LogicEngine {
   /**
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean }} options
+   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
-    options = { yieldSupported: false, disableInline: false }
+    options = { yieldSupported: false, disableInline: false, permissive: false }
   ) {
     this.disableInline = options.disableInline
     this.methods = { ...methods }
+    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean}} */
     this.options = { ...options }
   }
 
@@ -44,17 +45,16 @@ class LogicEngine {
       }
       if (typeof this.methods[func] === 'object') {
         const { method, traverse } = this.methods[func]
-        const shouldTraverse =
-          typeof traverse === 'undefined' ? true : traverse
+        const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
         const parsedData = shouldTraverse
           ? this.run(data, context, { above })
           : data
-        if (this.options.yieldSupported && checkYield(parsedData)) {
-          return parsedData
-        }
+        if (this.options.yieldSupported && checkYield(parsedData)) return parsedData
         return method(parsedData, context, above, this)
       }
     }
+    if (this.options.permissive) return { [func]: data }
+    throw new Error(`Method '${func}' was not found in the Logic Engine.`)
   }
 
   /**
