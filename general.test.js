@@ -87,9 +87,17 @@ describe('Various Test Cases', () => {
 
       const obj = { unknown: true, unknown2: 2 }
 
+      // test with deterministic function returning a passively preserved element.
       await testEngine(engine, {
         if: [true, obj, 5]
       }, {}, obj, 'equal')
+
+      // test with a non-deterministic function returning a passively preserved element.
+      await testEngine(engine, {
+        if: [{ var: 'data' }, obj, 5]
+      }, {
+        data: true
+      }, obj, 'equal')
     }
   })
 })
