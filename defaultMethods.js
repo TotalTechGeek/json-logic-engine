@@ -16,6 +16,9 @@ function isDeterministic (method, engine, buildState) {
   if (method && typeof method === 'object') {
     const func = Object.keys(method)[0]
     const lower = method[func]
+
+    if (!engine.methods[func] && engine.options.permissive) return true
+
     if (engine.methods[func].traverse === false) {
       return typeof engine.methods[func].deterministic === 'function'
         ? engine.methods[func].deterministic(lower, buildState)

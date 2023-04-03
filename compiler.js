@@ -271,7 +271,11 @@ function buildString (method, buildState = {}) {
     buildState.useContext || (engine.methods[func] || {}).useContext
 
   if (method && typeof method === 'object') {
-    if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+    if (!engine.methods[func]) {
+      // If we are in permissive mode, we will just return the object.
+      if (engine.options.permissive) return pushValue(method)
+      throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+    }
     functions[func] = functions[func] || 2
 
     if (
