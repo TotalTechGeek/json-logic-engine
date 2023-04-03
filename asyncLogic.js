@@ -35,22 +35,22 @@ class AsyncLogicEngine {
 
   /**
    * An internal method used to parse through the JSON Logic at a lower level.
-   * @param {String} func The name of the function being executed
-   * @param {*} data The data to traverse / execute upon
+   * @param {*} logic The logic being executed.
    * @param {*} context The context of the logic being run (input to the function.)
    * @param {*} above The context above (can be used for handlebars-style data traversal.)
-   * @returns {Promise}
+   * @returns {Promise<{ func: string, result: * }>}
    */
-  async _parse (func, data, context, above) {
+  async _parse (logic, context, above) {
+    const [func] = Object.keys(logic)
+    const data = logic[func]
     if (this.methods[func]) {
       if (typeof this.methods[func] === 'function') {
         const input = await this.run(data, context, { above })
         if (this.options.yieldSupported && (await checkYield(input))) {
-          return input
+          return { result: input, func }
         }
         const result = await this.methods[func](input, context, above, this)
-
-        return Array.isArray(result) ? Promise.all(result) : result
+        return { result: Array.isArray(result) ? Promise.all(result) : result, func }
       }
 
       if (typeof this.methods[func] === 'object') {
@@ -62,7 +62,7 @@ class AsyncLogicEngine {
           : data
 
         if (this.options.yieldSupported && (await checkYield(parsedData))) {
-          return parsedData
+          return { result: parsedData, func }
         }
 
         const result = await (asyncMethod || method)(
@@ -71,10 +71,10 @@ class AsyncLogicEngine {
           above,
           this
         )
-        return Array.isArray(result) ? Promise.all(result) : result
+        return { result: Array.isArray(result) ? Promise.all(result) : result, func }
       }
     }
-    if (this.options.permissive) return { [func]: data }
+    if (this.options.permissive) return { result: logic, func }
     throw new Error(`Method '${func}' was not found in the Logic Engine.`)
   }
 
@@ -151,8 +151,7 @@ class AsyncLogicEngine {
     }
 
     if (logic && typeof logic === 'object') {
-      const [func] = Object.keys(logic)
-      const result = await this._parse(func, logic[func], data, above)
+      const { func, result } = await this._parse(logic, data, above)
 
       if (this.options.yieldSupported && (await checkYield(result))) {
         if (result instanceof YieldStructure) {
