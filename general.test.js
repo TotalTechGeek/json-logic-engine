@@ -82,8 +82,8 @@ describe('Various Test Cases', () => {
       await testEngine(engine, { unknown: true }, {}, { unknown: true })
 
       await testEngine(engine, {
-        if: [true, { unknown: true }, 5]
-      }, {}, { unknown: true })
+        if: [true, { unknown: true, unknown2: 2 }, 5]
+      }, {}, { unknown: true, unknown2: 2 })
     }
   })
 })
