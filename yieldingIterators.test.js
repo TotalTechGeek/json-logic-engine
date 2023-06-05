@@ -33,7 +33,7 @@ const yieldVar = (key, context, above, engine) => {
       return new YieldStructure({ message: 'Data is not found.' })
     }
   }
-  if (engine.allowFunctions || typeof context[key] !== 'function') {
+  if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
     return context
   }
   return null

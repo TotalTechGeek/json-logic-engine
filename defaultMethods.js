@@ -194,7 +194,7 @@ const defaultMethods = {
     }
     const notFound = b === undefined ? null : b
     if (typeof key === 'undefined' || key === '' || key === null) {
-      if (engine.allowFunctions || typeof context[key] !== 'function') {
+      if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
         return context
       }
       return null
@@ -210,7 +210,7 @@ const defaultMethods = {
         return notFound
       }
     }
-    if (engine.allowFunctions || typeof context[key] !== 'function') {
+    if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
       return context
     }
     return null

@@ -778,7 +778,7 @@ modes.forEach((logic) => {
               )
             }
 
-            if (engine.allowFunctions || typeof context[key] !== 'function') {
+            if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
               if (!(key in context)) {
                 return new YieldStructure({
                   message: 'Data does not exist in context.'
