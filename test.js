@@ -708,6 +708,38 @@ modes.forEach((logic) => {
       expect(answer).toStrictEqual(1)
     })
 
+    test('length object (2 keys)', () => {
+      const answer = logic.run({
+        length: { preserve: { a: 1, b: 2 } }
+      })
+
+      expect(answer).toStrictEqual(2)
+    })
+
+    test('length object (1 keys)', () => {
+      const answer = logic.run({
+        length: { preserve: { a: 1 } }
+      })
+
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('length object (0 keys)', () => {
+      const answer = logic.run({
+        length: { preserve: {} }
+      })
+
+      expect(answer).toStrictEqual(0)
+    })
+
+    test('length object (null)', () => {
+      const answer = logic.run({
+        length: { preserve: null }
+      })
+
+      expect(answer).toStrictEqual(0)
+    })
+
     test('get from array', () => {
       const answer = logic.run({
         get: [['hi'], 'length']
