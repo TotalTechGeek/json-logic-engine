@@ -153,7 +153,17 @@ const defaultMethods = {
     }
     return string.substr(from, end)
   },
-  length: (i) => i.length,
+  length: (i) => {
+    if ((typeof i === 'string' || Array.isArray(i))) {
+      return i.length
+    }
+
+    if (i && typeof i === 'object') {
+      return Object.keys(i).length
+    }
+
+    return 0
+  },
   get: {
     method: ([data, key, defaultValue], context, above, engine) => {
       const notFound = defaultValue === undefined ? null : defaultValue

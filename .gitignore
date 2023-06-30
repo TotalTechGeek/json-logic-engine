@@ -2,6 +2,7 @@ node_modules/
 .nyc_output
 coverage
 .vscode
+.idea
 .npmrc
 bench/node_modules/
 dist/
