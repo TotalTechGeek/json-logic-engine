@@ -657,6 +657,78 @@ modes.forEach((logic) => {
       expect(answer2).toStrictEqual([])
     })
 
+    test('length string', async () => {
+      const answer = await logic.run({
+        length: 'hello'
+      })
+
+      expect(answer).toStrictEqual(5)
+    })
+
+    test('length array', async () => {
+      const answer = await logic.run({
+        length: ['hello']
+      })
+
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('length object (2 keys)', async () => {
+      const answer = await logic.run({
+        length: { preserve: { a: 1, b: 2 } }
+      })
+
+      expect(answer).toStrictEqual(2)
+    })
+
+    test('length object (1 keys)', async () => {
+      const answer = await logic.run({
+        length: { preserve: { a: 1 } }
+      })
+
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from array', async () => {
+      const answer = await logic.run({
+        get: [['hi'], 'length']
+      })
+
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from object', async () => {
+      const answer = await logic.run({
+        get: [{ preserve: { a: 1 } }, 'a']
+      })
+
+      expect(answer).toStrictEqual(1)
+    })
+
+    test('get from object default', async () => {
+      const answer = await logic.run({
+        get: [{ preserve: {} }, 'a', 5]
+      })
+
+      expect(answer).toStrictEqual(5)
+    })
+
+    test('length object (0 keys)', async () => {
+      const answer = await logic.run({
+        length: { preserve: {} }
+      })
+
+      expect(answer).toStrictEqual(0)
+    })
+
+    test('length object (null)', async () => {
+      const answer = await logic.run({
+        length: { preserve: null }
+      })
+
+      expect(answer).toStrictEqual(0)
+    })
+
     test('merge', async () => {
       const answer = await logic.run({
         merge: [{ preserve: ['b'] }, { preserve: ['c'] }]
