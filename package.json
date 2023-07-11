@@ -48,5 +48,11 @@
   },
   "types": "./index.d.ts",
   "type": "module",
-  "sideEffects": false
+  "sideEffects": false,
+  "keywords": [
+    "json",
+    "logic",
+    "jsonlogic",
+    "rules"
+  ]
 }
