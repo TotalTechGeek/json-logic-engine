@@ -9,7 +9,7 @@ const getIsOptionalChainingSupported = () => {
     // eslint-disable-next-line no-unused-vars
     const test = {}
     // eslint-disable-next-line no-eval
-    const isUndefined = eval('(test) => test?.foo?.bar')(test)
+    const isUndefined = globalThis.eval('(test) => test?.foo?.bar')(test)
     return isUndefined === undefined
   } catch {
     return false
