@@ -488,14 +488,14 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
-  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators) => ${buildState.asyncDetected ? 'async' : ''} (context ${
+  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync) => ${buildState.asyncDetected ? 'async' : ''} (context ${
     buildState.yieldUsed ? ', resumable = {}' : ''
   }) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync(eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
+  return declareSync(globalThis.eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync), !buildState.asyncDetected)
 }
 
 export { build }
