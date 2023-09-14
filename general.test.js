@@ -77,6 +77,11 @@ describe('Various Test Cases', () => {
     for (const engine of normalEngines) await testEngine(engine, { unknown: true }, {}, Error)
   })
 
+  it('Should return an empty object when I pass in an empty object.', async () => {
+    for (const engine of normalEngines) await testEngine(engine, {}, {}, {})
+    for (const engine of permissiveEngines) await testEngine(engine, {}, {}, {})
+  })
+
   it('Should return the object when an unrecognized method is used.', async () => {
     for (const engine of permissiveEngines) {
       await testEngine(engine, { unknown: true }, {}, { unknown: true })

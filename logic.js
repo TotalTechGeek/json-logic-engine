@@ -111,7 +111,7 @@ class LogicEngine {
       }
       return result
     }
-    if (logic && typeof logic === 'object') {
+    if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) {
       const { func, result } = this._parse(logic, data, above)
       if (this.options.yieldSupported && checkYield(result)) {
         if (result instanceof YieldStructure) {

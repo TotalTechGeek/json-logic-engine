@@ -272,6 +272,7 @@ function buildString (method, buildState = {}) {
     buildState.useContext || (engine.methods[func] || {}).useContext
 
   if (method && typeof method === 'object') {
+    if (!func) return pushValue(method)
     if (!engine.methods[func]) {
       // If we are in permissive mode, we will just return the object.
       if (engine.options.permissive) return pushValue(method, true)
