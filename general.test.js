@@ -105,4 +105,16 @@ describe('Various Test Cases', () => {
       }, obj, 'equal')
     }
   })
+
+  it('get operator w/ object key as string', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, 'b'] }, { selected: { b: 2 } }, 2)
+  })
+
+  it('get operator w/ object key as number', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, 1] }, { selected: [0, 2] }, 2)
+  })
+
+  it('get operator w/ object key as var', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { b: 2 }, key: 'b' }, 2)
+  })
 })

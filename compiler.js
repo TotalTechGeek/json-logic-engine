@@ -317,7 +317,7 @@ function buildString (method, buildState = {}) {
         `gen["${func}"](` + buildString(method[func], buildState) + ')'
       )
     } else {
-      if (engine.methods[func] && engine.methods[func].traverse) {
+      if (engine.methods[func] && (typeof engine.methods[func].traverse === 'undefined' ? true : engine.methods[func].traverse)) {
         functions[func] = 1
         asyncDetected = Boolean(
           async && engine.methods[func] && engine.methods[func].asyncMethod
