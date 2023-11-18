@@ -805,6 +805,10 @@ defaultMethods.get.compile = function (data, buildState) {
     obj = data[0]
     key = data[1]
     defaultValue = typeof data[2] === 'undefined' ? null : data[2]
+
+    // Bail out if the key is dynamic; dynamic keys are not really optimized by this block.
+    if (key && typeof key === 'object') return false
+
     key = key.toString()
     const pieces = key.split('.')
     if (!chainingSupported) {
@@ -813,11 +817,11 @@ defaultMethods.get.compile = function (data, buildState) {
           return `(${text}||0)[${JSON.stringify(i)}]`
         },
         `(${buildString(obj, buildState)}||0)`
-      )}, ${JSON.stringify(defaultValue)}))`
+      )}, ${buildString(defaultValue, buildState)}))`
     }
     return `((${buildString(obj, buildState)})${pieces
-      .map((i) => `?.[${JSON.stringify(i)}]`)
-      .join('')} ?? ${JSON.stringify(defaultValue)})`
+      .map((i) => `?.[${buildString(i, buildState)}]`)
+      .join('')} ?? ${buildString(defaultValue, buildState)})`
   }
   return false
 }
@@ -860,11 +864,11 @@ defaultMethods.var.compile = function (data, buildState) {
           return `(${text}||0)[${JSON.stringify(i)}]`
         },
         '(context||0)'
-      )}, ${JSON.stringify(defaultValue)}))`
+      )}, ${buildString(defaultValue, buildState)}))`
     }
     return `(context${pieces
       .map((i) => `?.[${JSON.stringify(i)}]`)
-      .join('')} ?? ${JSON.stringify(defaultValue)})`
+      .join('')} ?? ${buildString(defaultValue, buildState)})`
   }
   buildState.useContext = true
   return false
