@@ -8,6 +8,7 @@ import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
 import InvalidControlInput from './errors/InvalidControlInput.js'
 import YieldingIterators from './yieldingIterators.js'
+import { splitPath } from './utilities/splitPath.js'
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
@@ -161,7 +162,8 @@ const defaultMethods = {
   get: {
     method: ([data, key, defaultValue], context, above, engine) => {
       const notFound = defaultValue === undefined ? null : defaultValue
-      const subProps = String(key).split('.')
+
+      const subProps = splitPath(String(key))
       for (let i = 0; i < subProps.length; i++) {
         if (data === null || data === undefined) {
           return notFound
@@ -203,7 +205,7 @@ const defaultMethods = {
       }
       return null
     }
-    const subProps = String(key).split('.')
+    const subProps = splitPath(String(key))
     for (let i = 0; i < subProps.length; i++) {
       if (context === null || context === undefined) {
         return notFound
@@ -810,7 +812,7 @@ defaultMethods.get.compile = function (data, buildState) {
     if (key && typeof key === 'object') return false
 
     key = key.toString()
-    const pieces = key.split('.')
+    const pieces = splitPath(key)
     if (!chainingSupported) {
       return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
         (text, i) => {
@@ -854,7 +856,7 @@ defaultMethods.var.compile = function (data, buildState) {
       buildState.useContext = true
       return false
     }
-    const pieces = key.split('.')
+    const pieces = splitPath(key)
     const [top] = pieces
     buildState.varTop.add(top)
     // support older versions of node

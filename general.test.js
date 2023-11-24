@@ -117,4 +117,21 @@ describe('Various Test Cases', () => {
   it('get operator w/ object key as var', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { b: 2 }, key: 'b' }, 2)
   })
+
+  it('is able to handle simple path escaping', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, 'b\\.c'] }, { selected: { 'b.c': 2 } }, 2)
+  })
+
+  it('is able to handle simple path escaping in a variable', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { 'b.c': 2 }, key: 'b\\.c' }, 2)
+  })
+
+  it('is able to handle path escaping in a var call', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'hello\\.world' }, { 'hello.world': 2 }, 2)
+  })
+
+  it('is able to handle path escaping with multiple escapes', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\foo' }, { '\\foo': 2 }, 2)
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\\\foo' }, { '\\foo': 2 }, 2)
+  })
 })
