@@ -7,15 +7,15 @@
 <link rel="alternate" type="application/rss+xml" href="/json-logic-engine/blog/rss.xml" title="JSON Logic Engine Blog RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/json-logic-engine/blog/atom.xml" title="JSON Logic Engine Blog Atom Feed"><title data-react-helmet="true">Installation and Setup | JSON Logic Engine</title><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" property="og:title" content="Installation and Setup | JSON Logic Engine"><meta data-react-helmet="true" name="description" content="Installation &amp; Setup"><meta data-react-helmet="true" property="og:description" content="Installation &amp; Setup"><meta data-react-helmet="true" property="og:url" content="https://jessemitchell.me/json-logic-engine/docs/"><link data-react-helmet="true" rel="shortcut icon" href="/json-logic-engine/img/favicon.ico"><link rel="stylesheet" href="/json-logic-engine/assets/css/styles.3abd4778.css">
 <link rel="preload" href="/json-logic-engine/assets/js/styles.be28d2f2.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/runtime~main.a1f70217.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/main.3cfcfd21.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/common.78e4810e.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/1.51938251.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/3.8c31846e.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/1be78505.fe18d8ba.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/24.4c601166.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/runtime~main.e6eb78a4.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/main.189e81ec.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/common.969ae10b.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/1.ff02fea4.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/3.302cd05a.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/1be78505.4f32adcc.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/24.d0b5c865.js" as="script">
 <link rel="preload" href="/json-logic-engine/assets/js/935f2afb.9fc51c99.js" as="script">
-<link rel="preload" href="/json-logic-engine/assets/js/23.4f5463f3.js" as="script">
+<link rel="preload" href="/json-logic-engine/assets/js/23.f37cb294.js" as="script">
 <link rel="preload" href="/json-logic-engine/assets/js/b2f90839.cc19ed41.js" as="script">
 </head>
 <body>
@@ -30,15 +30,15 @@
 </span></div><div class="token-line" style="color:#d6deeb"><span class="token plain"></span><span class="token comment" style="color:rgb(99, 119, 119);font-style:italic">// we can make use of the modules function compilation</span><span class="token plain"></span></div><div class="token-line" style="color:#d6deeb"><span class="token plain"></span><span class="token console class-name" style="color:rgb(255, 203, 139)">console</span><span class="token punctuation" style="color:rgb(199, 146, 234)">.</span><span class="token method function property-access" style="color:rgb(130, 170, 255)">log</span><span class="token punctuation" style="color:rgb(199, 146, 234)">(</span><span class="token plain">engine</span><span class="token punctuation" style="color:rgb(199, 146, 234)">.</span><span class="token method function property-access" style="color:rgb(130, 170, 255)">run</span><span class="token punctuation" style="color:rgb(199, 146, 234)">(</span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token string" style="color:rgb(173, 219, 103)">&#x27;cat&#x27;</span><span class="token operator" style="color:rgb(127, 219, 202)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">[</span><span class="token string" style="color:rgb(173, 219, 103)">&quot;Hello, &quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token keyword" style="color:rgb(127, 219, 202)">var</span><span class="token operator" style="color:rgb(127, 219, 202)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(173, 219, 103)">&#x27;&#x27;</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token string" style="color:rgb(173, 219, 103)">&quot;!&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">]</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token string" style="color:rgb(173, 219, 103)">&quot;World&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">)</span><span class="token punctuation" style="color:rgb(199, 146, 234)">)</span><span class="token plain"></span></div><div class="token-line" style="color:#d6deeb"><span class="token plain" style="display:inline-block">
 </span></div></pre></pre><blockquote class="blockquote-footer"><div class="font-weight-light">Please note that at the time of writing that while the interpreter is still available in this module, the compilation mechanism yields far better performance in all use-cases &amp; supports all of the same features. The only time you may wish to use <code>.run</code> is when you are switching over from <code>json-logic-js</code> and migrating from it&#x27;s <code>.apply</code> method.</div></blockquote><nav aria-label="Doc list page navigation" class="my-5 p-0"><ul class="pagination justify-content-between"><li class="page-item mr-2"></li><li class="page-item ml-2"><a class="page-link" href="/json-logic-engine/docs/methods">Adding Methods »</a></li></ul></nav></main></main></div></div><footer class="container-fluid p-0 align-self-end"><div class="row bg-light no-gutters justify-content-center"><div class="col col-xs-1 col-xl-1 mx-4 my-4"><h5>Related</h5><ul class="list-unstyled"><li class="mb-1"><a href="https://github.com/TotalTechGeek" target="_blank" rel="noopener noreferrer">GitHub</a></li></ul></div></div></footer></div></div>
 <script src="/json-logic-engine/assets/js/styles.be28d2f2.js"></script>
-<script src="/json-logic-engine/assets/js/runtime~main.a1f70217.js"></script>
-<script src="/json-logic-engine/assets/js/main.3cfcfd21.js"></script>
-<script src="/json-logic-engine/assets/js/common.78e4810e.js"></script>
-<script src="/json-logic-engine/assets/js/1.51938251.js"></script>
-<script src="/json-logic-engine/assets/js/3.8c31846e.js"></script>
-<script src="/json-logic-engine/assets/js/1be78505.fe18d8ba.js"></script>
-<script src="/json-logic-engine/assets/js/24.4c601166.js"></script>
+<script src="/json-logic-engine/assets/js/runtime~main.e6eb78a4.js"></script>
+<script src="/json-logic-engine/assets/js/main.189e81ec.js"></script>
+<script src="/json-logic-engine/assets/js/common.969ae10b.js"></script>
+<script src="/json-logic-engine/assets/js/1.ff02fea4.js"></script>
+<script src="/json-logic-engine/assets/js/3.302cd05a.js"></script>
+<script src="/json-logic-engine/assets/js/1be78505.4f32adcc.js"></script>
+<script src="/json-logic-engine/assets/js/24.d0b5c865.js"></script>
 <script src="/json-logic-engine/assets/js/935f2afb.9fc51c99.js"></script>
-<script src="/json-logic-engine/assets/js/23.4f5463f3.js"></script>
+<script src="/json-logic-engine/assets/js/23.f37cb294.js"></script>
 <script src="/json-logic-engine/assets/js/b2f90839.cc19ed41.js"></script>
 </body>
 </html>
