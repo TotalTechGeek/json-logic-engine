@@ -134,4 +134,18 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\foo' }, { '\\foo': 2 }, 2)
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\\\foo' }, { '\\foo': 2 }, 2)
   })
+
+  it('should be able to handle various instances of "in" with good, bad and invalid data', async () => {
+    const rule = {
+      in: ['Spring', { var: 'city' }]
+    }
+
+    const goodData = { city: 'Springfield' }
+    const badData = { city: 'test' }
+    const invalidData = { city: null }
+
+    for (const engine of normalEngines) await testEngine(engine, rule, goodData, true)
+    for (const engine of normalEngines) await testEngine(engine, rule, badData, false)
+    for (const engine of normalEngines) await testEngine(engine, rule, invalidData, false)
+  })
 })

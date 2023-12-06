@@ -47,7 +47,7 @@ const defaultMethods = {
   '%': (data) => data.reduce((a, b) => +a % +b),
   max: (data) => Math.max(...data),
   min: (data) => Math.min(...data),
-  in: ([item, array]) => array.includes(item),
+  in: ([item, array]) => (array || []).includes(item),
   '>': ([a, b]) => a > b,
   '<': ([a, b, c]) => (c === undefined ? a < b : a < b && b < c),
   preserve: {
@@ -725,7 +725,7 @@ defaultMethods.or.compile = function (data, buildState) {
 // @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
   if (Array.isArray(data)) {
-    return `(${buildString(data[1], buildState)}).includes(${buildString(
+    return `(${buildString(data[1], buildState)} || []).includes(${buildString(
       data[0],
       buildState
     )})`
