@@ -4,14 +4,14 @@ import { LogicEngine, AsyncLogicEngine } from './index.js'
 class DataEngine extends LogicEngine {
   isData (logic, firstKey) {
     if (Object.keys(logic).length > 1) return true
-    return !(firstKey in logic)
+    return !(firstKey in this.methods)
   }
 }
 
 class AsyncDataEngine extends AsyncLogicEngine {
   isData (logic, firstKey) {
     if (Object.keys(logic).length > 1) return true
-    return !(firstKey in logic)
+    return !(firstKey in this.methods)
   }
 }
 
