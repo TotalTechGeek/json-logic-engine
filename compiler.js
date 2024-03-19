@@ -62,6 +62,9 @@ function isDeterministic (method, engine, buildState) {
     const func = Object.keys(method)[0]
     const lower = method[func]
 
+    if (engine.isData(method, func)) return true
+    if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+
     if (engine.methods[func].traverse === false) {
       return typeof engine.methods[func].deterministic === 'function'
         ? engine.methods[func].deterministic(lower, buildState)
@@ -274,8 +277,8 @@ function buildString (method, buildState = {}) {
   if (method && typeof method === 'object') {
     if (!func) return pushValue(method)
     if (!engine.methods[func]) {
-      // If we are in permissive mode, we will just return the object.
-      if (engine.options.permissive) return pushValue(method, true)
+      // Check if this is supposed to be "data" rather than a function.
+      if (engine.isData(method, func)) return pushValue(method, true)
       throw new Error(`Method '${func}' was not found in the Logic Engine.`)
     }
     functions[func] = functions[func] || 2

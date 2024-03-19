@@ -26,11 +26,18 @@ class AsyncLogicEngine {
     options = { yieldSupported: false, disableInline: false, permissive: false }
   ) {
     this.methods = { ...methods }
-    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean}} */
-    this.options = { ...options }
+    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean }} */
+    this.options = { yieldSupported: options.yieldSupported, disableInline: options.disableInline }
     this.disableInline = options.disableInline
     this.async = true
     this.fallback = new LogicEngine(methods, options)
+
+    if (!this.isData) {
+      if (!options.permissive) this.isData = () => false
+      else this.isData = (data, key) => !(key in this.methods)
+    }
+
+    this.fallback.isData = this.isData
   }
 
   /**
@@ -43,39 +50,42 @@ class AsyncLogicEngine {
   async _parse (logic, context, above) {
     const [func] = Object.keys(logic)
     const data = logic[func]
-    if (this.methods[func]) {
-      if (typeof this.methods[func] === 'function') {
-        const input = await this.run(data, context, { above })
-        if (this.options.yieldSupported && (await checkYield(input))) {
-          return { result: input, func }
-        }
-        const result = await this.methods[func](input, context, above, this)
-        return { result: Array.isArray(result) ? Promise.all(result) : result, func }
+
+    if (this.isData(logic, func)) return { result: logic, func }
+
+    if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+
+    if (typeof this.methods[func] === 'function') {
+      const input = await this.run(data, context, { above })
+      if (this.options.yieldSupported && (await checkYield(input))) {
+        return { result: input, func }
       }
-
-      if (typeof this.methods[func] === 'object') {
-        const { asyncMethod, method, traverse } = this.methods[func]
-        const shouldTraverse =
-          typeof traverse === 'undefined' ? true : traverse
-        const parsedData = shouldTraverse
-          ? await this.run(data, context, { above })
-          : data
-
-        if (this.options.yieldSupported && (await checkYield(parsedData))) {
-          return { result: parsedData, func }
-        }
-
-        const result = await (asyncMethod || method)(
-          parsedData,
-          context,
-          above,
-          this
-        )
-        return { result: Array.isArray(result) ? Promise.all(result) : result, func }
-      }
+      const result = await this.methods[func](input, context, above, this)
+      return { result: Array.isArray(result) ? Promise.all(result) : result, func }
     }
-    if (this.options.permissive) return { result: logic, func }
-    throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+
+    if (typeof this.methods[func] === 'object') {
+      const { asyncMethod, method, traverse } = this.methods[func]
+      const shouldTraverse =
+          typeof traverse === 'undefined' ? true : traverse
+      const parsedData = shouldTraverse
+        ? await this.run(data, context, { above })
+        : data
+
+      if (this.options.yieldSupported && (await checkYield(parsedData))) {
+        return { result: parsedData, func }
+      }
+
+      const result = await (asyncMethod || method)(
+        parsedData,
+        context,
+        above,
+        this
+      )
+      return { result: Array.isArray(result) ? Promise.all(result) : result, func }
+    }
+
+    throw new Error(`Method '${func}' is not set up properly.`)
   }
 
   /**
