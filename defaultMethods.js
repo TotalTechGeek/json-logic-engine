@@ -18,7 +18,8 @@ function isDeterministic (method, engine, buildState) {
     const func = Object.keys(method)[0]
     const lower = method[func]
 
-    if (!engine.methods[func] && engine.options.permissive) return true
+    if (engine.isData(method, func)) return true
+    if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (engine.methods[func].traverse === false) {
       return typeof engine.methods[func].deterministic === 'function'
