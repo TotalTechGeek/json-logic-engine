@@ -365,9 +365,9 @@ const defaultMethods = {
     },
     traverse: false
   },
-  not: (value) => !value,
-  '!': (value) => !value,
-  '!!': (value) => Boolean(value),
+  not: (value) => Array.isArray(value) ? !value[0] : !value,
+  '!': (value) => Array.isArray(value) ? !value[0] : !value,
+  '!!': (value) => Boolean(Array.isArray(value) ? value[0] : value),
   cat: (arr) => (typeof arr === 'string' ? arr : arr.join('')),
   keys: (obj) => Object.keys(obj),
   eachKey: {
@@ -793,10 +793,12 @@ defaultMethods.not.compile = defaultMethods['!'].compile = function (
   data,
   buildState
 ) {
+  if (Array.isArray(data)) return `(!(${buildString(data[0], buildState)}))`
   return `(!(${buildString(data, buildState)}))`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['!!'].compile = function (data, buildState) {
+  if (Array.isArray(data)) return `(!!(${buildString(data[0], buildState)}))`
   return `(!!(${buildString(data, buildState)}))`
 }
 defaultMethods.none.deterministic = defaultMethods.some.deterministic
