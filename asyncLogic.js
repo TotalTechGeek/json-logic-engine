@@ -223,7 +223,7 @@ class AsyncLogicEngine {
       }, top !== true && isSync(constructedFunction))
       // we can avoid the async pool if the constructed function is synchronous since the data
       // can't be updated :)
-      if (top === true && constructedFunction && !constructedFunction[Sync]) {
+      if (top === true && constructedFunction && !constructedFunction[Sync] && typeof constructedFunction === 'function') {
         // we use this async pool so that we can execute these in parallel without having
         // concerns about the data.
         return asyncPool({
