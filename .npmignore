@@ -4,3 +4,8 @@ coverage
 .vscode
 .npmrc
 bench/node_modules/
+bench/
+.github/
+.eslintrc.json
+perf*.js
+*.test.js
