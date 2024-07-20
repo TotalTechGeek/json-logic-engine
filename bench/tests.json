@@ -1986,6 +1986,46 @@
     null,
     "apple"
   ],
+  "Arrays with logic",
+  [
+    [
+      1,
+      {
+        "var": "x"
+      },
+      3
+    ],
+    {
+      "x": 2
+    },
+    [
+      1,
+      2,
+      3
+    ]
+  ],
+  [
+    {
+      "if": [
+        {
+          "var": "x"
+        },
+        [
+          {
+            "var": "y"
+          }
+        ],
+        99
+      ]
+    },
+    {
+      "x": true,
+      "y": 42
+    },
+    [
+      42
+    ]
+  ],
   "# Compound Tests",
   [
     {
@@ -2972,6 +3012,38 @@
       ]
     },
     10
+  ],
+  [
+    {
+      "reduce": [
+        {
+          "var": "integers"
+        },
+        {
+          "+": [
+            {
+              "var": "current"
+            },
+            {
+              "var": "accumulator"
+            }
+          ]
+        },
+        {
+          "var": "start_with"
+        }
+      ]
+    },
+    {
+      "integers": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "start_with": 59
+    },
+    69
   ],
   [
     {

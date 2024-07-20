@@ -42,6 +42,7 @@ function createYieldingControl (name, method, asyncMethod) {
         arr = input.arr
         cur = input.cur
       }
+      cur = engine.run(cur, context, { above })
       const executed = method(input, context, above, engine)
       const iter = new ReduceIterator(arr, cur, executed)
       while (!iter.done()) {
@@ -63,6 +64,7 @@ function createYieldingControl (name, method, asyncMethod) {
         arr = input.arr
         cur = input.cur
       }
+      cur = await engine.run(cur, context, { above })
       const executed = asyncMethod(input, context, above, engine)
       const iter = new AsyncReduceIterator(arr, cur, executed)
       while (!iter.done()) {
@@ -316,6 +318,7 @@ function createArrayIterativeMethod (
         cur = input.cur
         map = input.map
       }
+      cur = engine.run(cur, context, { above })
       const executed = method(input, context, above, engine)
       const iter = new ReduceIterator(arr, cur, executed)
       iter.map = map
@@ -364,6 +367,7 @@ function createArrayIterativeMethod (
         cur = input.cur
         map = input.map
       }
+      cur = await engine.run(cur, context, { above })
       const executed = asyncMethod(input, context, above, engine)
       const iter = new AsyncReduceIterator(arr, cur, executed)
       iter.map = map
