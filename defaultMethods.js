@@ -369,7 +369,7 @@ const defaultMethods = {
   '!': (value) => Array.isArray(value) ? !value[0] : !value,
   '!!': (value) => Boolean(Array.isArray(value) ? value[0] : value),
   cat: (arr) => (typeof arr === 'string' ? arr : arr.join('')),
-  keys: (obj) => Object.keys(obj),
+  keys: (obj) => typeof obj === 'object' ? Object.keys(obj) : [],
   eachKey: {
     traverse: false,
     method: (object, context, above, engine) => {

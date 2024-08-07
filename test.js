@@ -652,6 +652,12 @@ modes.forEach((logic) => {
       })
 
       expect(answer).toStrictEqual(['a', 'b'])
+
+      const answer2 = logic.run({
+        keys: 'foo'
+      })
+
+      expect(answer2).toStrictEqual([])
     })
 
     test('substr', () => {
