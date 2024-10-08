@@ -826,6 +826,17 @@ modes.forEach((logic) => {
       ).toBe(null)
     })
 
+    test('allow access to objects named as their methods', async () => {
+      expect(
+        await logic.run(
+          {
+            var: 'toString'
+          },
+          {toString: 'hello'}
+        )
+      ).toBe("hello")
+    })
+
     test('allow access to functions on objects when enabled', async () => {
       logic.allowFunctions = true
       expect(
