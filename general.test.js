@@ -126,6 +126,25 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { 'b.c': 2 }, key: 'b\\.c' }, 2)
   })
 
+  it('is able to avoid returning functions', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'toString' }, 'hello', null)
+  })
+
+  it('is able to return functions if enabled', async () => {
+    try {
+      for (const engine of [...normalEngines, ...permissiveEngines]) {
+        engine.allowFunctions = true
+        engine.addMethod('typeof', (value) => typeof value)
+        await testEngine(engine, { typeof: { var: 'toString' } }, 'hello', 'function')
+      }
+    } finally {
+      for (const engine of [...normalEngines, ...permissiveEngines]) {
+        engine.allowFunctions = false
+        delete engine.methods.typeof
+      }
+    }
+  })
+
   it('is able to handle path escaping in a var call', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'hello\\.world' }, { 'hello.world': 2 }, 2)
   })
