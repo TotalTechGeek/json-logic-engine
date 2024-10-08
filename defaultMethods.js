@@ -217,7 +217,7 @@ const defaultMethods = {
         return notFound
       }
     }
-    if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
+    if (engine.allowFunctions || typeof context !== 'function') {
       return context
     }
     return null
