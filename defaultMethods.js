@@ -862,18 +862,22 @@ defaultMethods.var.compile = function (data, buildState) {
     const pieces = splitPath(key)
     const [top] = pieces
     buildState.varTop.add(top)
+
+    if (!buildState.engine.allowFunctions) buildState.methods.preventFunctions = a => typeof a === 'function' ? null : a
+    else buildState.methods.preventFunctions = a => a
+
     // support older versions of node
     if (!chainingSupported) {
-      return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
+      return `(methods.preventFunctions(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
         (text, i) => {
           return `(${text}||0)[${JSON.stringify(i)}]`
         },
         '(context||0)'
-      )}, ${buildString(defaultValue, buildState)}))`
+      )}, ${buildString(defaultValue, buildState)})))`
     }
-    return `(context${pieces
+    return `(methods.preventFunctions(context${pieces
       .map((i) => `?.[${JSON.stringify(i)}]`)
-      .join('')} ?? ${buildString(defaultValue, buildState)})`
+      .join('')} ?? ${buildString(defaultValue, buildState)}))`
   }
   buildState.useContext = true
   return false
