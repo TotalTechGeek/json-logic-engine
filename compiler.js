@@ -256,7 +256,12 @@ function buildString (method, buildState = {}) {
   }
 
   if (Array.isArray(method)) {
-    return '[' + method.map((i) => buildString(i, buildState)).join(', ') + ']'
+    let res = ''
+    for (let i = 0; i < method.length; i++) {
+      if (i > 0) res += ','
+      res += buildString(method[i], buildState)
+    }
+    return '[' + res + ']'
   }
 
   let asyncDetected = false

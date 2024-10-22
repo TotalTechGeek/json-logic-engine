@@ -782,9 +782,9 @@ defaultMethods.cat.compile = function (data, buildState) {
   if (typeof data === 'string') {
     return JSON.stringify(data)
   } else if (Array.isArray(data)) {
-    return `(${['', ...data]
-      .map((i) => buildString(i, buildState))
-      .join(' + ')})`
+    let res = "''"
+    for (let i = 0; i < data.length; i++) res += `+ ${buildString(data[i], buildState)}`
+    return `(${res})`
   }
   return false
 }
