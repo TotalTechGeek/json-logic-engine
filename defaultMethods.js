@@ -505,7 +505,7 @@ Object.keys(defaultMethods).forEach((item) => {
 })
 // @ts-ignore Allow custom attribute
 defaultMethods.var.deterministic = (data, buildState) => {
-  return buildState.insideIterator && !String(data).includes('../')
+  return buildState.insideIterator && !String(data).includes('../../')
 }
 Object.assign(defaultMethods.var, { traverse: false })
 Object.assign(defaultMethods.missing, {
