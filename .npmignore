@@ -9,3 +9,4 @@ bench/
 .eslintrc.json
 perf*.js
 *.test.js
+experiments/

@@ -154,6 +154,15 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\\\foo' }, { '\\foo': 2 }, 2)
   })
 
+  it('is able to access the index in the iterators', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../index' }] }] }, {}, [0, 2, 4, 6])
+  })
+
+  // This is not fully supported right now.
+  // it('is able to access the source array in the iterators', async () => {
+  //   for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../item.2' }] }] }, {}, [2, 3, 4, 5])
+  // })
+
   it('should be able to handle various instances of "in" with good, bad and invalid data', async () => {
     const rule = {
       in: ['Spring', { var: 'city' }]

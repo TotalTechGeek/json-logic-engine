@@ -28,6 +28,7 @@ import asyncIterators from './async_iterators.js'
  * @property {*} [yieldUsed]
  * @property {Boolean} [useContext]
  * @property {Boolean} [avoidInlineAsync]
+ * @property {string} [extraArguments]
  *
  */
 
@@ -497,7 +498,7 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
-  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync) => ${buildState.asyncDetected ? 'async' : ''} (context ${
+  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''} ${
     buildState.yieldUsed ? ', resumable = {}' : ''
   }) => { ${copyStateCall} const result = ${str}; return result }`
 

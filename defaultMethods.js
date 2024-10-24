@@ -443,9 +443,9 @@ function createArrayIterativeMethod (name) {
         engine.run(selector, context, {
           above
         }) || []
-      return selector[name]((i) => {
+      return selector[name]((i, index) => {
         return engine.run(mapper, i, {
-          above: [selector, context, ...above]
+          above: [{ item: selector, index }, context, ...above]
         })
       })
     },
@@ -456,9 +456,9 @@ function createArrayIterativeMethod (name) {
         (await engine.run(selector, context, {
           above
         })) || []
-      return asyncIterators[name](selector, (i) => {
+      return asyncIterators[name](selector, (i, index) => {
         return engine.run(mapper, i, {
-          above: [selector, context, ...above]
+          above: [{ item: selector, index }, context, ...above]
         })
       })
     },
@@ -470,8 +470,9 @@ function createArrayIterativeMethod (name) {
       const mapState = {
         ...buildState,
         state: {},
-        above: [selector, state, ...above],
-        avoidInlineAsync: true
+        above: [{ item: selector }, state, ...above],
+        avoidInlineAsync: true,
+        iteratorCompile: true
       }
       mapper = build(mapper, mapState)
       buildState.useContext = buildState.useContext || mapState.useContext
@@ -841,6 +842,11 @@ defaultMethods.var.compile = function (data, buildState) {
     typeof data === 'number' ||
     (Array.isArray(data) && data.length <= 2)
   ) {
+    if (data === '../index' && buildState.iteratorCompile) {
+      buildState.extraArguments = 'index'
+      return 'index'
+    }
+
     if (Array.isArray(data)) {
       key = data[0]
       defaultValue = typeof data[1] === 'undefined' ? null : data[1]
