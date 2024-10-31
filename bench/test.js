@@ -1,7 +1,7 @@
 import { LogicEngine, AsyncLogicEngine } from '../index.js'
 import fs from 'fs'
 import { isDeepStrictEqual } from 'util'
-import traverseCopy from '../utilities/traverseCopy.js'
+// import traverseCopy from '../utilities/traverseCopy.js'
 import jl from 'json-logic-js'
 
 const x = new LogicEngine()
@@ -60,28 +60,7 @@ const defined = [
   [{ '*': [{ var: 'x' }, { var: 'y' }] }, { x: 1, y: 3 }, 3]
 ]
 const tests = defined || compatible
-const other =
-  tests ||
-  traverseCopy(tests, [], {
-    mutateKey: (i) => {
-      if (i === 'map') {
-        return 'mapYield'
-      }
-      if (i === 'reduce') {
-        return 'reduceYield'
-      }
-      if (i === 'filter') {
-        return 'filterYield'
-      }
-      if (i === 'every') {
-        return 'everyYield'
-      }
-      if (i === 'some') {
-        return 'someYield'
-      }
-      return i
-    }
-  })
+const other = tests
 const built = other.map((i) => {
   return x.build(i[0])
 })

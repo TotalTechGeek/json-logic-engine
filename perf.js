@@ -1,5 +1,5 @@
 import { AsyncLogicEngine } from './index.js'
-const x = new AsyncLogicEngine(undefined, { yieldSupported: false })
+const x = new AsyncLogicEngine(undefined)
 async function test () {
   const logic = {
     if: [

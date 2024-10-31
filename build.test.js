@@ -13,7 +13,11 @@ function timeout (n, x) {
   new LogicEngine(),
   new AsyncLogicEngine(),
   new LogicEngine(undefined, { disableInline: true }),
-  new AsyncLogicEngine(undefined, { disableInline: true })
+  new AsyncLogicEngine(undefined, { disableInline: true }),
+  new LogicEngine(undefined, { disableInterpretedOptimization: true, disableInline: true }),
+  new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true, disableInline: true }),
+  new LogicEngine(undefined, { disableInterpretedOptimization: true }),
+  new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true })
 ].forEach((logic) => {
   describe('Simple built functions', () => {
     test('Simple Addition', async () => {
@@ -219,17 +223,6 @@ function timeout (n, x) {
       expect(await f({ x: 1 })).toStrictEqual([2, 3, 4])
     })
 
-    test('Simple mapYield (w/ handlebars traversal)', async () => {
-      const f = await logic.build({
-        mapYield: [
-          [1, 2, 3],
-          { '+': [{ var: '' }, { var: '../../x' }, { preserve: 0 }] }
-        ]
-      })
-
-      expect(await f({ x: 1 })).toStrictEqual([2, 3, 4])
-    })
-
     test('Simple eachKey', async () => {
       const f = await logic.build({
         eachKey: { a: { var: 'x' }, b: { var: 'y' } }
@@ -267,17 +260,6 @@ describe('Testing async build with full async', () => {
   test('Simple async map (w/ handlebars traversal)', async () => {
     const f = await logic.build({
       map: [
-        [1, 2, 3],
-        { '+': [{ as1: { var: '' } }, { var: '../../x' }, { preserve: 0 }] }
-      ]
-    })
-
-    expect(await f({ x: 1 })).toStrictEqual([3, 4, 5])
-  })
-
-  test('Simple async mapYield (w/ handlebars traversal)', async () => {
-    const f = await logic.build({
-      mapYield: [
         [1, 2, 3],
         { '+': [{ as1: { var: '' } }, { var: '../../x' }, { preserve: 0 }] }
       ]

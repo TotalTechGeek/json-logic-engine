@@ -1,12 +1,8 @@
 import { AsyncLogicEngine } from './index.js'
-import YieldStructure from './structures/Yield.js'
-import EngineObject from './structures/EngineObject.js'
 
 const modes = [
   new AsyncLogicEngine(),
-  new AsyncLogicEngine(undefined, {
-    yieldSupported: true
-  })
+  new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true })
 ]
 
 modes.forEach((logic) => {
@@ -832,9 +828,9 @@ modes.forEach((logic) => {
           {
             var: 'toString'
           },
-          {toString: 'hello'}
+          { toString: 'hello' }
         )
-      ).toBe("hello")
+      ).toBe('hello')
     })
 
     test('allow access to functions on objects when enabled', async () => {
@@ -849,65 +845,4 @@ modes.forEach((logic) => {
       ).toBe('hello'.toString)
     })
   })
-
-  if (logic.options.yieldSupported) {
-    describe('Yield technology', () => {
-      test('Yield if variable does not exist', async () => {
-        logic.addMethod(
-          'yieldVar',
-          (key, context, above, engine) => {
-            if (!key) return context
-
-            if (typeof context !== 'object' && key.startsWith('../')) {
-              return engine.methods.var(
-                key.substring(3),
-                above,
-                undefined,
-                engine
-              )
-            }
-
-            if (engine.allowFunctions || typeof (context && context[key]) !== 'function') {
-              if (!(key in context)) {
-                return new YieldStructure({
-                  message: 'Data does not exist in context.'
-                })
-              }
-              return context[key]
-            }
-          },
-          { sync: true }
-        )
-
-        const script = {
-          '+': [1, { '+': [1, 2, 3] }, { yieldVar: 'a' }]
-        }
-
-        const instance = await logic.run(script)
-
-        expect(instance instanceof EngineObject).toBe(true)
-
-        expect(instance.yields().map((i) => ({ ...i }))).toStrictEqual([
-          {
-            _input: null,
-            message: 'Data does not exist in context.',
-            _logic: { yieldVar: 'a' },
-            resumable: null
-          }
-        ])
-
-        expect(instance.logic()).toStrictEqual({
-          '+': [1, 6, { yieldVar: 'a' }]
-        })
-
-        expect(
-          await logic.run(instance.logic(), {
-            a: 1
-          })
-        ).toBe(8)
-
-        expect(await logic.run(script, { a: 1 })).toBe(8)
-      })
-    })
-  }
 })

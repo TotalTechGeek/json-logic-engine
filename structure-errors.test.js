@@ -2,9 +2,7 @@ import InvalidControlInput from './errors/InvalidControlInput.js'
 import { LogicEngine, AsyncLogicEngine } from './index.js'
 const engines = [
   new LogicEngine(),
-  new AsyncLogicEngine(),
-  new LogicEngine(undefined, { yieldSupported: true }),
-  new AsyncLogicEngine(undefined, { yieldSupported: true })
+  new AsyncLogicEngine()
 ]
 describe('Test throwing errors for dynamic control structures', () => {
   engines.forEach((engine) => {

@@ -1,16 +1,14 @@
 // @ts-check
 'use strict'
 
-import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
-import YieldStructure from './structures/Yield.js'
-import EngineObject from './structures/EngineObject.js'
 import LogicEngine from './logic.js'
 import asyncPool from './asyncPool.js'
 import { Sync, isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { buildAsync } from './compiler.js'
 import omitUndefined from './utilities/omitUndefined.js'
+import { optimize } from './async_optimizer.js'
 
 /**
  * An engine capable of running asynchronous JSON Logic.
@@ -19,18 +17,21 @@ class AsyncLogicEngine {
   /**
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean }} options
+   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: boolean, permissive?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
-    options = { yieldSupported: false, disableInline: false, permissive: false }
+    options = { disableInline: false, disableInterpretedOptimization: false, permissive: false }
   ) {
     this.methods = { ...methods }
-    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean }} */
-    this.options = { yieldSupported: options.yieldSupported, disableInline: options.disableInline }
+    /** @type {{disableInline?: Boolean, disableInterpretedOptimization?: Boolean }} */
+    this.options = { disableInline: options.disableInline, disableInterpretedOptimization: options.disableInterpretedOptimization }
     this.disableInline = options.disableInline
+    this.disableInterpretedOptimization = options.disableInterpretedOptimization
     this.async = true
     this.fallback = new LogicEngine(methods, options)
+    this.optimizedMap = new WeakMap()
+    this.missesSinceSeen = 0
 
     if (!this.isData) {
       if (!options.permissive) this.isData = () => false
@@ -57,9 +58,7 @@ class AsyncLogicEngine {
 
     if (typeof this.methods[func] === 'function') {
       const input = await this.run(data, context, { above })
-      if (this.options.yieldSupported && (await checkYield(input))) {
-        return { result: input, func }
-      }
+
       const result = await this.methods[func](input, context, above, this)
       return { result: Array.isArray(result) ? Promise.all(result) : result, func }
     }
@@ -71,10 +70,6 @@ class AsyncLogicEngine {
       const parsedData = shouldTraverse
         ? await this.run(data, context, { above })
         : data
-
-      if (this.options.yieldSupported && (await checkYield(parsedData))) {
-        return { result: parsedData, func }
-      }
 
       const result = await (asyncMethod || method)(
         parsedData,
@@ -92,12 +87,12 @@ class AsyncLogicEngine {
    *
    * @param {String} name The name of the method being added.
    * @param {Function|{ traverse?: Boolean, method?: Function, asyncMethod?: Function, deterministic?: Function | Boolean }} method
-   * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
+   * @param {{ deterministic?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
   addMethod (
     name,
     method,
-    { deterministic, async, sync, yields, useContext } = {}
+    { deterministic, async, sync, useContext } = {}
   ) {
     if (typeof async === 'undefined' && typeof sync === 'undefined') sync = false
     if (typeof sync !== 'undefined') async = !sync
@@ -113,9 +108,9 @@ class AsyncLogicEngine {
       method = { ...method }
     }
 
-    Object.assign(method, omitUndefined({ yields, deterministic, useContext }))
+    Object.assign(method, omitUndefined({ deterministic, useContext }))
     // @ts-ignore
-    this.fallback.addMethod(name, method, { deterministic, yields, useContext })
+    this.fallback.addMethod(name, method, { deterministic, useContext })
     this.methods[name] = declareSync(method, sync)
   }
 
@@ -123,7 +118,7 @@ class AsyncLogicEngine {
    * Adds a batch of functions to the engine
    * @param {String} name
    * @param {Object} obj
-   * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
+   * @param {{ deterministic?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
    */
   addModule (name, obj, annotations = {}) {
     Object.getOwnPropertyNames(obj).forEach((key) => {
@@ -138,6 +133,14 @@ class AsyncLogicEngine {
   }
 
   /**
+   * Runs the logic against the data.
+   *
+   * NOTE: With interpreted optimizations enabled, it will cache the execution plan for the logic for
+   * future invocations; if you plan to modify the logic, you should disable this feature, by passing
+   * `disableInterpretedOptimization: true` in the constructor.
+   *
+   * If it detects that a bunch of dynamic objects are being passed in, and it doesn't see the same object,
+   * it will disable the interpreted optimization.
    *
    * @param {*} logic The logic to be executed
    * @param {*} data The data being passed in to the logic to be executed against.
@@ -146,39 +149,35 @@ class AsyncLogicEngine {
    */
   async run (logic, data = {}, options = {}) {
     const { above = [] } = options
+
+    // OPTIMIZER BLOCK //
+    if (this.missesSinceSeen > 500) {
+      this.disableInterpretedOptimization = true
+      this.missesSinceSeen = 0
+    }
+
+    if (!this.disableInterpretedOptimization && typeof logic === 'object' && logic && !this.optimizedMap.has(logic)) {
+      this.optimizedMap.set(logic, optimize(logic, this, above))
+      this.missesSinceSeen++
+      return typeof this.optimizedMap.get(logic) === 'function' ? this.optimizedMap.get(logic)(data, above) : this.optimizedMap.get(logic)
+    }
+
+    if (!this.disableInterpretedOptimization && logic && typeof logic === 'object' && this.optimizedMap.get(logic)) {
+      this.missesSinceSeen = 0
+      return typeof this.optimizedMap.get(logic) === 'function' ? this.optimizedMap.get(logic)(data, above) : this.optimizedMap.get(logic)
+    }
+    // END OPTIMIZER BLOCK //
+
     if (Array.isArray(logic)) {
       const result = await Promise.all(
         logic.map((i) => this.run(i, data, { above }))
       )
 
-      if (this.options.yieldSupported && (await checkYield(result))) {
-        return new EngineObject({
-          result
-        })
-      }
-
       return result
     }
 
     if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) {
-      const { func, result } = await this._parse(logic, data, above)
-
-      if (this.options.yieldSupported && (await checkYield(result))) {
-        if (result instanceof YieldStructure) {
-          if (result._input) {
-            result._logic = { [func]: result._input }
-          }
-          if (!result._logic) {
-            result._logic = logic
-          }
-          return result
-        }
-
-        return new EngineObject({
-          result: { [func]: result.data.result }
-        })
-      }
-
+      const { result } = await this._parse(logic, data, above)
       return result
     }
 

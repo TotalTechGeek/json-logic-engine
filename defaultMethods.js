@@ -7,7 +7,6 @@ import declareSync from './utilities/declareSync.js'
 import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
 import InvalidControlInput from './errors/InvalidControlInput.js'
-import YieldingIterators from './yieldingIterators.js'
 import { splitPath } from './utilities/splitPath.js'
 
 function isDeterministic (method, engine, buildState) {
@@ -443,6 +442,7 @@ function createArrayIterativeMethod (name) {
         engine.run(selector, context, {
           above
         }) || []
+
       return selector[name]((i, index) => {
         return engine.run(mapper, i, {
           above: [{ item: selector, index }, context, ...above]
@@ -507,7 +507,6 @@ Object.keys(defaultMethods).forEach((item) => {
 defaultMethods.var.deterministic = (data, buildState) => {
   return buildState.insideIterator && !String(data).includes('../../')
 }
-Object.assign(defaultMethods.var, { traverse: false })
 Object.assign(defaultMethods.missing, {
   deterministic: false,
   useContext: true
@@ -890,6 +889,5 @@ defaultMethods.var.compile = function (data, buildState) {
 }
 
 export default {
-  ...defaultMethods,
-  ...YieldingIterators
+  ...defaultMethods
 }

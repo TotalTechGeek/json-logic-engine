@@ -1,13 +1,12 @@
 // @ts-check
 'use strict'
 
-import checkYield from './utilities/checkYield.js'
 import defaultMethods from './defaultMethods.js'
-import YieldStructure from './structures/Yield.js'
-import EngineObject from './structures/EngineObject.js'
+
 import { build } from './compiler.js'
 import declareSync from './utilities/declareSync.js'
 import omitUndefined from './utilities/omitUndefined.js'
+import { optimize } from './optimizer.js'
 
 /**
  * An engine capable of running synchronous JSON Logic.
@@ -16,19 +15,26 @@ class LogicEngine {
   /**
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ yieldSupported?: Boolean, disableInline?: Boolean, permissive?: boolean }} options
+   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: Boolean, permissive?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
-    options = { yieldSupported: false, disableInline: false, permissive: false }
+    options = { disableInline: false, disableInterpretedOptimization: false, permissive: false }
   ) {
     this.disableInline = options.disableInline
+    this.disableInterpretedOptimization = options.disableInterpretedOptimization
     this.methods = { ...methods }
-    /** @type {{yieldSupported?: Boolean, disableInline?: Boolean }} */
-    this.options = { yieldSupported: options.yieldSupported, disableInline: options.disableInline }
+
+    this.optimizedMap = new WeakMap()
+    this.missesSinceSeen = 0
+
+    /** @type {{ disableInline?: Boolean, disableInterpretedOptimization?: Boolean }} */
+    this.options = { disableInline: options.disableInline, disableInterpretedOptimization: options.disableInterpretedOptimization }
     if (!this.isData) {
       if (!options.permissive) this.isData = () => false
-      else this.isData = (data, key) => !(key in this.methods)
+      else {
+        this.isData = (data, key) => !(key in this.methods)
+      }
     }
   }
 
@@ -49,7 +55,6 @@ class LogicEngine {
 
     if (typeof this.methods[func] === 'function') {
       const input = this.run(data, context, { above })
-      if (this.options.yieldSupported && checkYield(input)) return { result: input, func }
       return { result: this.methods[func](input, context, above, this), func }
     }
 
@@ -59,7 +64,7 @@ class LogicEngine {
       const parsedData = shouldTraverse
         ? this.run(data, context, { above })
         : data
-      if (this.options.yieldSupported && checkYield(parsedData)) return { result: parsedData, func }
+
       return { result: method(parsedData, context, above, this), func }
     }
 
@@ -70,16 +75,16 @@ class LogicEngine {
    *
    * @param {String} name The name of the method being added.
    * @param {Function|{ traverse?: Boolean, method: Function, deterministic?: Function | Boolean }} method
-   * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
+   * @param {{ deterministic?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod (name, method, { deterministic, yields, useContext } = {}) {
+  addMethod (name, method, { deterministic, useContext } = {}) {
     if (typeof method === 'function') {
       method = { method, traverse: true }
     } else {
       method = { ...method }
     }
 
-    Object.assign(method, omitUndefined({ yields, useContext, deterministic }))
+    Object.assign(method, omitUndefined({ useContext, deterministic }))
     this.methods[name] = declareSync(method)
   }
 
@@ -87,7 +92,7 @@ class LogicEngine {
    * Adds a batch of functions to the engine
    * @param {String} name
    * @param {Object} obj
-   * @param {{ deterministic?: Boolean, yields?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
+   * @param {{ deterministic?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
    */
   addModule (name, obj, annotations) {
     Object.getOwnPropertyNames(obj).forEach((key) => {
@@ -102,6 +107,14 @@ class LogicEngine {
   }
 
   /**
+   * Runs the logic against the data.
+   *
+   * NOTE: With interpreted optimizations enabled, it will cache the execution plan for the logic for
+   * future invocations; if you plan to modify the logic, you should disable this feature, by passing
+   * `disableInterpretedOptimization: true` in the constructor.
+   *
+   * If it detects that a bunch of dynamic objects are being passed in, and it doesn't see the same object,
+   * it will disable the interpreted optimization.
    *
    * @param {*} logic The logic to be executed
    * @param {*} data The data being passed in to the logic to be executed against.
@@ -110,33 +123,32 @@ class LogicEngine {
    */
   run (logic, data = {}, options = {}) {
     const { above = [] } = options
-    if (Array.isArray(logic)) {
-      const result = logic.map((i) => this.run(i, data, { above }))
-      if (this.options.yieldSupported && checkYield(result)) {
-        return new EngineObject({
-          result
-        })
-      }
-      return result
+
+    // OPTIMIZER BLOCK //
+    if (this.missesSinceSeen > 500) {
+      this.disableInterpretedOptimization = true
+      this.missesSinceSeen = 0
     }
+
+    if (!this.disableInterpretedOptimization && typeof logic === 'object' && logic && !this.optimizedMap.has(logic)) {
+      this.optimizedMap.set(logic, optimize(logic, this, above))
+      this.missesSinceSeen++
+      return typeof this.optimizedMap.get(logic) === 'function' ? this.optimizedMap.get(logic)(data, above) : this.optimizedMap.get(logic)
+    }
+
+    if (!this.disableInterpretedOptimization && logic && typeof logic === 'object' && this.optimizedMap.get(logic)) {
+      this.missesSinceSeen = 0
+      return typeof this.optimizedMap.get(logic) === 'function' ? this.optimizedMap.get(logic)(data, above) : this.optimizedMap.get(logic)
+    }
+    // END OPTIMIZER BLOCK //
+
+    if (Array.isArray(logic)) return logic.map((i) => this.run(i, data, { above }))
+
     if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) {
-      const { func, result } = this._parse(logic, data, above)
-      if (this.options.yieldSupported && checkYield(result)) {
-        if (result instanceof YieldStructure) {
-          if (result._input) {
-            result._logic = { [func]: result._input }
-          }
-          if (!result._logic) {
-            result._logic = logic
-          }
-          return result
-        }
-        return new EngineObject({
-          result: { [func]: result.data.result }
-        })
-      }
+      const { result } = this._parse(logic, data, above)
       return result
     }
+
     return logic
   }
 

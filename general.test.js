@@ -5,15 +5,15 @@ import { LogicEngine, AsyncLogicEngine } from './index.js'
 const normalEngines = [
   new LogicEngine(),
   new AsyncLogicEngine(),
-  new LogicEngine(undefined, { yieldSupported: true }),
-  new AsyncLogicEngine(undefined, { yieldSupported: true })
+  new LogicEngine(undefined, { disableInterpretedOptimization: true }),
+  new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true })
 ]
 
 const permissiveEngines = [
   new LogicEngine(undefined, { permissive: true }),
   new AsyncLogicEngine(undefined, { permissive: true }),
-  new LogicEngine(undefined, { yieldSupported: true, permissive: true }),
-  new AsyncLogicEngine(undefined, { yieldSupported: true, permissive: true })
+  new LogicEngine(undefined, { disableInterpretedOptimization: true, permissive: true }),
+  new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true, permissive: true })
 ]
 
 async function testEngineAsync (engine, rule, data, expected, matcher = 'deepStrictEqual') {
@@ -156,6 +156,16 @@ describe('Various Test Cases', () => {
 
   it('is able to access the index in the iterators', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../index' }] }] }, {}, [0, 2, 4, 6])
+  })
+
+  it('disables interpreted optimization when it realizes it will not be faster', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) {
+      const disableInterpretedOptimization = engine.disableInterpretedOptimization
+      for (let i = 0; i < 10e3; i++) await engine.run({ '+': [1, 2] }, {})
+      assert.strictEqual(engine.disableInterpretedOptimization, true)
+      // Resets back to the original value.
+      engine.disableInterpretedOptimization = disableInterpretedOptimization
+    }
   })
 
   // This is not fully supported right now.

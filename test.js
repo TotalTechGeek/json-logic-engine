@@ -1,13 +1,6 @@
 import { LogicEngine } from './index.js'
-import YieldStructure from './structures/Yield.js'
-import EngineObject from './structures/EngineObject.js'
 
-const modes = [
-  new LogicEngine(),
-  new LogicEngine(undefined, {
-    yieldSupported: true
-  })
-]
+const modes = [new LogicEngine(), new LogicEngine(undefined, { disableInterpretedOptimization: true })]
 
 modes.forEach((logic) => {
   describe('+', () => {
@@ -878,54 +871,4 @@ modes.forEach((logic) => {
       ).toBe('hello'.toString)
     })
   })
-
-  if (logic.options.yieldSupported) {
-    describe('Yield technology', () => {
-      test('Yield if variable does not exist', () => {
-        logic.addMethod('yieldVar', (key, context, above, engine) => {
-          if (!key) return context
-          if (typeof context !== 'object' && key.startsWith('../')) {
-            return engine.methods.var(
-              key.substring(3),
-              above,
-              undefined,
-              engine
-            )
-          }
-          if (engine.allowFunctions || typeof context[key] !== 'function') {
-            if (!(key in context)) {
-              return new YieldStructure({
-                message: 'Data does not exist in context.'
-              })
-            }
-            return context[key]
-          }
-        })
-
-        const script = {
-          '+': [1, { '+': [1, 2, 3] }, { yieldVar: 'a' }]
-        }
-        const instance = logic.run(script)
-        expect(instance instanceof EngineObject).toBe(true)
-        expect(instance.yields().map((i) => ({ ...i }))).toStrictEqual([
-          {
-            _input: null,
-            message: 'Data does not exist in context.',
-            _logic: { yieldVar: 'a' },
-            resumable: null
-          }
-        ])
-        expect(instance.logic()).toStrictEqual({
-          '+': [1, 6, { yieldVar: 'a' }]
-        })
-
-        expect(
-          logic.run(instance.logic(), {
-            a: 1
-          })
-        ).toBe(8)
-        expect(logic.run(script, { a: 1 })).toBe(8)
-      })
-    })
-  }
 })

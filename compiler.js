@@ -6,7 +6,6 @@ import {
   // Override is required for the compiler to operate as intended.
   Override
 } from './constants.js'
-import YieldStructure from './structures/Yield.js'
 import declareSync from './utilities/declareSync.js'
 
 // asyncIterators is required for the compiler to operate as intended.
@@ -25,7 +24,6 @@ import asyncIterators from './async_iterators.js'
  * @property {Array} [above]
  * @property {Boolean} [asyncDetected]
  * @property {*} [values]
- * @property {*} [yieldUsed]
  * @property {Boolean} [useContext]
  * @property {Boolean} [avoidInlineAsync]
  * @property {string} [extraArguments]
@@ -54,7 +52,7 @@ function isPrimitive (x, preserveObject) {
  * @param {BuildState} buildState
  * @returns
  */
-function isDeterministic (method, engine, buildState) {
+export function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
     return method.every((i) => isDeterministic(i, engine, buildState))
   }
@@ -64,6 +62,7 @@ function isDeterministic (method, engine, buildState) {
     const lower = method[func]
 
     if (engine.isData(method, func)) return true
+    if (lower === undefined) return true
     if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (engine.methods[func].traverse === false) {
@@ -104,134 +103,6 @@ function isDeepSync (method, engine) {
   return true
 }
 
-/**
- * A function that handles yields by caching the values to resumable object.
- * @param {Function} func
- * @param {*} input
- * @param {String} name
- * @param {Object} resumable
- * @returns
- */
-function r (func, input, name, resumable) {
-  if (resumable[name]) {
-    return resumable[name]
-  }
-  const result = resumable[name + '_input']
-    ? func(resumable[name + '_input'])
-    : func(typeof input === 'function' ? input() : input)
-
-  if (result instanceof YieldStructure) {
-    if (result._input) {
-      resumable[name + '_input'] = result._input
-    }
-    result.resumable = resumable
-    throw result
-  } else {
-    resumable[name] = result
-  }
-
-  return result
-}
-
-/**
- * A function that handles async yields by caching the values to resumable object.
- * @param {Function} func
- * @param {*} input
- * @param {String} name
- * @param {Object} resumable
- * @returns
- */
-async function rAsync (func, input, name, resumable) {
-  if (resumable[name]) {
-    return resumable[name]
-  }
-
-  const result = resumable[name + '_input']
-    ? await func(resumable[name + '_input'])
-    : await func(typeof input === 'function' ? await input() : input)
-
-  if (result instanceof YieldStructure) {
-    if (result._input) {
-      resumable[name + '_input'] = result._input
-    }
-
-    result.resumable = resumable
-    throw result
-  } else {
-    resumable[name] = result
-  }
-
-  return result
-}
-/**
- * Builds a string for a function that may need to yield & resume.
- * @param {String} method
- * @param {BuildState} buildState
- * @returns
- */
-function buildYield (method, buildState = {}) {
-  // todo: add gc so we don't save resumable state for longer than it needs to exist
-  const { notTraversed = [], functions = {}, async, engine } = buildState
-  const func = Object.keys(method)[0]
-  buildState.yieldUsed = (buildState.yieldUsed || 0) + 1
-  let asyncDetected = false
-  buildState.useContext =
-    buildState.useContext || (engine.methods[func] || {}).useContext
-
-  if (typeof engine.methods[func] === 'function') {
-    functions[func] = 1
-    asyncDetected = !isSync(engine.methods[func])
-    const stringBuildState = { ...buildState, avoidInlineAsync: true }
-    const inputStr = buildString(method[func], stringBuildState)
-    buildState.useContext =
-      buildState.useContext || stringBuildState.useContext
-
-    if (asyncDetected || inputStr.includes('await')) {
-      buildState.asyncDetected = buildState.asyncDetected || asyncDetected
-      return `await rAsync(gen["${func}"], async () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
-    }
-
-    return `r(gen["${func}"], () => { return ${inputStr} }, 'yield${buildState.yieldUsed}', resumable)`
-  } else {
-    if (engine.methods[func] && engine.methods[func].traverse) {
-      functions[func] = 1
-      // console.log(async)
-      asyncDetected = Boolean(
-        async && engine.methods[func] && engine.methods[func].asyncMethod
-      )
-
-      const stringBuildState = { ...buildState, avoidInlineAsync: true }
-      const inputStr = buildString(method[func], stringBuildState)
-
-      buildState.useContext =
-        buildState.useContext || stringBuildState.useContext
-
-      if (asyncDetected || inputStr.startsWith('await')) {
-        buildState.asyncDetected = buildState.asyncDetected || asyncDetected
-        return `await rAsync(gen["${func}"], async () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
-      }
-      return `r(gen["${func}"], () => ${inputStr}, 'yield${buildState.yieldUsed}', resumable)`
-    } else {
-      // todo: make build work for yields somehow. The issue is that it pre-binds data, thus making it impossible
-      asyncDetected = Boolean(
-        async && engine.methods[func] && engine.methods[func].asyncMethod
-      )
-      functions[func] = 1
-      notTraversed.push(method[func])
-      buildState.useContext = true
-
-      if (asyncDetected) {
-        buildState.asyncDetected = buildState.asyncDetected || asyncDetected
-        return `await rAsync(gen["${func}"], notTraversed[${
-          notTraversed.length - 1
-        }], 'yield${buildState.yieldUsed}', resumable)`
-      }
-      return `r(gen["${func}"], notTraversed[${
-        notTraversed.length - 1
-      }], 'yield${buildState.yieldUsed}', resumable)`
-    }
-  }
-}
 /**
  * Builds the string for the function that will be evaluated.
  * @param {*} method
@@ -300,14 +171,6 @@ function buildString (method, buildState = {}) {
         processing.push(engine.run(method).then((i) => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
       }
-    }
-
-    if (
-      engine.options.yieldSupported &&
-      engine.methods[func] &&
-      engine.methods[func].yields
-    ) {
-      return buildYield(method, buildState)
     }
 
     if (engine.methods[func] && engine.methods[func].compile) {
@@ -498,25 +361,20 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
-  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''} ${
-    buildState.yieldUsed ? ', resumable = {}' : ''
-  }) => { ${copyStateCall} const result = ${str}; return result }`
+  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync(globalThis.eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators, r, rAsync), !buildState.asyncDetected)
+  return declareSync(globalThis.eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
 }
 
 export { build }
 export { buildAsync }
 export { buildString }
-export { r }
-export { rAsync }
+
 export default {
   build,
   buildAsync,
-  buildString,
-  r,
-  rAsync
+  buildString
 }
