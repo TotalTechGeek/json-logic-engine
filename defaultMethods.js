@@ -7,7 +7,7 @@ import declareSync from './utilities/declareSync.js'
 import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
 import InvalidControlInput from './errors/InvalidControlInput.js'
-import { splitPath } from './utilities/splitPath.js'
+import { splitPathMemoized } from './utilities/splitPath.js'
 
 function isDeterministic (method, engine, buildState) {
   if (Array.isArray(method)) {
@@ -34,17 +34,36 @@ function isDeterministic (method, engine, buildState) {
 }
 
 const defaultMethods = {
-  '+': (data) => [].concat(data).reduce((a, b) => +a + +b, 0),
-  '*': (data) => data.reduce((a, b) => +a * +b),
-  '/': (data) => data.reduce((a, b) => +a / +b),
-
-  '-': (data) =>
-  // @ts-ignore Type checking is incorrect on the following line.
-    ((a) => (a.length === 1 ? (a[0] = -a[0]) : a) & 0 || a)(
-      [].concat(data)
-      // @ts-ignore Type checking is incorrect on the following line.
-    ).reduce((a, b) => +a - +b),
-  '%': (data) => data.reduce((a, b) => +a % +b),
+  '+': (data) => {
+    if (typeof data === 'string') return +data
+    if (typeof data === 'number') return +data
+    let res = 0
+    for (let i = 0; i < data.length; i++) res += +data[i]
+    return res
+  },
+  '*': (data) => {
+    let res = 1
+    for (let i = 0; i < data.length; i++) res *= +data[i]
+    return res
+  },
+  '/': (data) => {
+    let res = data[0]
+    for (let i = 1; i < data.length; i++) res /= +data[i]
+    return res
+  },
+  '-': (data) => {
+    if (typeof data === 'string') return -data
+    if (typeof data === 'number') return -data
+    if (data.length === 1) return -data[0]
+    let res = data[0]
+    for (let i = 1; i < data.length; i++) res -= +data[i]
+    return res
+  },
+  '%': (data) => {
+    let res = data[0]
+    for (let i = 1; i < data.length; i++) res %= +data[i]
+    return res
+  },
   max: (data) => Math.max(...data),
   min: (data) => Math.min(...data),
   in: ([item, array]) => (array || []).includes(item),
@@ -145,8 +164,18 @@ const defaultMethods = {
   '!=': ([a, b]) => a != b,
   '!==': ([a, b]) => a !== b,
   xor: ([a, b]) => a ^ b,
-  or: (arr) => arr.reduce((a, b) => a || b, false),
-  and: (arr) => arr.reduce((a, b) => a && b),
+  or: (arr) => {
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i]) return arr[i]
+    }
+    return arr[arr.length - 1]
+  },
+  and: (arr) => {
+    for (let i = 0; i < arr.length; i++) {
+      if (!arr[i]) return arr[i]
+    }
+    return arr[arr.length - 1]
+  },
   substr: ([string, from, end]) => {
     if (end < 0) {
       const result = string.substr(from)
@@ -163,7 +192,7 @@ const defaultMethods = {
     method: ([data, key, defaultValue], context, above, engine) => {
       const notFound = defaultValue === undefined ? null : defaultValue
 
-      const subProps = splitPath(String(key))
+      const subProps = splitPathMemoized(String(key))
       for (let i = 0; i < subProps.length; i++) {
         if (data === null || data === undefined) {
           return notFound
@@ -205,7 +234,7 @@ const defaultMethods = {
       }
       return null
     }
-    const subProps = splitPath(String(key))
+    const subProps = splitPathMemoized(String(key))
     for (let i = 0; i < subProps.length; i++) {
       if (context === null || context === undefined) {
         return notFound
@@ -815,7 +844,7 @@ defaultMethods.get.compile = function (data, buildState) {
     if (key && typeof key === 'object') return false
 
     key = key.toString()
-    const pieces = splitPath(key)
+    const pieces = splitPathMemoized(key)
     if (!chainingSupported) {
       return `(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
         (text, i) => {
@@ -864,7 +893,7 @@ defaultMethods.var.compile = function (data, buildState) {
       buildState.useContext = true
       return false
     }
-    const pieces = splitPath(key)
+    const pieces = splitPathMemoized(key)
     const [top] = pieces
     buildState.varTop.add(top)
 

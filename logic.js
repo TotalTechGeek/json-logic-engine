@@ -49,13 +49,13 @@ class LogicEngine {
     const [func] = Object.keys(logic)
     const data = logic[func]
 
-    if (this.isData(logic, func)) return { result: logic, func }
+    if (this.isData(logic, func)) return logic
 
     if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (typeof this.methods[func] === 'function') {
       const input = this.run(data, context, { above })
-      return { result: this.methods[func](input, context, above, this), func }
+      return this.methods[func](input, context, above, this)
     }
 
     if (typeof this.methods[func] === 'object') {
@@ -65,7 +65,7 @@ class LogicEngine {
         ? this.run(data, context, { above })
         : data
 
-      return { result: method(parsedData, context, above, this), func }
+      return method(parsedData, context, above, this)
     }
 
     throw new Error(`Method '${func}' is not set up properly.`)
@@ -144,10 +144,7 @@ class LogicEngine {
 
     if (Array.isArray(logic)) return logic.map((i) => this.run(i, data, { above }))
 
-    if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) {
-      const { result } = this._parse(logic, data, above)
-      return result
-    }
+    if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) return this._parse(logic, data, above)
 
     return logic
   }

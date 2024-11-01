@@ -1,3 +1,24 @@
+const parsedPaths = new Map()
+
+/**
+ * Splits a path string into an array of parts; lightly memoized.
+ * It will reset the entire cache after 2048 paths, this could be improved
+ * by implementing an LRU cache or something, but I'm trying to keep
+ * this library fairly dep free, and the code not too cumbersome.
+ *
+ * Memoizing the splitPath function can be seen as cheating, but I think it's likely
+ * that a lot of the same paths will be used for logic, so it's a good optimization.
+ *
+ * @param {string} str
+ * @returns {string[]}
+ */
+export function splitPathMemoized (str) {
+  if (parsedPaths.has(str)) return parsedPaths.get(str)
+  if (parsedPaths.size > 2048) parsedPaths.clear()
+  const parts = splitPath(str)
+  parsedPaths.set(str, parts)
+  return parts
+}
 
 /**
  * Splits a path string into an array of parts.
@@ -34,6 +55,5 @@ export function splitPath (str, separator = '.', escape = '\\') {
     } else current += char
   }
   parts.push(current)
-
   return parts
 }

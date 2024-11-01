@@ -46,13 +46,13 @@ class AsyncLogicEngine {
    * @param {*} logic The logic being executed.
    * @param {*} context The context of the logic being run (input to the function.)
    * @param {*} above The context above (can be used for handlebars-style data traversal.)
-   * @returns {Promise<{ func: string, result: * }>}
+   * @returns {Promise<*>}
    */
   async _parse (logic, context, above) {
     const [func] = Object.keys(logic)
     const data = logic[func]
 
-    if (this.isData(logic, func)) return { result: logic, func }
+    if (this.isData(logic, func)) return logic
 
     if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
@@ -60,7 +60,7 @@ class AsyncLogicEngine {
       const input = await this.run(data, context, { above })
 
       const result = await this.methods[func](input, context, above, this)
-      return { result: Array.isArray(result) ? Promise.all(result) : result, func }
+      return Array.isArray(result) ? Promise.all(result) : result
     }
 
     if (typeof this.methods[func] === 'object') {
@@ -77,7 +77,7 @@ class AsyncLogicEngine {
         above,
         this
       )
-      return { result: Array.isArray(result) ? Promise.all(result) : result, func }
+      return Array.isArray(result) ? Promise.all(result) : result
     }
 
     throw new Error(`Method '${func}' is not set up properly.`)
@@ -176,10 +176,7 @@ class AsyncLogicEngine {
       return result
     }
 
-    if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) {
-      const { result } = await this._parse(logic, data, above)
-      return result
-    }
+    if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) return this._parse(logic, data, above)
 
     return logic
   }
