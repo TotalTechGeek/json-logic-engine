@@ -396,7 +396,12 @@ const defaultMethods = {
   not: (value) => Array.isArray(value) ? !value[0] : !value,
   '!': (value) => Array.isArray(value) ? !value[0] : !value,
   '!!': (value) => Boolean(Array.isArray(value) ? value[0] : value),
-  cat: (arr) => (typeof arr === 'string' ? arr : arr.join('')),
+  cat: (arr) => {
+    if (typeof arr === 'string') return arr
+    let res = ''
+    for (let i = 0; i < arr.length; i++) res += arr[i]
+    return res
+  },
   keys: (obj) => typeof obj === 'object' ? Object.keys(obj) : [],
   eachKey: {
     traverse: false,

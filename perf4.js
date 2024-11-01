@@ -33,8 +33,6 @@ console.timeEnd('Unoptimized, Same Object, Static')
 
 console.log('----')
 
-global.gc()
-
 console.time('Optimized, Different Object, Dynamic')
 for (let i = 0; i < 1e6; i++) {
   optimized.run({ '+': [1, 2, 3, { var: 'a' }] }, { a: i })

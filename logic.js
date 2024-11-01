@@ -142,7 +142,11 @@ class LogicEngine {
     }
     // END OPTIMIZER BLOCK //
 
-    if (Array.isArray(logic)) return logic.map((i) => this.run(i, data, { above }))
+    if (Array.isArray(logic)) {
+      const res = []
+      for (let i = 0; i < logic.length; i++) res.push(this.run(logic[i], data, { above }))
+      return res
+    }
 
     if (logic && typeof logic === 'object' && Object.keys(logic).length > 0) return this._parse(logic, data, above)
 

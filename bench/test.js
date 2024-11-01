@@ -71,6 +71,8 @@ for (let j = 0; j < tests.length; j++) {
   }
 }
 console.timeEnd('json-logic-js')
+
+x.disableInterpretedOptimization = true
 console.time('le interpreted')
 for (let j = 0; j < other.length; j++) {
   for (let i = 0; i < 1e5; i++) {
@@ -78,6 +80,16 @@ for (let j = 0; j < other.length; j++) {
   }
 }
 console.timeEnd('le interpreted')
+
+x.disableInterpretedOptimization = false
+console.time('le interpreted (optimized)')
+for (let j = 0; j < other.length; j++) {
+  for (let i = 0; i < 1e5; i++) {
+    x.run(other[j][0], other[j][1])
+  }
+}
+console.timeEnd('le interpreted (optimized)')
+
 console.time('le built')
 for (let j = 0; j < tests.length; j++) {
   for (let i = 0; i < 1e5; i++) {
