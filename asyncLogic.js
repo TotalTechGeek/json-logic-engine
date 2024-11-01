@@ -9,15 +9,22 @@ import declareSync from './utilities/declareSync.js'
 import { buildAsync } from './compiler.js'
 import omitUndefined from './utilities/omitUndefined.js'
 import { optimize } from './async_optimizer.js'
+import { applyPatches } from './compatibility.js'
 
 /**
  * An engine capable of running asynchronous JSON Logic.
  */
 class AsyncLogicEngine {
   /**
+   * Creates a new instance of the Logic Engine.
+   *
+   * "compatible" applies a few patches to make it compatible with the preferences of mainline JSON Logic.
+   * The main changes are:
+   * - In mainline: "all" will return false if the array is empty; by default, we return true.
+   * - In mainline: empty arrays are falsey; in our implementation, they are truthy.
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: boolean, permissive?: boolean }} options
+   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: boolean, permissive?: boolean, compatible?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
@@ -30,6 +37,9 @@ class AsyncLogicEngine {
     this.disableInterpretedOptimization = options.disableInterpretedOptimization
     this.async = true
     this.fallback = new LogicEngine(methods, options)
+
+    if (options.compatible) applyPatches(this)
+
     this.optimizedMap = new WeakMap()
     this.missesSinceSeen = 0
 
@@ -39,6 +49,16 @@ class AsyncLogicEngine {
     }
 
     this.fallback.isData = this.isData
+  }
+
+  /**
+   * Determines the truthiness of a value.
+   * You can override this method to change the way truthiness is determined.
+   * @param {*} value
+   * @returns
+   */
+  truthy (value) {
+    return value
   }
 
   /**
@@ -189,6 +209,7 @@ class AsyncLogicEngine {
    */
   async build (logic, options = {}) {
     const { above = [], max = 100, top = true } = options
+    this.fallback.truthy = this.truthy
     if (top) {
       const constructedFunction = await buildAsync(logic, {
         engine: this,
@@ -237,5 +258,5 @@ class AsyncLogicEngine {
     return logic
   }
 }
-
+Object.assign(AsyncLogicEngine.prototype.truthy, { IDENTITY: true })
 export default AsyncLogicEngine

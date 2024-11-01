@@ -4,8 +4,9 @@ import { isDeepStrictEqual } from 'util'
 // import traverseCopy from '../utilities/traverseCopy.js'
 import jl from 'json-logic-js'
 
-const x = new LogicEngine()
-const y = new AsyncLogicEngine()
+const x = new LogicEngine(undefined, { compatible: true })
+const y = new AsyncLogicEngine(undefined, { compatible: true })
+
 const compatible = []
 const incompatible = []
 JSON.parse(fs.readFileSync('./tests.json').toString()).forEach((test) => {

@@ -1,7 +1,8 @@
 import jsonRulesEngine from 'json-rules-engine'
 import { AsyncLogicEngine } from '../index.js'
 const { Engine } = jsonRulesEngine
-const engine = new Engine()
+
+const engine = new (Engine || jsonRulesEngine)()
 engine.addRule({
   conditions: {
     any: [

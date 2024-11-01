@@ -4,10 +4,10 @@ const tests = JSON.parse(fs.readFileSync('./bench/compatible.json').toString())
 
 // eslint-disable-next-line no-labels
 inline: {
-  const logic = new LogicEngine()
-  const asyncLogic = new AsyncLogicEngine()
-  const logicWithoutOptimization = new LogicEngine()
-  const asyncLogicWithoutOptimization = new AsyncLogicEngine()
+  const logic = new LogicEngine(undefined, { compatible: true })
+  const asyncLogic = new AsyncLogicEngine(undefined, { compatible: true })
+  const logicWithoutOptimization = new LogicEngine(undefined, { compatible: true })
+  const asyncLogicWithoutOptimization = new AsyncLogicEngine(undefined, { compatible: true })
 
   describe('All of the compatible tests', () => {
     tests.forEach((testCase) => {
@@ -71,10 +71,10 @@ inline: {
 }
 // eslint-disable-next-line no-labels
 notInline: {
-  const logic = new LogicEngine()
-  const asyncLogic = new AsyncLogicEngine()
-  const logicWithoutOptimization = new LogicEngine()
-  const asyncLogicWithoutOptimization = new AsyncLogicEngine()
+  const logic = new LogicEngine(undefined, { compatible: true })
+  const asyncLogic = new AsyncLogicEngine(undefined, { compatible: true })
+  const logicWithoutOptimization = new LogicEngine(undefined, { compatible: true })
+  const asyncLogicWithoutOptimization = new AsyncLogicEngine(undefined, { compatible: true })
 
   logicWithoutOptimization.disableInline = true
   logic.disableInline = true

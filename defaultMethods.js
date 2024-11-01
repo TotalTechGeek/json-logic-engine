@@ -77,16 +77,11 @@ const defaultMethods = {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
 
-      // check the bounds
-      if (input.length < 2) {
-        throw new InvalidControlInput(input)
-      }
+      if (input.length === 1) return engine.run(input[0], context, { above })
+      if (input.length < 2) return null
 
       input = [...input]
-
-      if (input.length % 2 !== 1) {
-        input.push(null)
-      }
+      if (input.length % 2 !== 1) input.push(null)
 
       // fallback to the default if the condition is false
       const onFalse = input.pop()
@@ -96,21 +91,13 @@ const defaultMethods = {
         const check = input.shift()
         const onTrue = input.shift()
 
-        const test = engine.run(check, context, {
-          above
-        })
+        const test = engine.run(check, context, { above })
 
         // if the condition is true, run the true branch
-        if (test) {
-          return engine.run(onTrue, context, {
-            above
-          })
-        }
+        if (engine.truthy(test)) return engine.run(onTrue, context, { above })
       }
 
-      return engine.run(onFalse, context, {
-        above
-      })
+      return engine.run(onFalse, context, { above })
     },
     deterministic: (data, buildState) => {
       return isDeterministic(data, buildState.engine, buildState)
@@ -119,15 +106,12 @@ const defaultMethods = {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
 
       // check the bounds
-      if (input.length < 2) {
-        throw new InvalidControlInput(input)
-      }
+      if (input.length === 1) return engine.run(input[0], context, { above })
+      if (input.length < 2) return null
 
       input = [...input]
 
-      if (input.length % 2 !== 1) {
-        input.push(null)
-      }
+      if (input.length % 2 !== 1) input.push(null)
 
       // fallback to the default if the condition is false
       const onFalse = input.pop()
@@ -137,21 +121,13 @@ const defaultMethods = {
         const check = input.shift()
         const onTrue = input.shift()
 
-        const test = await engine.run(check, context, {
-          above
-        })
+        const test = await engine.run(check, context, { above })
 
         // if the condition is true, run the true branch
-        if (test) {
-          return engine.run(onTrue, context, {
-            above
-          })
-        }
+        if (engine.truthy(test)) return engine.run(onTrue, context, { above })
       }
 
-      return engine.run(onFalse, context, {
-        above
-      })
+      return engine.run(onFalse, context, { above })
     },
     traverse: false
   },
@@ -164,15 +140,15 @@ const defaultMethods = {
   '!=': ([a, b]) => a != b,
   '!==': ([a, b]) => a !== b,
   xor: ([a, b]) => a ^ b,
-  or: (arr) => {
+  or: (arr, _1, _2, engine) => {
     for (let i = 0; i < arr.length; i++) {
-      if (arr[i]) return arr[i]
+      if (engine.truthy(arr[i])) return arr[i]
     }
     return arr[arr.length - 1]
   },
-  and: (arr) => {
+  and: (arr, _1, _2, engine) => {
     for (let i = 0; i < arr.length; i++) {
-      if (!arr[i]) return arr[i]
+      if (!engine.truthy(arr[i])) return arr[i]
     }
     return arr[arr.length - 1]
   },
@@ -264,8 +240,8 @@ const defaultMethods = {
     }
   },
   map: createArrayIterativeMethod('map'),
-  some: createArrayIterativeMethod('some'),
-  all: createArrayIterativeMethod('every'),
+  some: createArrayIterativeMethod('some', true),
+  all: createArrayIterativeMethod('every', true),
   none: {
     traverse: false,
     // todo: add async build & build
@@ -393,9 +369,8 @@ const defaultMethods = {
     },
     traverse: false
   },
-  not: (value) => Array.isArray(value) ? !value[0] : !value,
-  '!': (value) => Array.isArray(value) ? !value[0] : !value,
-  '!!': (value) => Boolean(Array.isArray(value) ? value[0] : value),
+  '!': (value, _1, _2, engine) => Array.isArray(value) ? !engine.truthy(value[0]) : !engine.truthy(value),
+  '!!': (value, _1, _2, engine) => Boolean(Array.isArray(value) ? engine.truthy(value[0]) : engine.truthy(value)),
   cat: (arr) => {
     if (typeof arr === 'string') return arr
     let res = ''
@@ -458,7 +433,8 @@ const defaultMethods = {
     }
   }
 }
-function createArrayIterativeMethod (name) {
+
+function createArrayIterativeMethod (name, useTruthy = false) {
   return {
     deterministic: (data, buildState) => {
       return (
@@ -478,9 +454,10 @@ function createArrayIterativeMethod (name) {
         }) || []
 
       return selector[name]((i, index) => {
-        return engine.run(mapper, i, {
+        const result = engine.run(mapper, i, {
           above: [{ item: selector, index }, context, ...above]
         })
+        return useTruthy ? engine.truthy(result) : result
       })
     },
     asyncMethod: async (input, context, above, engine) => {
@@ -491,9 +468,10 @@ function createArrayIterativeMethod (name) {
           above
         })) || []
       return asyncIterators[name](selector, (i, index) => {
-        return engine.run(mapper, i, {
+        const result = engine.run(mapper, i, {
           above: [{ item: selector, index }, context, ...above]
         })
+        return useTruthy ? engine.truthy(result) : result
       })
     },
     compile: (data, buildState) => {
@@ -685,7 +663,7 @@ defaultMethods.if.compile = function (data, buildState) {
       while (data.length) {
         const condition = data.shift()
         const onTrue = data.shift()
-        str += `(${buildString(condition, buildState)}) ? ${buildString(onTrue, buildState)} : `
+        str += `methods.truthy(${buildString(condition, buildState)}) ? ${buildString(onTrue, buildState)} : `
       }
 
       return '(' + str + `${buildString(onFalse, buildState)}` + ')'
@@ -749,14 +727,17 @@ defaultMethods['%'].compile = function (data, buildState) {
     return `(${buildString(data, buildState)}).reduce((a,b) => (+a)%(+b))`
   }
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods.or.compile = function (data, buildState) {
+  if (!buildState.engine.truthy.IDENTITY) return false
   if (Array.isArray(data)) {
     return `(${data.map((i) => buildString(i, buildState)).join(' || ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => a||b, false)`
   }
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
   if (Array.isArray(data)) {
@@ -767,14 +748,17 @@ defaultMethods.in.compile = function (data, buildState) {
   }
   return false
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods.and.compile = function (data, buildState) {
+  if (!buildState.engine.truthy.IDENTITY) return false
   if (Array.isArray(data)) {
     return `(${data.map((i) => buildString(i, buildState)).join(' && ')})`
   } else {
     return `(${buildString(data, buildState)}).reduce((a,b) => a&&b, true)`
   }
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods['-'].compile = function (data, buildState) {
   if (Array.isArray(data)) {
@@ -823,17 +807,20 @@ defaultMethods.cat.compile = function (data, buildState) {
   return false
 }
 // @ts-ignore Allow custom attribute
-defaultMethods.not.compile = defaultMethods['!'].compile = function (
+defaultMethods['!'].compile = function (
   data,
   buildState
 ) {
-  if (Array.isArray(data)) return `(!(${buildString(data[0], buildState)}))`
-  return `(!(${buildString(data, buildState)}))`
+  if (Array.isArray(data)) return `(!methods.truthy(${buildString(data[0], buildState)}))`
+  return `(!methods.truthy(${buildString(data, buildState)}))`
 }
+
+defaultMethods.not = defaultMethods['!']
+
 // @ts-ignore Allow custom attribute
 defaultMethods['!!'].compile = function (data, buildState) {
-  if (Array.isArray(data)) return `(!!(${buildString(data[0], buildState)}))`
-  return `(!!(${buildString(data, buildState)}))`
+  if (Array.isArray(data)) return `(!!methods.truthy(${buildString(data[0], buildState)}))`
+  return `(!!methods.truthy(${buildString(data, buildState)}))`
 }
 defaultMethods.none.deterministic = defaultMethods.some.deterministic
 defaultMethods.get.compile = function (data, buildState) {

@@ -361,6 +361,7 @@ function processBuiltString (method, str, buildState) {
     }
   }
 
+  methods.truthy = engine.truthy
   const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { ${copyStateCall} const result = ${str}; return result }`
 
   // console.log(str)

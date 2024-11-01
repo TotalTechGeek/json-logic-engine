@@ -1270,6 +1270,40 @@
     ],
     [
         {
+            "if": []
+        },
+        null,
+        null
+    ],
+    [
+        {
+            "if": [
+                true
+            ]
+        },
+        null,
+        true
+    ],
+    [
+        {
+            "if": [
+                false
+            ]
+        },
+        null,
+        false
+    ],
+    [
+        {
+            "if": [
+                "apple"
+            ]
+        },
+        null,
+        "apple"
+    ],
+    [
+        {
             "if": [
                 true,
                 "apple"
@@ -1303,6 +1337,17 @@
         {
             "if": [
                 false,
+                "apple",
+                "banana"
+            ]
+        },
+        null,
+        "banana"
+    ],
+    [
+        {
+            "if": [
+                [],
                 "apple",
                 "banana"
             ]
@@ -1463,6 +1508,44 @@
         },
         null,
         "apple"
+    ],
+    [
+        {
+            "!": [
+                []
+            ]
+        },
+        {},
+        true
+    ],
+    [
+        {
+            "!!": [
+                []
+            ]
+        },
+        {},
+        false
+    ],
+    [
+        {
+            "and": [
+                [],
+                true
+            ]
+        },
+        {},
+        []
+    ],
+    [
+        {
+            "or": [
+                [],
+                true
+            ]
+        },
+        {},
+        true
     ],
     [
         {
@@ -2629,6 +2712,21 @@
             ]
         },
         {
+            "a": "apple"
+        },
+        "found it"
+    ],
+    [
+        {
+            "if": [
+                {
+                    "missing": "a"
+                },
+                "missed it",
+                "found it"
+            ]
+        },
+        {
             "b": "banana"
         },
         "missed it"
@@ -3120,6 +3218,27 @@
         {
             "all": [
                 {
+                    "var": "integers"
+                },
+                {
+                    "<": [
+                        {
+                            "var": ""
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "integers": []
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
                     "var": "items"
                 },
                 {
@@ -3203,6 +3322,27 @@
                     "sku": "banana"
                 }
             ]
+        },
+        false
+    ],
+    [
+        {
+            "all": [
+                {
+                    "var": "items"
+                },
+                {
+                    ">=": [
+                        {
+                            "var": "qty"
+                        },
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "items": []
         },
         false
     ],

@@ -7,15 +7,22 @@ import { build } from './compiler.js'
 import declareSync from './utilities/declareSync.js'
 import omitUndefined from './utilities/omitUndefined.js'
 import { optimize } from './optimizer.js'
+import { applyPatches } from './compatibility.js'
 
 /**
  * An engine capable of running synchronous JSON Logic.
  */
 class LogicEngine {
   /**
+   * Creates a new instance of the Logic Engine.
+   *
+   * "compatible" applies a few patches to make it compatible with the preferences of mainline JSON Logic.
+   * The main changes are:
+   * - In mainline: "all" will return false if the array is empty; by default, we return true.
+   * - In mainline: empty arrays are falsey; in our implementation, they are truthy.
    *
    * @param {Object} methods An object that stores key-value pairs between the names of the commands & the functions they execute.
-   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: Boolean, permissive?: boolean }} options
+   * @param {{ disableInline?: Boolean, disableInterpretedOptimization?: Boolean, permissive?: boolean, compatible?: boolean }} options
    */
   constructor (
     methods = defaultMethods,
@@ -28,6 +35,8 @@ class LogicEngine {
     this.optimizedMap = new WeakMap()
     this.missesSinceSeen = 0
 
+    if (options.compatible) applyPatches(this)
+
     /** @type {{ disableInline?: Boolean, disableInterpretedOptimization?: Boolean }} */
     this.options = { disableInline: options.disableInline, disableInterpretedOptimization: options.disableInterpretedOptimization }
     if (!this.isData) {
@@ -36,6 +45,16 @@ class LogicEngine {
         this.isData = (data, key) => !(key in this.methods)
       }
     }
+  }
+
+  /**
+   * Determines the truthiness of a value.
+   * You can override this method to change the way truthiness is determined.
+   * @param {*} value
+   * @returns
+   */
+  truthy (value) {
+    return value
   }
 
   /**
@@ -179,4 +198,5 @@ class LogicEngine {
     return logic
   }
 }
+Object.assign(LogicEngine.prototype.truthy, { IDENTITY: true })
 export default LogicEngine
