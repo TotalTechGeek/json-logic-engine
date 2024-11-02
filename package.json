@@ -33,7 +33,7 @@
     "typescript": "^4.4.4"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=10.14.0"
   },
   "jest": {
     "testPathIgnorePatterns": [
