@@ -33,6 +33,23 @@ function isDeterministic (method, engine, buildState) {
   return true
 }
 
+function isSyncDeep (method, engine, buildState) {
+  if (Array.isArray(method)) {
+    return method.every((i) => isSyncDeep(i, engine, buildState))
+  }
+
+  if (method && typeof method === 'object') {
+    const func = Object.keys(method)[0]
+    const lower = method[func]
+    if (engine.isData(method, func)) return true
+    if (!engine.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
+    if (engine.methods[func].traverse === false) return typeof engine.methods[func][Sync] === 'function' ? engine.methods[func][Sync](lower, buildState) : engine.methods[func][Sync]
+    return typeof engine.methods[func][Sync] === 'function' ? engine.methods[func][Sync](lower, buildState) : engine.methods[func][Sync] && isSyncDeep(lower, engine, buildState)
+  }
+
+  return true
+}
+
 const defaultMethods = {
   '+': (data) => {
     if (typeof data === 'string') return +data
@@ -77,7 +94,7 @@ const defaultMethods = {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
 
-      if (input.length === 1) return engine.run(input[0], context, { above })
+      if (input.length === 1) return (engine.fallback || engine).run(input[0], context, { above })
       if (input.length < 2) return null
 
       input = [...input]
@@ -91,14 +108,15 @@ const defaultMethods = {
         const check = input.shift()
         const onTrue = input.shift()
 
-        const test = engine.run(check, context, { above })
+        const test = (engine.fallback || engine).run(check, context, { above })
 
         // if the condition is true, run the true branch
-        if (engine.truthy(test)) return engine.run(onTrue, context, { above })
+        if (engine.truthy(test)) return (engine.fallback || engine).run(onTrue, context, { above })
       }
 
-      return engine.run(onFalse, context, { above })
+      return (engine.fallback || engine).run(onFalse, context, { above })
     },
+    [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     deterministic: (data, buildState) => {
       return isDeterministic(data, buildState.engine, buildState)
     },
@@ -316,15 +334,15 @@ const defaultMethods = {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
-      defaultValue = engine.run(defaultValue, context, {
+      defaultValue = (engine.fallback || engine).run(defaultValue, context, {
         above
       })
       selector =
-        engine.run(selector, context, {
+        (engine.fallback || engine).run(selector, context, {
           above
         }) || []
       const func = (accumulator, current) => {
-        return engine.run(
+        return (engine.fallback || engine).run(
           mapper,
           {
             accumulator,
@@ -340,6 +358,7 @@ const defaultMethods = {
       }
       return selector.reduce(func, defaultValue)
     },
+    [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     asyncMethod: async (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
@@ -385,7 +404,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: engine.run(item, context, { above })
+          value: (engine.fallback || engine).run(item, context, { above })
         })
         return accumulator
       }, {})
@@ -445,16 +464,17 @@ function createArrayIterativeMethod (name, useTruthy = false) {
         })
       )
     },
+    [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper] = input
       selector =
-        engine.run(selector, context, {
+        (engine.fallback || engine).run(selector, context, {
           above
         }) || []
 
       return selector[name]((i, index) => {
-        const result = engine.run(mapper, i, {
+        const result = (engine.fallback || engine).run(mapper, i, {
           above: [{ item: selector, index }, context, ...above]
         })
         return useTruthy ? engine.truthy(result) : result

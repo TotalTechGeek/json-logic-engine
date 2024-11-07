@@ -16,8 +16,12 @@ function getMethod (logic, engine, methodName, above) {
   const method = engine.methods[methodName]
   const called = method.asyncMethod ? method.asyncMethod : method.method ? method.method : method
 
-  // Todo: Like "deterministic", we should add "sync" to the method object to determine if the structure can be run synchronously.
   if (method.traverse === false) {
+    if (typeof method[Sync] === 'function' && method[Sync](logic, { engine })) {
+      const called = method.method ? method.method : method
+      return declareSync((data, abv) => called(logic[methodName], data, abv || above, engine), true)
+    }
+
     const args = logic[methodName]
     return (data, abv) => called(args, data, abv || above, engine)
   }

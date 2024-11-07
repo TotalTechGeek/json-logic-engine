@@ -4,7 +4,7 @@
 import defaultMethods from './defaultMethods.js'
 import LogicEngine from './logic.js'
 import asyncPool from './asyncPool.js'
-import { Sync, isSync } from './constants.js'
+import { isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { buildAsync } from './compiler.js'
 import omitUndefined from './utilities/omitUndefined.js'

@@ -82,6 +82,10 @@ describe('Various Test Cases', () => {
     for (const engine of permissiveEngines) await testEngine(engine, {}, {}, {})
   })
 
+  it('Should work with preserve', async () => {
+    for (const engine of [...permissiveEngines, ...normalEngines]) await testEngine(engine, { preserve: { x: 5 } }, null, { x: 5 })
+  })
+
   it('Should return the object when an unrecognized method is used.', async () => {
     for (const engine of permissiveEngines) {
       await testEngine(engine, { unknown: true }, {}, { unknown: true })
