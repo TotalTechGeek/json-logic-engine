@@ -3,6 +3,7 @@ import fs from 'fs'
 import { isDeepStrictEqual } from 'util'
 // import traverseCopy from '../utilities/traverseCopy.js'
 import jl from 'json-logic-js'
+import rust from '@bestow/jsonlogic-rs'
 
 const x = new LogicEngine(undefined, { compatible: true })
 const y = new AsyncLogicEngine(undefined, { compatible: true })
@@ -73,6 +74,14 @@ for (let j = 0; j < tests.length; j++) {
 }
 console.timeEnd('json-logic-js')
 
+console.time('json-logic-rs')
+for (let j = 0; j < tests.length; j++) {
+  for (let i = 0; i < 1e5; i++) {
+    rust.apply(tests[j][0], tests[j][1])
+  }
+}
+console.timeEnd('json-logic-rs')
+
 x.disableInterpretedOptimization = true
 console.time('le interpreted')
 for (let j = 0; j < other.length; j++) {
@@ -104,6 +113,15 @@ async function run () {
       return y.build(i[0])
     })
   )
+
+  console.time('le async interpreted')
+  for (let j = 0; j < tests.length; j++) {
+    for (let i = 0; i < 1e5; i++) {
+      await y.run(tests[j][0], tests[j][1])
+    }
+  }
+  console.timeEnd('le async interpreted')
+
   console.time('le async built')
   for (let j = 0; j < tests.length; j++) {
     for (let i = 0; i < 1e5; i++) {
