@@ -367,7 +367,7 @@ function processBuiltString (method, str, buildState) {
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync(globalThis.eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
+  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
 }
 
 export { build }
