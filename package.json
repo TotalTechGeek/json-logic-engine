@@ -1,6 +1,6 @@
 {
   "name": "json-logic-engine",
-  "version": "2.1.5",
+  "version": "3.0.0",
   "description": "Construct complex rules with JSON & process them.",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -14,8 +14,8 @@
     "coverage": "coveralls < coverage/lcov.info",
     "prepublish": "npm run build",
     "build": "run-script-os",
-    "build:win32": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo { \"type\": \"module\" } > dist/esm/package.json && echo { \"type\": \"commonjs\" } > dist/cjs/package.json && cd dist && standard --fix */*.js && tsc ../index.js --declaration --allowJs --emitDeclarationOnly --target ESNext --moduleResolution node",
-    "build:default": "rm -rf dist && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo '{ \"type\": \"module\" }' > dist/esm/package.json && echo '{ \"type\": \"commonjs\" }' > dist/cjs/package.json && cd dist && standard --fix */*.js && tsc ../index.js --declaration --allowJs --emitDeclarationOnly --target ESNext --moduleResolution node"
+    "build:win32": "rm -rf dist && rm -f *.d.ts && rm -f utilities/*.d.ts && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo { \"type\": \"module\" } > dist/esm/package.json && echo { \"type\": \"commonjs\" } > dist/cjs/package.json && cd dist && standard --fix */*.js && tsc ../index.js --declaration --allowJs --emitDeclarationOnly --target ESNext --moduleResolution node",
+    "build:default": "rm -rf dist && rm -f *.d.ts && rm -f utilities/*.d.ts && rollup index.js --file dist/cjs/index.js --format cjs --exports named && rollup index.js --file dist/esm/index.js --format esm && echo '{ \"type\": \"module\" }' > dist/esm/package.json && echo '{ \"type\": \"commonjs\" }' > dist/cjs/package.json && cd dist && standard --fix */*.js && tsc ../index.js --declaration --allowJs --emitDeclarationOnly --target ESNext --moduleResolution node"
   },
   "devDependencies": {
     "coveralls": "^3.1.1",

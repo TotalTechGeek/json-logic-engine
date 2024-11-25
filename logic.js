@@ -88,14 +88,13 @@ class LogicEngine {
   /**
    *
    * @param {String} name The name of the method being added.
-   * @param {Function|{ traverse?: Boolean, method: Function, deterministic?: Function | Boolean }} method
-   * @param {{ deterministic?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
+   * @param {((args: any, context: any, above: any[], engine: LogicEngine) => any) |{ traverse?: Boolean, method: (args: any, context: any, above: any[], engine: LogicEngine) => any, deterministic?: Function | Boolean }} method
+   * @param {{ deterministic?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod (name, method, { deterministic, useContext } = {}) {
+  addMethod (name, method, { deterministic } = {}) {
     if (typeof method === 'function') method = { method, traverse: true }
     else method = { ...method }
-
-    Object.assign(method, omitUndefined({ useContext, deterministic }))
+    Object.assign(method, omitUndefined({ deterministic }))
     this.methods[name] = declareSync(method)
   }
 
@@ -103,7 +102,7 @@ class LogicEngine {
    * Adds a batch of functions to the engine
    * @param {String} name
    * @param {Object} obj
-   * @param {{ deterministic?: Boolean, useContext?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
+   * @param {{ deterministic?: Boolean, async?: Boolean, sync?: Boolean }} annotations Not recommended unless you're sure every function from the module will match these annotations.
    */
   addModule (name, obj, annotations) {
     Object.getOwnPropertyNames(obj).forEach((key) => {

@@ -3,9 +3,8 @@
 
 import {
   isSync,
-  // Override is required for the compiler to operate as intended.
-  Override,
-  Sync
+  Sync,
+  Compiled
 } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 
@@ -13,11 +12,31 @@ import declareSync from './utilities/declareSync.js'
 import asyncIterators from './async_iterators.js'
 
 /**
+ * Provides a simple way to compile logic into a function that can be run.
+ * @param {string[]} strings
+ * @param  {...any} items
+ * @returns {{ [Compiled]: string }}
+ */
+function compileTemplate (strings, ...items) {
+  let res = ''
+  for (let i = 0; i < strings.length; i++) {
+    res += strings[i]
+    if (i < items.length) {
+      if (typeof items[i] === 'function') {
+        this.methods.push(items[i])
+        res += 'methods[' + (this.methods.length - 1) + ']'
+      } else if (items[i] && typeof items[i][Compiled] !== 'undefined') res += items[i][Compiled]
+      else res += buildString(items[i], this)
+    }
+  }
+  return { [Compiled]: res }
+}
+
+/**
  * @typedef BuildState
  * Used to keep track of the compilation.
  * @property {*} [engine]
  * @property {Object} [notTraversed]
- * @property {Object} [functions]
  * @property {Object} [methods]
  * @property {Object} [state]
  * @property {Array} [processing]
@@ -25,10 +44,9 @@ import asyncIterators from './async_iterators.js'
  * @property {Array} [above]
  * @property {Boolean} [asyncDetected]
  * @property {*} [values]
- * @property {Boolean} [useContext]
  * @property {Boolean} [avoidInlineAsync]
  * @property {string} [extraArguments]
- *
+ * @property {(strings: string[], ...items: any[]) => { compiled: string }} [compile] A function that can be used to compile a template.
  */
 
 /**
@@ -117,11 +135,7 @@ function isDeepSync (method, engine) {
 function buildString (method, buildState = {}) {
   const {
     notTraversed = [],
-    functions = {},
-    // methods = [],
-    // state,
     async,
-    // above = [],
     processing = [],
     values = [],
     engine
@@ -150,7 +164,6 @@ function buildString (method, buildState = {}) {
   }
 
   const func = method && Object.keys(method)[0]
-  buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
 
   if (method && typeof method === 'object') {
     if (!func) return pushValue(method)
@@ -159,7 +172,6 @@ function buildString (method, buildState = {}) {
       if (engine.isData(method, func)) return pushValue(method, true)
       throw new Error(`Method '${func}' was not found in the Logic Engine.`)
     }
-    functions[func] = functions[func] || 2
 
     if (
       !buildState.engine.disableInline &&
@@ -175,7 +187,8 @@ function buildString (method, buildState = {}) {
     }
 
     if (engine.methods[func] && engine.methods[func].compile) {
-      const str = engine.methods[func].compile(method[func], buildState)
+      let str = engine.methods[func].compile(method[func], buildState)
+      if (str[Compiled]) str = str[Compiled]
 
       if ((str || '').startsWith('await')) buildState.asyncDetected = true
 
@@ -183,23 +196,16 @@ function buildString (method, buildState = {}) {
     }
 
     if (typeof engine.methods[func] === 'function') {
-      functions[func] = 1
       asyncDetected = !isSync(engine.methods[func])
-
-      return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
+      return makeAsync(`engine.methods["${func}"](` + buildString(method[func], buildState) + ', context, above, engine)')
     } else {
       if (engine.methods[func] && (typeof engine.methods[func].traverse === 'undefined' ? true : engine.methods[func].traverse)) {
-        functions[func] = 1
         asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-
-        return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
+        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + buildString(method[func], buildState) + ', context, above, engine)')
       } else {
         asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-
-        functions[func] = 1
         notTraversed.push(method[func])
-
-        return makeAsync(`gen["${func}"](` + `notTraversed[${notTraversed.length - 1}]` + ')')
+        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + `notTraversed[${notTraversed.length - 1}]` + ', context, above, engine)')
       }
     }
   }
@@ -218,14 +224,13 @@ function build (method, buildState = {}) {
     Object.assign(
       {
         notTraversed: [],
-        functions: {},
         methods: [],
         state: {},
         processing: [],
         async: buildState.engine.async,
-        above: [],
         asyncDetected: false,
-        values: []
+        values: [],
+        compile: compileTemplate
       },
       buildState
     )
@@ -246,20 +251,19 @@ async function buildAsync (method, buildState = {}) {
     Object.assign(
       {
         notTraversed: [],
-        functions: {},
         methods: [],
         state: {},
         processing: [],
         async: buildState.engine.async,
-        above: [],
         asyncDetected: false,
-        values: []
+        values: [],
+        compile: compileTemplate
       },
       buildState
     )
   )
   const str = buildString(method, buildState)
-  buildState.processing = await Promise.all(buildState.processing)
+  buildState.processing = await Promise.all(buildState.processing || [])
   return processBuiltString(method, str, buildState)
 }
 
@@ -271,58 +275,26 @@ async function buildAsync (method, buildState = {}) {
  * @returns
  */
 function processBuiltString (method, str, buildState) {
-  const gen = {}
   const {
-    functions,
-    state,
-    async,
     engine,
-    above,
     methods,
     notTraversed,
-    processing,
+    processing = [],
     values
   } = buildState
+
+  const above = []
+
   processing.forEach((item, x) => {
     str = str.replace(`__%%%${x}%%%__`, item)
   })
-  Object.keys(functions).forEach((key) => {
-    if (functions[key] === 2) return
 
-    if (!engine.methods[key]) throw new Error(`Method '${key}' was not found in the Logic Engine.`)
-
-    if (typeof engine.methods[key] === 'function') {
-      const method = engine.methods[key]
-      gen[key] = (input) => method(input, state, above, engine)
-    } else {
-      if (async && engine.methods[key].asyncMethod) {
-        buildState.asyncDetected = true
-        const method = engine.methods[key].asyncMethod
-        gen[key] = (input) => method(input, state, above, engine)
-      } else {
-        const method = engine.methods[key].method
-        gen[key] = (input) => method(input, state, above, engine)
-      }
-    }
-  })
-
-  if (!Object.keys(functions).length) return method
-
-  let copyStateCall = 'state[Override] = context;'
-  // console.log(buildState.useContext)
-
-  if (!buildState.useContext) {
-    copyStateCall = ''
-    str = str.replace(/state\[Override\]/g, 'context')
-  }
-
-  methods.truthy = engine.truthy
-  const final = `(state, values, methods, gen, notTraversed, Override, asyncIterators) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { ${copyStateCall} const result = ${str}; return result }`
+  const final = `(values, methods, notTraversed, asyncIterators, engine, above) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(state, values, methods, gen, notTraversed, Override, asyncIterators), !buildState.asyncDetected)
+  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above), !buildState.asyncDetected)
 }
 
 export { build }

@@ -2,7 +2,6 @@ import defaultMethods from './defaultMethods.js'
 const oldAll = defaultMethods.all
 
 const all = {
-  useContext: true,
   method: (args, context, above, engine) => {
     if (Array.isArray(args)) {
       const first = engine.run(args[0], context, above)

@@ -2,7 +2,7 @@
 'use strict'
 
 export const Sync = Symbol.for('json_logic_sync')
-export const Override = Symbol.for('json_logic_override')
+export const Compiled = Symbol.for('json_logic_compiled')
 export const EfficientTop = Symbol.for('json_logic_efficientTop')
 
 /**
@@ -22,7 +22,6 @@ export function isSync (item) {
 
 export default {
   Sync,
-  Override,
   EfficientTop,
   isSync
 }

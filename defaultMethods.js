@@ -2,7 +2,7 @@
 'use strict'
 
 import asyncIterators from './async_iterators.js'
-import { Sync, Override, isSync } from './constants.js'
+import { Sync, isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { build, buildString } from './compiler.js'
 import chainingSupported from './utilities/chainingSupported.js'
@@ -209,7 +209,6 @@ const defaultMethods = {
       b = key[1]
       key = key[0]
     }
-    // if (!key && context && context[Override]) return context[Override]
     let iter = 0
     while (
       typeof key === 'string' &&
@@ -219,9 +218,7 @@ const defaultMethods = {
       context = above[iter++]
       key = key.substring(3)
     }
-    if (context && typeof context[Override] !== 'undefined') {
-      context = context[Override]
-    }
+
     const notFound = b === undefined ? null : b
     if (typeof key === 'undefined' || key === '' || key === null) {
       if (engine.allowFunctions || typeof context !== 'function') {
@@ -276,8 +273,8 @@ const defaultMethods = {
       ))
     },
     compile: (data, buildState) => {
-      const result = `${defaultMethods.some.compile(data, buildState)}`
-      return result ? `!(${result})` : false
+      const result = defaultMethods.some.compile(data, buildState)
+      return result ? buildState.compile`!(${result})` : false
     }
   },
   merge: (arrays) => (Array.isArray(arrays) ? [].concat(...arrays) : [arrays]),
@@ -295,7 +292,7 @@ const defaultMethods = {
     },
     compile: (data, buildState) => {
       if (!Array.isArray(data)) throw new InvalidControlInput(data)
-      const { above = [], state, async } = buildState
+      const { async } = buildState
       let [selector, mapper, defaultValue] = data
       selector = buildString(selector, buildState)
       if (typeof defaultValue !== 'undefined') {
@@ -303,12 +300,10 @@ const defaultMethods = {
       }
       const mapState = {
         ...buildState,
-        state: {},
-        above: [selector, state, ...above],
+        extraArguments: 'above',
         avoidInlineAsync: true
       }
       mapper = build(mapper, mapState)
-      buildState.useContext = buildState.useContext || mapState.useContext
       buildState.methods.push(mapper)
       if (async) {
         if (!isSync(mapper) || selector.includes('await')) {
@@ -316,21 +311,21 @@ const defaultMethods = {
           if (typeof defaultValue !== 'undefined') {
             return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
               buildState.methods.length - 1
-            }]({ accumulator: a, current: b }), ${defaultValue})`
+            }]({ accumulator: a, current: b }, [null, context, ...above]), ${defaultValue})`
           }
           return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
             buildState.methods.length - 1
-          }]({ accumulator: a, current: b }))`
+          }]({ accumulator: a, current: b }, [null, context, ...above]))`
         }
       }
       if (typeof defaultValue !== 'undefined') {
         return `(${selector} || []).reduce((a,b) => methods[${
           buildState.methods.length - 1
-        }]({ accumulator: a, current: b }), ${defaultValue})`
+        }]({ accumulator: a, current: b }, [null, context, ...above]), ${defaultValue})`
       }
       return `(${selector} || []).reduce((a,b) => methods[${
         buildState.methods.length - 1
-      }]({ accumulator: a, current: b }))`
+      }]({ accumulator: a, current: b }, [null, context, ...above]))`
     },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
@@ -412,7 +407,6 @@ const defaultMethods = {
       }, {})
       return result
     },
-    useContext: true,
     deterministic: (data, buildState) => {
       if (data && typeof data === 'object') {
         return Object.values(data).every((i) => {
@@ -428,6 +422,7 @@ const defaultMethods = {
         const result = `({ ${Object.keys(data)
           .reduce((accumulator, key) => {
             accumulator.push(
+              // @ts-ignore Never[] is not accurate
               `${JSON.stringify(key)}: ${buildString(data[key], buildState)}`
             )
             return accumulator
@@ -498,30 +493,24 @@ function createArrayIterativeMethod (name, useTruthy = false) {
     },
     compile: (data, buildState) => {
       if (!Array.isArray(data)) throw new InvalidControlInput(data)
-      const { above = [], state, async } = buildState
-      let [selector, mapper] = data
-      selector = buildString(selector, buildState)
+      const { async } = buildState
+      const [selector, mapper] = data
+
       const mapState = {
         ...buildState,
-        state: {},
-        above: [{ item: selector }, state, ...above],
         avoidInlineAsync: true,
-        iteratorCompile: true
+        iteratorCompile: true,
+        extraArguments: 'index, above'
       }
-      mapper = build(mapper, mapState)
-      buildState.useContext = buildState.useContext || mapState.useContext
-      buildState.methods.push(mapper)
+
       if (async) {
-        if (!isSync(mapper) || selector.includes('await')) {
+        if (!isSyncDeep(mapper, buildState.engine, buildState)) {
           buildState.detectAsync = true
-          return `await asyncIterators.${name}(${selector} || [], methods[${
-            buildState.methods.length - 1
-          }])`
+          return buildState.compile`await asyncIterators[${name}](${selector} || [], (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
         }
       }
-      return `(${selector} || []).${name}(methods[${
-        buildState.methods.length - 1
-      }])`
+
+      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
     },
     traverse: false
   }
@@ -542,186 +531,86 @@ defaultMethods.var.deterministic = (data, buildState) => {
   return buildState.insideIterator && !String(data).includes('../../')
 }
 Object.assign(defaultMethods.missing, {
-  deterministic: false,
-  useContext: true
+  deterministic: false
 })
 Object.assign(defaultMethods.missing_some, {
-  deterministic: false,
-  useContext: true
+  deterministic: false
 })
 // @ts-ignore Allow custom attribute
 defaultMethods['<'].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' < ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-    if (data.length === 3) {
-      const a = buildString(data[0], buildState)
-      const b = buildString(data[1], buildState)
-      const c = buildString(data[2], buildState)
-      return `${a} < ${b} && ${b} < ${c}`
-    }
-  }
+  if (!Array.isArray(data)) return false
+  if (data.length === 2) return buildState.compile`(${data[0]} < ${data[1]})`
+  if (data.length === 3) return buildState.compile`(${data[0]} < ${data[1]} && ${data[1]} < ${data[2]})`
   return false
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['<='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' <= ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-    if (data.length === 3) {
-      const a = buildString(data[0], buildState)
-      const b = buildString(data[1], buildState)
-      const c = buildString(data[2], buildState)
-      return `${a} <= ${b} && ${b} <= ${c}`
-    }
-  }
+  if (!Array.isArray(data)) return false
+  if (data.length === 2) return buildState.compile`(${data[0]} <= ${data[1]})`
+  if (data.length === 3) return buildState.compile`(${data[0]} <= ${data[1]} && ${data[1]} <= ${data[2]})`
   return false
 }
 // @ts-ignore Allow custom attribute
 defaultMethods.min.compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    return `Math.min(${data
-      .map((i) => buildString(i, buildState))
-      .join(', ')})`
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  return `Math.min(${data
+    .map((i) => buildString(i, buildState))
+    .join(', ')})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods.max.compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    return `Math.max(${data
-      .map((i) => buildString(i, buildState))
-      .join(', ')})`
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  return `Math.max(${data
+    .map((i) => buildString(i, buildState))
+    .join(', ')})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['>'].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' > ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  if (data.length !== 2) return false
+  return buildState.compile`(${data[0]} > ${data[1]})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['>='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' >= ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  if (data.length !== 2) return false
+  return buildState.compile`(${data[0]} >= ${data[1]})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['=='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' == ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  if (data.length !== 2) return false
+  return buildState.compile`(${data[0]} == ${data[1]})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['!='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' != ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  if (data.length !== 2) return false
+  return buildState.compile`(${data[0]} != ${data[1]})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods.if.compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length >= 3) {
-      data = [...data]
+  if (!Array.isArray(data)) return false
+  if (data.length < 3) return false
 
-      if (data.length % 2 !== 1) {
-        data.push(null)
-      }
+  data = [...data]
+  if (data.length % 2 !== 1) data.push(null)
+  const onFalse = data.pop()
 
-      const onFalse = data.pop()
-
-      let str = ''
-      while (data.length) {
-        const condition = data.shift()
-        const onTrue = data.shift()
-        str += `methods.truthy(${buildString(condition, buildState)}) ? ${buildString(onTrue, buildState)} : `
-      }
-
-      return '(' + str + `${buildString(onFalse, buildState)}` + ')'
-    }
+  let res = buildState.compile``
+  while (data.length) {
+    const condition = data.shift()
+    const onTrue = data.shift()
+    res = buildState.compile`${res} engine.truthy(${condition}) ? ${onTrue} : `
   }
-  return false
-}
-// @ts-ignore Allow custom attribute
-defaultMethods['!=='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' !== ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+
+  return buildState.compile`(${res} ${onFalse})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['==='].compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    if (data.length === 2) {
-      return (
-        '(' +
-        buildString(data[0], buildState) +
-        ' === ' +
-        buildString(data[1], buildState) +
-        ')'
-      )
-    }
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  if (data.length !== 2) return false
+  return buildState.compile`(${data[0]} === ${data[1]})`
 }
 // @ts-ignore Allow custom attribute
 defaultMethods['+'].compile = function (data, buildState) {
@@ -762,13 +651,8 @@ defaultMethods.or.compile = function (data, buildState) {
 
 // @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
-  if (Array.isArray(data)) {
-    return `(${buildString(data[1], buildState)} || []).includes(${buildString(
-      data[0],
-      buildState
-    )})`
-  }
-  return false
+  if (!Array.isArray(data)) return false
+  return buildState.compile`(${data[1]} || []).includes(${data[0]})`
 }
 
 // @ts-ignore Allow custom attribute
@@ -819,30 +703,28 @@ defaultMethods['*'].compile = function (data, buildState) {
 }
 // @ts-ignore Allow custom attribute
 defaultMethods.cat.compile = function (data, buildState) {
-  if (typeof data === 'string') {
-    return JSON.stringify(data)
-  } else if (Array.isArray(data)) {
-    let res = "''"
-    for (let i = 0; i < data.length; i++) res += `+ ${buildString(data[i], buildState)}`
-    return `(${res})`
-  }
-  return false
+  if (typeof data === 'string') return JSON.stringify(data)
+  if (!Array.isArray(data)) return false
+  let res = buildState.compile`''`
+  for (let i = 0; i < data.length; i++) res = buildState.compile`${res} + ${data[i]}`
+  return buildState.compile`(${res})`
 }
+
 // @ts-ignore Allow custom attribute
 defaultMethods['!'].compile = function (
   data,
   buildState
 ) {
-  if (Array.isArray(data)) return `(!methods.truthy(${buildString(data[0], buildState)}))`
-  return `(!methods.truthy(${buildString(data, buildState)}))`
+  if (Array.isArray(data)) return buildState.compile`(!engine.truthy(${data[0]}))`
+  return buildState.compile`(!engine.truthy(${data}))`
 }
 
 defaultMethods.not = defaultMethods['!']
 
 // @ts-ignore Allow custom attribute
 defaultMethods['!!'].compile = function (data, buildState) {
-  if (Array.isArray(data)) return `(!!methods.truthy(${buildString(data[0], buildState)}))`
-  return `(!!methods.truthy(${buildString(data, buildState)}))`
+  if (Array.isArray(data)) return buildState.compile`(!!engine.truthy(${data[0]}))`
+  return `(!!engine.truthy(${data}))`
 }
 defaultMethods.none.deterministic = defaultMethods.some.deterministic
 defaultMethods.get.compile = function (data, buildState) {
@@ -884,29 +766,21 @@ defaultMethods.var.compile = function (data, buildState) {
     typeof data === 'number' ||
     (Array.isArray(data) && data.length <= 2)
   ) {
-    if (data === '../index' && buildState.iteratorCompile) {
-      buildState.extraArguments = 'index'
-      return 'index'
-    }
+    if (data === '../index' && buildState.iteratorCompile) return 'index'
 
     if (Array.isArray(data)) {
       key = data[0]
       defaultValue = typeof data[1] === 'undefined' ? null : data[1]
     }
-    if (typeof key === 'undefined' || key === null || key === '') {
-      // this counts the number of var accesses to determine if they're all just using this override.
-      // this allows for a small optimization :)
-      return 'state[Override]'
-    }
-    if (typeof key !== 'string' && typeof key !== 'number') {
-      buildState.useContext = true
-      return false
-    }
+
+    // this counts the number of var accesses to determine if they're all just using this override.
+    // this allows for a small optimization :)
+    if (typeof key === 'undefined' || key === null || key === '') return 'context'
+    if (typeof key !== 'string' && typeof key !== 'number') return false
+
     key = key.toString()
-    if (key.includes('../')) {
-      buildState.useContext = true
-      return false
-    }
+    if (key.includes('../')) return false
+
     const pieces = splitPathMemoized(key)
     const [top] = pieces
     buildState.varTop.add(top)
@@ -917,9 +791,7 @@ defaultMethods.var.compile = function (data, buildState) {
     // support older versions of node
     if (!chainingSupported) {
       return `(methods.preventFunctions(((a,b) => (typeof a === 'undefined' || a === null) ? b : a)(${pieces.reduce(
-        (text, i) => {
-          return `(${text}||0)[${JSON.stringify(i)}]`
-        },
+        (text, i) => `(${text}||0)[${JSON.stringify(i)}]`,
         '(context||0)'
       )}, ${buildString(defaultValue, buildState)})))`
     }
@@ -927,7 +799,6 @@ defaultMethods.var.compile = function (data, buildState) {
       .map((i) => `?.[${JSON.stringify(i)}]`)
       .join('')} ?? ${buildString(defaultValue, buildState)}))`
   }
-  buildState.useContext = true
   return false
 }
 
