@@ -72,30 +72,20 @@ class AsyncLogicEngine {
     const data = logic[func]
 
     if (this.isData(logic, func)) return logic
-
     if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (typeof this.methods[func] === 'function') {
       const input = await this.run(data, context, { above })
-
       const result = await this.methods[func](input, context, above, this)
       return Array.isArray(result) ? Promise.all(result) : result
     }
 
     if (typeof this.methods[func] === 'object') {
       const { asyncMethod, method, traverse } = this.methods[func]
-      const shouldTraverse =
-          typeof traverse === 'undefined' ? true : traverse
-      const parsedData = shouldTraverse
-        ? await this.run(data, context, { above })
-        : data
+      const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
+      const parsedData = shouldTraverse ? await this.run(data, context, { above }) : data
 
-      const result = await (asyncMethod || method)(
-        parsedData,
-        context,
-        above,
-        this
-      )
+      const result = await (asyncMethod || method)(parsedData, context, above, this)
       return Array.isArray(result) ? Promise.all(result) : result
     }
 
@@ -118,14 +108,9 @@ class AsyncLogicEngine {
     if (typeof async !== 'undefined') sync = !async
 
     if (typeof method === 'function') {
-      if (async) {
-        method = { asyncMethod: method, traverse: true }
-      } else {
-        method = { method, traverse: true }
-      }
-    } else {
-      method = { ...method }
-    }
+      if (async) method = { asyncMethod: method, traverse: true }
+      else method = { method, traverse: true }
+    } else method = { ...method }
 
     Object.assign(method, omitUndefined({ deterministic, useContext }))
     // @ts-ignore
@@ -141,13 +126,7 @@ class AsyncLogicEngine {
    */
   addModule (name, obj, annotations = {}) {
     Object.getOwnPropertyNames(obj).forEach((key) => {
-      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
-        this.addMethod(
-          `${name}${name ? '.' : ''}${key}`,
-          obj[key],
-          annotations
-        )
-      }
+      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') this.addMethod(`${name}${name ? '.' : ''}${key}`, obj[key], annotations)
     })
   }
 
@@ -210,39 +189,22 @@ class AsyncLogicEngine {
     const { above = [], top = true } = options
     this.fallback.truthy = this.truthy
     if (top) {
-      const constructedFunction = await buildAsync(logic, {
-        engine: this,
-        above,
-        async: true,
-        state: {}
-      })
+      const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: {} })
 
       const result = declareSync((...args) => {
         if (top === true) {
           try {
-            const result =
-              typeof constructedFunction === 'function'
-                ? constructedFunction(...args)
-                : constructedFunction
+            const result = typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
             return Promise.resolve(result)
           } catch (err) {
             return Promise.reject(err)
           }
         }
 
-        const result =
-          typeof constructedFunction === 'function'
-            ? constructedFunction(...args)
-            : constructedFunction
-
-        return result
+        return typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
       }, top !== true && isSync(constructedFunction))
-
-      return typeof constructedFunction === 'function' || top === true
-        ? result
-        : constructedFunction
+      return typeof constructedFunction === 'function' || top === true ? result : constructedFunction
     }
-
     return logic
   }
 }

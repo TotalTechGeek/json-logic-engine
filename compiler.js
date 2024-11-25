@@ -89,9 +89,7 @@ export function isDeterministic (method, engine, buildState) {
 function isDeepSync (method, engine) {
   if (!engine.async) return true
 
-  if (Array.isArray(method)) {
-    return method.every(i => isDeepSync(i, engine))
-  }
+  if (Array.isArray(method)) return method.every(i => isDeepSync(i, engine))
 
   if (typeof method === 'object') {
     const func = Object.keys(method)[0]
@@ -120,10 +118,10 @@ function buildString (method, buildState = {}) {
   const {
     notTraversed = [],
     functions = {},
-    methods = [],
-    state,
+    // methods = [],
+    // state,
     async,
-    above = [],
+    // above = [],
     processing = [],
     values = [],
     engine
@@ -147,16 +145,12 @@ function buildString (method, buildState = {}) {
 
   function makeAsync (result) {
     buildState.asyncDetected = buildState.asyncDetected || asyncDetected
-
-    if (async && asyncDetected) {
-      return `await ${result}`
-    }
+    if (async && asyncDetected) return `await ${result}`
     return result
   }
 
   const func = method && Object.keys(method)[0]
-  buildState.useContext =
-    buildState.useContext || (engine.methods[func] || {}).useContext
+  buildState.useContext = buildState.useContext || (engine.methods[func] || {}).useContext
 
   if (method && typeof method === 'object') {
     if (!func) return pushValue(method)
@@ -192,62 +186,20 @@ function buildString (method, buildState = {}) {
       functions[func] = 1
       asyncDetected = !isSync(engine.methods[func])
 
-      return makeAsync(
-        `gen["${func}"](` + buildString(method[func], buildState) + ')'
-      )
+      return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
     } else {
       if (engine.methods[func] && (typeof engine.methods[func].traverse === 'undefined' ? true : engine.methods[func].traverse)) {
         functions[func] = 1
-        asyncDetected = Boolean(
-          async && engine.methods[func] && engine.methods[func].asyncMethod
-        )
+        asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
 
-        return makeAsync(
-          `gen["${func}"](` + buildString(method[func], buildState) + ')'
-        )
+        return makeAsync(`gen["${func}"](` + buildString(method[func], buildState) + ')')
       } else {
-        if (engine.methods[func]) {
-          if (async) {
-            if (engine.methods[func].asyncBuild || engine.methods[func].build) {
-              const builder =
-                engine.methods[func].asyncBuild || engine.methods[func].build
-              const result = builder(
-                method[func],
-                state,
-                above,
-                engine,
-                buildState
-              )
-              methods.push(result)
-              asyncDetected = !isSync(result)
-              return makeAsync(`methods[${methods.length - 1}]()`)
-            }
-          } else {
-            if (engine.methods[func].build) {
-              methods.push(
-                engine.methods[func].build(
-                  method[func],
-                  state,
-                  above,
-                  engine,
-                  buildState
-                )
-              )
-              return makeAsync(`methods[${methods.length - 1}]()`)
-            }
-          }
-        }
-
-        asyncDetected = Boolean(
-          async && engine.methods[func] && engine.methods[func].asyncMethod
-        )
+        asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
 
         functions[func] = 1
         notTraversed.push(method[func])
 
-        return makeAsync(
-          `gen["${func}"](` + `notTraversed[${notTraversed.length - 1}]` + ')'
-        )
+        return makeAsync(`gen["${func}"](` + `notTraversed[${notTraversed.length - 1}]` + ')')
       }
     }
   }
@@ -354,18 +306,14 @@ function processBuiltString (method, str, buildState) {
     }
   })
 
-  if (!Object.keys(functions).length) {
-    return method
-  }
+  if (!Object.keys(functions).length) return method
 
   let copyStateCall = 'state[Override] = context;'
   // console.log(buildState.useContext)
 
   if (!buildState.useContext) {
     copyStateCall = ''
-    while (str.includes('state[Override]')) {
-      str = str.replace('state[Override]', 'context')
-    }
+    str = str.replace(/state\[Override\]/g, 'context')
   }
 
   methods.truthy = engine.truthy

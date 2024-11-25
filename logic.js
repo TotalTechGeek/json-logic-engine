@@ -41,9 +41,7 @@ class LogicEngine {
     this.options = { disableInline: options.disableInline, disableInterpretedOptimization: options.disableInterpretedOptimization }
     if (!this.isData) {
       if (!options.permissive) this.isData = () => false
-      else {
-        this.isData = (data, key) => !(key in this.methods)
-      }
+      else this.isData = (data, key) => !(key in this.methods)
     }
   }
 
@@ -80,10 +78,7 @@ class LogicEngine {
     if (typeof this.methods[func] === 'object') {
       const { method, traverse } = this.methods[func]
       const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
-      const parsedData = shouldTraverse
-        ? this.run(data, context, { above })
-        : data
-
+      const parsedData = shouldTraverse ? this.run(data, context, { above }) : data
       return method(parsedData, context, above, this)
     }
 
@@ -97,11 +92,8 @@ class LogicEngine {
    * @param {{ deterministic?: Boolean, useContext?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
   addMethod (name, method, { deterministic, useContext } = {}) {
-    if (typeof method === 'function') {
-      method = { method, traverse: true }
-    } else {
-      method = { ...method }
-    }
+    if (typeof method === 'function') method = { method, traverse: true }
+    else method = { ...method }
 
     Object.assign(method, omitUndefined({ useContext, deterministic }))
     this.methods[name] = declareSync(method)
@@ -115,13 +107,7 @@ class LogicEngine {
    */
   addModule (name, obj, annotations) {
     Object.getOwnPropertyNames(obj).forEach((key) => {
-      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
-        this.addMethod(
-          `${name}${name ? '.' : ''}${key}`,
-          obj[key],
-          annotations
-        )
-      }
+      if (typeof obj[key] === 'function' || typeof obj[key] === 'object') this.addMethod(`${name}${name ? '.' : ''}${key}`, obj[key], annotations)
     })
   }
 
@@ -181,18 +167,8 @@ class LogicEngine {
   build (logic, options = {}) {
     const { above = [], top = true } = options
     if (top) {
-      const constructedFunction = build(logic, {
-        state: {},
-        engine: this,
-        above
-      })
-      if (typeof constructedFunction === 'function' || top === true) {
-        return (...args) => {
-          return typeof constructedFunction === 'function'
-            ? constructedFunction(...args)
-            : constructedFunction
-        }
-      }
+      const constructedFunction = build(logic, { state: {}, engine: this, above })
+      if (typeof constructedFunction === 'function' || top === true) return (...args) => typeof constructedFunction === 'function' ? constructedFunction(...args) : constructedFunction
       return constructedFunction
     }
     return logic
