@@ -844,5 +844,21 @@ modes.forEach((logic) => {
         )
       ).toBe('hello'.toString)
     })
+
+    test('async + deterministic function', async () => {
+      logic.addMethod('test', async () => '1337', { deterministic: true })
+      expect(
+        await logic.run({
+          test: true
+        })
+      ).toBe('1337')
+    })
+
+    test('async + determistic function inside array', async () => {
+      logic.addMethod('test', async () => '1337', { deterministic: true })
+      expect(
+        await logic.run([{ test: true }, { test: true }])
+      ).toStrictEqual(['1337', '1337'])
+    })
   })
 })
