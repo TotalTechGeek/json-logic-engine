@@ -860,5 +860,12 @@ modes.forEach((logic) => {
         await logic.run([{ test: true }, { test: true }])
       ).toStrictEqual(['1337', '1337'])
     })
+
+    test('async + non-determistic function inside array', async () => {
+      logic.addMethod('test', async () => '1337')
+      expect(
+        await logic.run([{ test: true }, { test: true }])
+      ).toStrictEqual(['1337', '1337'])
+    })
   })
 })

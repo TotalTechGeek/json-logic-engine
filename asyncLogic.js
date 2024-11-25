@@ -3,7 +3,6 @@
 
 import defaultMethods from './defaultMethods.js'
 import LogicEngine from './logic.js'
-import asyncPool from './asyncPool.js'
 import { isSync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 import { buildAsync } from './compiler.js'
@@ -204,11 +203,11 @@ class AsyncLogicEngine {
   /**
    *
    * @param {*} logic The logic to be built.
-   * @param {{ top?: Boolean, above?: any, max?: Number }} options
+   * @param {{ top?: Boolean, above?: any }} options
    * @returns {Promise<Function>}
    */
   async build (logic, options = {}) {
-    const { above = [], max = 100, top = true } = options
+    const { above = [], top = true } = options
     this.fallback.truthy = this.truthy
     if (top) {
       const constructedFunction = await buildAsync(logic, {
@@ -238,21 +237,10 @@ class AsyncLogicEngine {
 
         return result
       }, top !== true && isSync(constructedFunction))
-      // we can avoid the async pool if the constructed function is synchronous since the data
-      // can't be updated :)
-      if (top === true && constructedFunction && !isSync(constructedFunction) && typeof constructedFunction === 'function') {
-        // we use this async pool so that we can execute these in parallel without having
-        // concerns about the data.
-        return asyncPool({
-          free: [result],
-          max,
-          create: () => this.build(logic, { ...options, above })
-        })
-      } else {
-        return typeof constructedFunction === 'function' || top === true
-          ? result
-          : constructedFunction
-      }
+
+      return typeof constructedFunction === 'function' || top === true
+        ? result
+        : constructedFunction
     }
 
     return logic
