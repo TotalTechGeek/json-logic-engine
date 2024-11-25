@@ -4,7 +4,8 @@
 import {
   isSync,
   // Override is required for the compiler to operate as intended.
-  Override
+  Override,
+  Sync
 } from './constants.js'
 import declareSync from './utilities/declareSync.js'
 
@@ -97,6 +98,12 @@ function isDeepSync (method, engine) {
 
     const lower = method[func]
     if (!isSync(engine.methods[func])) return false
+
+    if (engine.methods[func].traverse === false) {
+      if (typeof engine.methods[func][Sync] === 'function' && engine.methods[func][Sync](method, { engine })) return true
+      return false
+    }
+
     return isDeepSync(lower, engine)
   }
 

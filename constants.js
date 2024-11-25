@@ -16,6 +16,7 @@ export const EfficientTop = Symbol.for('json_logic_efficientTop')
 export function isSync (item) {
   if (typeof item === 'function') return item[Sync] === true
   if (Array.isArray(item)) return item.every(isSync)
+  if (item && item.asyncMethod && !item.method) return false
   return true
 }
 

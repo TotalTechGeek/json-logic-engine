@@ -88,7 +88,8 @@ const defaultMethods = {
   '<': ([a, b, c]) => (c === undefined ? a < b : a < b && b < c),
   preserve: {
     traverse: false,
-    method: declareSync((i) => i)
+    method: declareSync((i) => i, true),
+    [Sync]: () => true
   },
   if: {
     method: (input, context, above, engine) => {
@@ -399,6 +400,7 @@ const defaultMethods = {
   keys: (obj) => typeof obj === 'object' ? Object.keys(obj) : [],
   eachKey: {
     traverse: false,
+    [Sync]: (data, buildState) => isSyncDeep(Object.values(data[Object.keys(data)[0]]), buildState.engine, buildState),
     method: (object, context, above, engine) => {
       const result = Object.keys(object).reduce((accumulator, key) => {
         const item = object[key]
