@@ -5,6 +5,10 @@ const modes = [
   new AsyncLogicEngine(undefined, { disableInterpretedOptimization: true })
 ]
 
+for (const engine of modes) {
+  engine.addMethod('as1', async (n) => n + 1, { async: true, deterministic: true })
+}
+
 modes.forEach((logic) => {
   describe('+', () => {
     test('it should be able to add two numbers together', async () => {
@@ -866,6 +870,24 @@ modes.forEach((logic) => {
       expect(
         await logic.run([{ test: true }, { test: true }])
       ).toStrictEqual(['1337', '1337'])
+    })
+
+    test('async + map + deterministic (trying to trigger avoidInlineAsync)', async () => {
+      expect(
+        await (await logic.build({
+          map: [{ var: 'arr' }, {
+            map: [[1, 2, 3], { as1: { var: '' } }]
+          }]
+        }))({ arr: [1, 2, 3] })
+      ).toStrictEqual([[2, 3, 4], [2, 3, 4], [2, 3, 4]])
+
+      expect(
+        await logic.run({
+          map: [{ var: 'arr' }, {
+            map: [[1, 2, 3], { as1: { var: '' } }]
+          }]
+        }, { arr: [1, 2, 3] })
+      ).toStrictEqual([[2, 3, 4], [2, 3, 4], [2, 3, 4]])
     })
   })
 })

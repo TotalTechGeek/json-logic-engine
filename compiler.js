@@ -185,6 +185,9 @@ function buildString (method, buildState = {}) {
       } else if (!buildState.avoidInlineAsync) {
         processing.push(engine.run(method).then((i) => pushValue(i)))
         return `__%%%${processing.length - 1}%%%__`
+      } else {
+        buildState.asyncDetected = true
+        return `(await ${pushValue(engine.run(method))})`
       }
     }
 
