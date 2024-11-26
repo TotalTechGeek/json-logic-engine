@@ -393,6 +393,33 @@ const defaultMethods = {
     return res
   },
   keys: (obj) => typeof obj === 'object' ? Object.keys(obj) : [],
+  pipe: {
+    traverse: false,
+    [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
+    method: (args, context, above, engine) => {
+      if (!Array.isArray(args)) throw new Error('Data for pipe must be an array')
+      let answer = (engine.fallback || engine).run(args[0], context, { above: [args, context, ...above] })
+      for (let i = 1; i < args.length; i++) answer = (engine.fallback || engine).run(args[i], answer, { above: [args, context, ...above] })
+      return answer
+    },
+    asyncMethod: async (args, context, above, engine) => {
+      if (!Array.isArray(args)) throw new Error('Data for pipe must be an array')
+      let answer = await engine.run(args[0], context, { above: [args, context, ...above] })
+      for (let i = 1; i < args.length; i++) answer = await engine.run(args[i], answer, { above: [args, context, ...above] })
+      return answer
+    },
+    compile: (args, buildState) => {
+      let res = buildState.compile`${args[0]}`
+      for (let i = 1; i < args.length; i++) res = buildState.compile`${build(args[i], { ...buildState, extraArguments: 'above' })}(${res}, [null, context, ...above])`
+      return res
+    },
+    deterministic: (data, buildState) => {
+      if (!Array.isArray(data)) return false
+      data = [...data]
+      const first = data.shift()
+      return isDeterministic(first, buildState.engine, buildState) && isDeterministic(data, buildState.engine, { ...buildState, insideIterator: true })
+    }
+  },
   eachKey: {
     traverse: false,
     [Sync]: (data, buildState) => isSyncDeep(Object.values(data[Object.keys(data)[0]]), buildState.engine, buildState),
@@ -506,7 +533,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
       if (async) {
         if (!isSyncDeep(mapper, buildState.engine, buildState)) {
           buildState.detectAsync = true
-          return buildState.compile`await asyncIterators[${name}](${selector} || [], (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
+          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
         }
       }
 

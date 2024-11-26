@@ -162,6 +162,11 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../index' }] }] }, {}, [0, 2, 4, 6])
   })
 
+  it('is able to use pipe', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { pipe: ['Austin', { cat: ['Hello, ', { var: '' }, '!'] }] }, {}, 'Hello, Austin!')
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { pipe: [{ var: 'name' }, { cat: ['Hello, ', { var: '' }, '!'] }] }, { name: 'Austin' }, 'Hello, Austin!')
+  })
+
   it('disables interpreted optimization when it realizes it will not be faster', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) {
       const disableInterpretedOptimization = engine.disableInterpretedOptimization

@@ -19,14 +19,16 @@ import asyncIterators from './async_iterators.js'
  */
 function compileTemplate (strings, ...items) {
   let res = ''
+  const buildState = this
   for (let i = 0; i < strings.length; i++) {
     res += strings[i]
     if (i < items.length) {
       if (typeof items[i] === 'function') {
         this.methods.push(items[i])
-        res += 'methods[' + (this.methods.length - 1) + ']'
+        if (!isSync(items[i])) buildState.asyncDetected = true
+        res += (isSync(items[i]) ? '' : ' await ') + 'methods[' + (buildState.methods.length - 1) + ']'
       } else if (items[i] && typeof items[i][Compiled] !== 'undefined') res += items[i][Compiled]
-      else res += buildString(items[i], this)
+      else res += buildString(items[i], buildState)
     }
   }
   return { [Compiled]: res }
