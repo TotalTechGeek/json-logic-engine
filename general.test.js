@@ -178,6 +178,10 @@ describe('Various Test Cases', () => {
     }
   })
 
+  it('is able to reach far up in the traversal', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1, 2, 3], { map: [[1], { var: '../../../../name' }] }] }, { name: 'Bob' }, [['Bob'], ['Bob'], ['Bob']])
+  })
+
   it('disables interpreted optimization when it realizes it will not be faster', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) {
       const disableInterpretedOptimization = engine.disableInterpretedOptimization

@@ -217,6 +217,12 @@ const defaultMethods = {
     ) {
       context = above[iter++]
       key = key.substring(3)
+      // A performance optimization that allows you to pass the previous above array without spreading it as the last argument
+      if (iter === above.length && Array.isArray(context)) {
+        iter = 0
+        above = context
+        context = above[iter++]
+      }
     }
 
     const notFound = b === undefined ? null : b
@@ -311,21 +317,21 @@ const defaultMethods = {
           if (typeof defaultValue !== 'undefined') {
             return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
               buildState.methods.length - 1
-            }]({ accumulator: a, current: b }, [null, context, ...above]), ${defaultValue})`
+            }]({ accumulator: a, current: b }, [null, context, above]), ${defaultValue})`
           }
           return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
             buildState.methods.length - 1
-          }]({ accumulator: a, current: b }, [null, context, ...above]))`
+          }]({ accumulator: a, current: b }, [null, context, above]))`
         }
       }
       if (typeof defaultValue !== 'undefined') {
         return `(${selector} || []).reduce((a,b) => methods[${
           buildState.methods.length - 1
-        }]({ accumulator: a, current: b }, [null, context, ...above]), ${defaultValue})`
+        }]({ accumulator: a, current: b }, [null, context, above]), ${defaultValue})`
       }
       return `(${selector} || []).reduce((a,b) => methods[${
         buildState.methods.length - 1
-      }]({ accumulator: a, current: b }, [null, context, ...above]))`
+      }]({ accumulator: a, current: b }, [null, context, above]))`
     },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
@@ -345,7 +351,7 @@ const defaultMethods = {
             current
           },
           {
-            above: [selector, context, ...above]
+            above: [selector, context, above]
           }
         )
       }
@@ -375,7 +381,7 @@ const defaultMethods = {
               current
             },
             {
-              above: [selector, context, ...above]
+              above: [selector, context, above]
             }
           )
         },
@@ -398,19 +404,19 @@ const defaultMethods = {
     [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     method: (args, context, above, engine) => {
       if (!Array.isArray(args)) throw new Error('Data for pipe must be an array')
-      let answer = engine.run(args[0], context, { above: [args, context, ...above] })
-      for (let i = 1; i < args.length; i++) answer = engine.run(args[i], answer, { above: [args, context, ...above] })
+      let answer = engine.run(args[0], context, { above: [args, context, above] })
+      for (let i = 1; i < args.length; i++) answer = engine.run(args[i], answer, { above: [args, context, above] })
       return answer
     },
     asyncMethod: async (args, context, above, engine) => {
       if (!Array.isArray(args)) throw new Error('Data for pipe must be an array')
-      let answer = await engine.run(args[0], context, { above: [args, context, ...above] })
-      for (let i = 1; i < args.length; i++) answer = await engine.run(args[i], answer, { above: [args, context, ...above] })
+      let answer = await engine.run(args[0], context, { above: [args, context, above] })
+      for (let i = 1; i < args.length; i++) answer = await engine.run(args[i], answer, { above: [args, context, above] })
       return answer
     },
     compile: (args, buildState) => {
       let res = buildState.compile`${args[0]}`
-      for (let i = 1; i < args.length; i++) res = buildState.compile`${build(args[i], { ...buildState, extraArguments: 'above' })}(${res}, [null, context, ...above])`
+      for (let i = 1; i < args.length; i++) res = buildState.compile`${build(args[i], { ...buildState, extraArguments: 'above' })}(${res}, [null, context, above])`
       return res
     },
     deterministic: (data, buildState) => {
@@ -499,7 +505,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
 
       return selector[name]((i, index) => {
         const result = engine.run(mapper, i, {
-          above: [{ item: selector, index }, context, ...above]
+          above: [{ item: selector, index }, context, above]
         })
         return useTruthy ? engine.truthy(result) : result
       })
@@ -513,7 +519,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
         })) || []
       return asyncIterators[name](selector, (i, index) => {
         const result = engine.run(mapper, i, {
-          above: [{ item: selector, index }, context, ...above]
+          above: [{ item: selector, index }, context, above]
         })
         return useTruthy ? engine.truthy(result) : result
       })
@@ -533,11 +539,11 @@ function createArrayIterativeMethod (name, useTruthy = false) {
       if (async) {
         if (!isSyncDeep(mapper, buildState.engine, buildState)) {
           buildState.detectAsync = true
-          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
+          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, above]))`
         }
       }
 
-      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, ...above]))`
+      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, above]))`
     },
     traverse: false
   }
