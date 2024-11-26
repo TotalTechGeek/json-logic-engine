@@ -95,7 +95,7 @@ const defaultMethods = {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
 
-      if (input.length === 1) return (engine.fallback || engine).run(input[0], context, { above })
+      if (input.length === 1) return engine.run(input[0], context, { above })
       if (input.length < 2) return null
 
       input = [...input]
@@ -109,13 +109,13 @@ const defaultMethods = {
         const check = input.shift()
         const onTrue = input.shift()
 
-        const test = (engine.fallback || engine).run(check, context, { above })
+        const test = engine.run(check, context, { above })
 
         // if the condition is true, run the true branch
-        if (engine.truthy(test)) return (engine.fallback || engine).run(onTrue, context, { above })
+        if (engine.truthy(test)) return engine.run(onTrue, context, { above })
       }
 
-      return (engine.fallback || engine).run(onFalse, context, { above })
+      return engine.run(onFalse, context, { above })
     },
     [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     deterministic: (data, buildState) => {
@@ -330,15 +330,15 @@ const defaultMethods = {
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper, defaultValue] = input
-      defaultValue = (engine.fallback || engine).run(defaultValue, context, {
+      defaultValue = engine.run(defaultValue, context, {
         above
       })
       selector =
-        (engine.fallback || engine).run(selector, context, {
+        engine.run(selector, context, {
           above
         }) || []
       const func = (accumulator, current) => {
-        return (engine.fallback || engine).run(
+        return engine.run(
           mapper,
           {
             accumulator,
@@ -398,8 +398,8 @@ const defaultMethods = {
     [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
     method: (args, context, above, engine) => {
       if (!Array.isArray(args)) throw new Error('Data for pipe must be an array')
-      let answer = (engine.fallback || engine).run(args[0], context, { above: [args, context, ...above] })
-      for (let i = 1; i < args.length; i++) answer = (engine.fallback || engine).run(args[i], answer, { above: [args, context, ...above] })
+      let answer = engine.run(args[0], context, { above: [args, context, ...above] })
+      for (let i = 1; i < args.length; i++) answer = engine.run(args[i], answer, { above: [args, context, ...above] })
       return answer
     },
     asyncMethod: async (args, context, above, engine) => {
@@ -428,7 +428,7 @@ const defaultMethods = {
         const item = object[key]
         Object.defineProperty(accumulator, key, {
           enumerable: true,
-          value: (engine.fallback || engine).run(item, context, { above })
+          value: engine.run(item, context, { above })
         })
         return accumulator
       }, {})
@@ -493,12 +493,12 @@ function createArrayIterativeMethod (name, useTruthy = false) {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
       let [selector, mapper] = input
       selector =
-        (engine.fallback || engine).run(selector, context, {
+        engine.run(selector, context, {
           above
         }) || []
 
       return selector[name]((i, index) => {
-        const result = (engine.fallback || engine).run(mapper, i, {
+        const result = engine.run(mapper, i, {
           above: [{ item: selector, index }, context, ...above]
         })
         return useTruthy ? engine.truthy(result) : result

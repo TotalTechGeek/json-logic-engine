@@ -19,7 +19,7 @@ function getMethod (logic, engine, methodName, above) {
   if (method.traverse === false) {
     if (typeof method[Sync] === 'function' && method[Sync](logic, { engine })) {
       const called = method.method ? method.method : method
-      return declareSync((data, abv) => called(logic[methodName], data, abv || above, engine), true)
+      return declareSync((data, abv) => called(logic[methodName], data, abv || above, engine.fallback), true)
     }
 
     const args = logic[methodName]
@@ -35,7 +35,7 @@ function getMethod (logic, engine, methodName, above) {
       const called = method.method ? method.method : method
       return declareSync((data, abv) => {
         const evaluatedArgs = optimizedArgs.map(l => typeof l === 'function' ? l(data, abv) : l)
-        return called(evaluatedArgs, data, abv || above, engine)
+        return called(evaluatedArgs, data, abv || above, engine.fallback)
       }, true)
     }
 
