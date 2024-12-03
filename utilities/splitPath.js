@@ -35,25 +35,31 @@ export function splitPathMemoized (str) {
  * @param {string} separator
  * @returns {string[]}
  */
-export function splitPath (str, separator = '.', escape = '\\') {
+export function splitPath (str, separator = '.', escape = '\\', up = '/') {
   const parts = []
   let current = ''
 
   for (let i = 0; i < str.length; i++) {
     const char = str[i]
     if (char === escape) {
-      if (str[i + 1] === separator) {
-        current += separator
+      if (str[i + 1] === separator || str[i + 1] === up) {
+        current += str[i + 1]
         i++
       } else if (str[i + 1] === escape) {
         current += escape
         i++
+        // The following else might be something tweaked in a spec.
       } else current += escape
     } else if (char === separator) {
       parts.push(current)
       current = ''
     } else current += char
   }
-  parts.push(current)
+
+  // The if prevents me from pushing more sections than characters
+  // This is so that "." will [''] and not ['','']
+  // But .h will be ['','.h']
+  // .. becomes ['',''], ..h becomes ['', '', 'h']
+  if (parts.length !== str.length) parts.push(current)
   return parts
 }

@@ -153,6 +153,18 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'hello\\.world' }, { 'hello.world': 2 }, 2)
   })
 
+  it('is able to access empty keys', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '.' }, { '': 2 }, 2)
+  })
+
+  it('is able to access dot keys', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\.' }, { '.': 2 }, 2)
+  })
+
+  it('is able to access "/" keys from above', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1], { '+': [{ var: '' }, { var: '../../..\\/' }] }] }, { '': { '': { '/': 3 } } }, [4])
+  })
+
   it('is able to handle path escaping with multiple escapes', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\foo' }, { '\\foo': 2 }, 2)
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\\\foo' }, { '\\foo': 2 }, 2)
