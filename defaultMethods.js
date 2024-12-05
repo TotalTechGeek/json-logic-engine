@@ -178,7 +178,7 @@ const defaultMethods = {
     }
     return string.substr(from, end)
   },
-  length: (i) => {
+  length: ([i]) => {
     if (typeof i === 'string' || Array.isArray(i)) return i.length
     if (i && typeof i === 'object') return Object.keys(i).length
     return 0
@@ -398,7 +398,7 @@ const defaultMethods = {
     for (let i = 0; i < arr.length; i++) res += arr[i]
     return res
   },
-  keys: (obj) => typeof obj === 'object' ? Object.keys(obj) : [],
+  keys: ([obj]) => typeof obj === 'object' ? Object.keys(obj) : [],
   pipe: {
     traverse: false,
     [Sync]: (data, buildState) => isSyncDeep(data, buildState.engine, buildState),
@@ -799,12 +799,12 @@ defaultMethods.var.compile = function (data, buildState) {
     typeof data === 'number' ||
     (Array.isArray(data) && data.length <= 2)
   ) {
-    if (data === '../index' && buildState.iteratorCompile) return 'index'
-
     if (Array.isArray(data)) {
       key = data[0]
       defaultValue = typeof data[1] === 'undefined' ? null : data[1]
     }
+
+    if (key === '../index' && buildState.iteratorCompile) return 'index'
 
     // this counts the number of var accesses to determine if they're all just using this override.
     // this allows for a small optimization :)
@@ -834,6 +834,9 @@ defaultMethods.var.compile = function (data, buildState) {
   }
   return false
 }
+
+// @ts-ignore Allowing a optimizeUnary attribute that can be used for performance optimizations
+defaultMethods['+'].optimizeUnary = defaultMethods['-'].optimizeUnary = defaultMethods.var.optimizeUnary = defaultMethods['!'].optimizeUnary = defaultMethods['!!'].optimizeUnary = defaultMethods.cat.optimizeUnary = true
 
 export default {
   ...defaultMethods

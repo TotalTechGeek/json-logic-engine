@@ -1,0 +1,64 @@
+[
+    "These are tests from https://github.com/orgs/json-logic/discussions/2",
+    [
+      { "max": [1, 2, 3] },
+      {},
+      3,
+      "Standard Max"
+    ],
+    [
+      { "max": 1 },
+      {},
+      1,
+      "Standard Max, Single Argument Sugared"
+    ],
+    [
+      { "max": { "var": "data" } },
+      { "data": [1, 2, 3] },
+      3,
+      "Max with Logic Chaining"
+    ],
+    [
+      { "cat": { "merge": [["Hello "], ["World", "!"]] } },
+      {},
+      "Hello World!",
+      "Cat with Logic Chaining"
+    ],
+    [
+      { "cat": { "var": "text" } },
+      { "text": ["Hello ", "World", "!"] },
+      "Hello World!",
+      "Cat with Logic Chaining (Simple)"
+    ],
+    [
+      {
+        "max": {
+            "map": [
+              {
+                "filter": [
+                  { "var": "people" }, 
+                  { "===": [{ "var": "department" }, "Engineering"] }
+                ]
+              }, 
+              { "var": "salary" }
+          ]
+        }
+      },
+      {
+        "people": [
+          { "name": "Jay Ortiz", "salary": 100414, "department": "Engineering"},
+          { "name": "Louisa Hall", "salary": 133601, "department": "Sales"},
+          { "name": "Kyle Carlson", "salary": 139803, "department": "Sales"},
+          { "name": "Grace Ortiz", "salary": 147068, "department": "Engineering"},
+          { "name": "Isabelle Harrington", "salary": 112704, "department": "Marketing"},
+          { "name": "Harold Moore", "salary": 125221, "department": "Sales"},
+          { "name": "Clarence Schultz", "salary": 127985, "department": "Sales"},
+          { "name": "Jesse Keller", "salary": 149212, "department": "Engineering"},
+          { "name": "Phillip Holland", "salary": 105888, "department": "Marketing"},
+          { "name": "Mason Sullivan", "salary": 147161, "department": "Engineering" }
+        ]
+      },
+      149212,
+      "Max with Logic Chaining (Complex)"
+    ]
+  ]

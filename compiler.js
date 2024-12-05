@@ -10,6 +10,7 @@ import declareSync from './utilities/declareSync.js'
 
 // asyncIterators is required for the compiler to operate as intended.
 import asyncIterators from './async_iterators.js'
+import { coerceArray } from './utilities/coerceArray.js'
 
 /**
  * Provides a simple way to compile logic into a function that can be run.
@@ -191,8 +192,11 @@ function buildString (method, buildState = {}) {
       }
     }
 
+    let lower = method[func]
+    if (!lower || typeof lower !== 'object') lower = [lower]
+
     if (engine.methods[func] && engine.methods[func].compile) {
-      let str = engine.methods[func].compile(method[func], buildState)
+      let str = engine.methods[func].compile(lower, buildState)
       if (str[Compiled]) str = str[Compiled]
 
       if ((str || '').startsWith('await')) buildState.asyncDetected = true
@@ -200,16 +204,20 @@ function buildString (method, buildState = {}) {
       if (str !== false) return str
     }
 
+    let coerce = engine.methods[func].optimizeUnary ? '' : 'coerceArray'
+    if (!coerce && Array.isArray(lower) && lower.length === 1) lower = lower[0]
+    else if (coerce && Array.isArray(lower)) coerce = ''
+
     if (typeof engine.methods[func] === 'function') {
       asyncDetected = !isSync(engine.methods[func])
-      return makeAsync(`engine.methods["${func}"](` + buildString(method[func], buildState) + ', context, above, engine)')
+      return makeAsync(`engine.methods["${func}"](${coerce}(` + buildString(lower, buildState) + '), context, above, engine)')
     } else {
       if (engine.methods[func] && (typeof engine.methods[func].traverse === 'undefined' ? true : engine.methods[func].traverse)) {
         asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + buildString(method[func], buildState) + ', context, above, engine)')
+        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(${coerce}(` + buildString(lower, buildState) + '), context, above, engine)')
       } else {
         asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-        notTraversed.push(method[func])
+        notTraversed.push(lower)
         return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + `notTraversed[${notTraversed.length - 1}]` + ', context, above, engine)')
       }
     }
@@ -294,12 +302,12 @@ function processBuiltString (method, str, buildState) {
     str = str.replace(`__%%%${x}%%%__`, item)
   })
 
-  const final = `(values, methods, notTraversed, asyncIterators, engine, above) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { const result = ${str}; return result }`
+  const final = `(values, methods, notTraversed, asyncIterators, engine, above, coerceArray) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { const result = ${str}; return result }`
 
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above), !buildState.asyncDetected)
+  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above, coerceArray), !buildState.asyncDetected)
 }
 
 export { build }

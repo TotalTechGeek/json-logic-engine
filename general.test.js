@@ -138,8 +138,8 @@ describe('Various Test Cases', () => {
     try {
       for (const engine of [...normalEngines, ...permissiveEngines]) {
         engine.allowFunctions = true
-        engine.addMethod('typeof', (value) => typeof value)
-        await testEngine(engine, { typeof: { var: 'toString' } }, 'hello', 'function')
+        engine.addMethod('typeof', ([value]) => typeof value)
+        await testEngine(engine, { typeof: { var: 'toString' } }, {}, 'function')
       }
     } finally {
       for (const engine of [...normalEngines, ...permissiveEngines]) {
@@ -147,6 +147,10 @@ describe('Various Test Cases', () => {
         delete engine.methods.typeof
       }
     }
+  })
+
+  it('is able to handle max with 1 element', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { max: 5 }, {}, 5)
   })
 
   it('is able to handle path escaping in a var call', async () => {
@@ -179,7 +183,7 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { pipe: [{ var: 'name' }, { cat: ['Hello, ', { var: '' }, '!'] }] }, { name: 'Austin' }, 'Hello, Austin!')
 
     for (const engine of [normalEngines[1], normalEngines[3], permissiveEngines[1], permissiveEngines[3]]) {
-      engine.addMethod('as1', async (n) => n + 1, { async: true, deterministic: true })
+      engine.addMethod('as1', async ([n]) => n + 1, { async: true, deterministic: true })
       await testEngine(engine, {
         pipe: [
           'Austin',

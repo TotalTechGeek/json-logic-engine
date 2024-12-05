@@ -3,6 +3,7 @@ import { isDeterministic } from './compiler.js'
 import { map } from './async_iterators.js'
 import { isSync, Sync } from './constants.js'
 import declareSync from './utilities/declareSync.js'
+import { coerceArray } from './utilities/coerceArray.js'
 
 /**
  * Turns an expression like { '+': [1, 2] } into a function that can be called with data.
@@ -26,7 +27,8 @@ function getMethod (logic, engine, methodName, above) {
     return (data, abv) => called(args, data, abv || above, engine)
   }
 
-  const args = logic[methodName]
+  let args = logic[methodName]
+  if (!args || typeof args !== 'object') args = [args]
 
   if (Array.isArray(args)) {
     const optimizedArgs = args.map(l => optimize(l, engine, above))
@@ -48,11 +50,11 @@ function getMethod (logic, engine, methodName, above) {
 
     if (isSync(optimizedArgs) && (method.method || method[Sync])) {
       const called = method.method ? method.method : method
-      return declareSync((data, abv) => called(typeof optimizedArgs === 'function' ? optimizedArgs(data, abv) : optimizedArgs, data, abv || above, engine), true)
+      return declareSync((data, abv) => called(coerceArray(typeof optimizedArgs === 'function' ? optimizedArgs(data, abv) : optimizedArgs, method.optimizeUnary), data, abv || above, engine), true)
     }
 
     return async (data, abv) => {
-      return called(typeof optimizedArgs === 'function' ? await optimizedArgs(data, abv) : optimizedArgs, data, abv || above, engine)
+      return called(coerceArray(typeof optimizedArgs === 'function' ? await optimizedArgs(data, abv) : optimizedArgs, method.optimizeUnary), data, abv || above, engine)
     }
   }
 }
@@ -65,6 +67,7 @@ function getMethod (logic, engine, methodName, above) {
  * @returns A function that optimizes the logic for the engine in advance.
  */
 export function optimize (logic, engine, above = []) {
+  engine.fallback.allowFunctions = engine.allowFunctions
   if (Array.isArray(logic)) {
     const arr = logic.map(l => optimize(l, engine, above))
     if (isSync(arr)) return declareSync((data, abv) => arr.map(l => typeof l === 'function' ? l(data, abv) : l), true)

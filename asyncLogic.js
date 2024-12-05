@@ -9,6 +9,7 @@ import { buildAsync } from './compiler.js'
 import omitUndefined from './utilities/omitUndefined.js'
 import { optimize } from './async_optimizer.js'
 import { applyPatches } from './compatibility.js'
+import { coerceArray } from './utilities/coerceArray.js'
 
 /**
  * An engine capable of running asynchronous JSON Logic.
@@ -75,16 +76,15 @@ class AsyncLogicEngine {
     if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (typeof this.methods[func] === 'function') {
-      const input = await this.run(data, context, { above })
-      const result = await this.methods[func](input, context, above, this)
+      const input = (!data || typeof data !== 'object') ? [data] : await this.run(data, context, { above })
+      const result = await this.methods[func](coerceArray(input), context, above, this)
       return Array.isArray(result) ? Promise.all(result) : result
     }
 
     if (typeof this.methods[func] === 'object') {
       const { asyncMethod, method, traverse } = this.methods[func]
       const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
-      const parsedData = shouldTraverse ? await this.run(data, context, { above }) : data
-
+      const parsedData = shouldTraverse ? ((!data || typeof data !== 'object') ? [data] : coerceArray(await this.run(data, context, { above }))) : data
       const result = await (asyncMethod || method)(parsedData, context, above, this)
       return Array.isArray(result) ? Promise.all(result) : result
     }
@@ -96,12 +96,12 @@ class AsyncLogicEngine {
    *
    * @param {String} name The name of the method being added.
    * @param {((args: any, context: any, above: any[], engine: AsyncLogicEngine) => any) | { traverse?: Boolean, method?: (args: any, context: any, above: any[], engine: AsyncLogicEngine) => any, asyncMethod?: (args: any, context: any, above: any[], engine: AsyncLogicEngine) => Promise<any>, deterministic?: Function | Boolean }} method
-   * @param {{ deterministic?: Boolean, async?: Boolean, sync?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
+   * @param {{ deterministic?: Boolean, async?: Boolean, sync?: Boolean, optimizeUnary?: boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
   addMethod (
     name,
     method,
-    { deterministic, async, sync } = {}
+    { deterministic, async, sync, optimizeUnary } = {}
   ) {
     if (typeof async === 'undefined' && typeof sync === 'undefined') sync = false
     if (typeof sync !== 'undefined') async = !sync
@@ -112,7 +112,7 @@ class AsyncLogicEngine {
       else method = { method, traverse: true }
     } else method = { ...method }
 
-    Object.assign(method, omitUndefined({ deterministic }))
+    Object.assign(method, omitUndefined({ deterministic, optimizeUnary }))
     // @ts-ignore
     this.fallback.addMethod(name, method, { deterministic })
     this.methods[name] = declareSync(method, sync)
@@ -188,6 +188,8 @@ class AsyncLogicEngine {
   async build (logic, options = {}) {
     const { above = [], top = true } = options
     this.fallback.truthy = this.truthy
+    // @ts-ignore
+    this.fallback.allowFunctions = this.allowFunctions
     if (top) {
       const constructedFunction = await buildAsync(logic, { engine: this, above, async: true, state: {} })
 

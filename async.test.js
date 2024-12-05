@@ -6,7 +6,7 @@ const modes = [
 ]
 
 for (const engine of modes) {
-  engine.addMethod('as1', async (n) => n + 1, { async: true, deterministic: true })
+  engine.addMethod('as1', async ([n]) => n + 1, { async: true, deterministic: true })
 }
 
 modes.forEach((logic) => {
@@ -676,7 +676,7 @@ modes.forEach((logic) => {
         length: ['hello']
       })
 
-      expect(answer).toStrictEqual(1)
+      expect(answer).toStrictEqual(5)
     })
 
     test('length object (2 keys)', async () => {
@@ -781,7 +781,7 @@ modes.forEach((logic) => {
 
   describe('addMethod', () => {
     test('adding a method works', async () => {
-      logic.addMethod('+1', (item) => item + 1, { sync: true })
+      logic.addMethod('+1', ([item]) => item + 1, { sync: true })
       expect(
         await logic.run({
           '+1': 7

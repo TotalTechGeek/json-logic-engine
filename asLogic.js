@@ -21,7 +21,7 @@ function pick (keep, obj) {
 export function asLogicSync (functions, keep = ['var'], engine = new LogicEngine()) {
   engine.methods = pick(keep, engine.methods)
   engine.addMethod('list', i => [].concat(i))
-  Object.keys(functions).forEach(i => engine.addMethod(i, data => Array.isArray(data) ? functions[i](...data) : functions[i](data === null ? undefined : data)))
+  Object.keys(functions).forEach(i => engine.addMethod(i, data => functions[i](...data)))
   return engine.build.bind(engine)
 }
 
