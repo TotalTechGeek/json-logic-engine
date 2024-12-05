@@ -10,3 +10,4 @@ bench/
 perf*.js
 *.test.js
 experiments/
+suites/

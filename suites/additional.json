@@ -1,0 +1,74 @@
+[
+    "# These are some tests from https://github.com/TotalTechGeek/json-logic-engine/commit/9125e91b5137938a8319de1103b0ebc5819e54e1",
+    [
+        [
+            1,
+            {
+                "var": "x"
+            },
+            3
+        ],
+        {
+            "x": 2
+        },
+        [
+            1,
+            2,
+            3
+        ]
+    ],
+    [
+        {
+            "if": [
+                {
+                    "var": "x"
+                },
+                [
+                    {
+                        "var": "y"
+                    }
+                ],
+                99
+            ]
+        },
+        {
+            "x": true,
+            "y": 42
+        },
+        [
+            42
+        ]
+    ],
+    [
+        {
+            "reduce": [
+                {
+                    "var": "integers"
+                },
+                {
+                    "+": [
+                        {
+                            "var": "current"
+                        },
+                        {
+                            "var": "accumulator"
+                        }
+                    ]
+                },
+                {
+                    "var": "start_with"
+                }
+            ]
+        },
+        {
+            "integers": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "start_with": 59
+        },
+        69
+    ]
+]

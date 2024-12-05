@@ -1,64 +1,62 @@
 [
-    "These are tests from https://github.com/orgs/json-logic/discussions/2",
-    [
-      { "max": [1, 2, 3] },
-      {},
-      3,
-      "Standard Max"
-    ],
-    [
-      { "max": 1 },
-      {},
-      1,
-      "Standard Max, Single Argument Sugared"
-    ],
-    [
-      { "max": { "var": "data" } },
-      { "data": [1, 2, 3] },
-      3,
-      "Max with Logic Chaining"
-    ],
-    [
-      { "cat": { "merge": [["Hello "], ["World", "!"]] } },
-      {},
-      "Hello World!",
-      "Cat with Logic Chaining"
-    ],
-    [
-      { "cat": { "var": "text" } },
-      { "text": ["Hello ", "World", "!"] },
-      "Hello World!",
-      "Cat with Logic Chaining (Simple)"
-    ],
-    [
-      {
-        "max": {
-            "map": [
-              {
-                "filter": [
-                  { "var": "people" }, 
-                  { "===": [{ "var": "department" }, "Engineering"] }
-                ]
-              }, 
-              { "var": "salary" }
+  "# These are tests from https://github.com/orgs/json-logic/discussions/2",
+  {
+      "description": "Standard Max",
+      "rule": { "max": [1, 2, 3] },
+      "data": {},
+      "result": 3
+  },
+  {
+      "description": "Standard Max, Single Argument Sugared",
+      "rule": { "max": 1 },
+      "data": {},
+      "result": 1
+  },
+  {
+      "description": "Max with Logic Chaining",
+      "rule": { "max": { "var": "data" } },
+      "data": { "data": [1, 2, 3] },
+      "result": 3
+  },
+  {
+      "description": "Cat with Logic Chaining",
+      "rule": { "cat": { "merge": [["Hello "], ["World", "!"]] } },
+      "data": {},
+      "result": "Hello World!"
+  },
+  {
+      "description": "Cat with Logic Chaining (Simple)",
+      "rule": { "cat": { "var": "text" } },
+      "data": { "text": ["Hello ", "World", "!"] },
+      "result": "Hello World!"
+  },
+  {
+      "rule": {
+          "max": {
+              "map": [{
+                  "filter": [
+                    { "var": "people" }, 
+                    { "===": [{ "var": "department" }, "Engineering"] }
+                ]}, 
+                { "var": "salary" }
+            ]
+          }
+      },
+      "data": {
+          "people": [
+            { "name": "Jay Ortiz", "salary": 100414, "department": "Engineering"},
+            { "name": "Louisa Hall", "salary": 133601, "department": "Sales"},
+            { "name": "Kyle Carlson", "salary": 139803, "department": "Sales"},
+            { "name": "Grace Ortiz", "salary": 147068, "department": "Engineering"},
+            { "name": "Isabelle Harrington", "salary": 112704, "department": "Marketing"},
+            { "name": "Harold Moore", "salary": 125221, "department": "Sales"},
+            { "name": "Clarence Schultz", "salary": 127985, "department": "Sales"},
+            { "name": "Jesse Keller", "salary": 149212, "department": "Engineering"},
+            { "name": "Phillip Holland", "salary": 105888, "department": "Marketing"},
+            { "name": "Mason Sullivan", "salary": 147161, "department": "Engineering" }
           ]
-        }
       },
-      {
-        "people": [
-          { "name": "Jay Ortiz", "salary": 100414, "department": "Engineering"},
-          { "name": "Louisa Hall", "salary": 133601, "department": "Sales"},
-          { "name": "Kyle Carlson", "salary": 139803, "department": "Sales"},
-          { "name": "Grace Ortiz", "salary": 147068, "department": "Engineering"},
-          { "name": "Isabelle Harrington", "salary": 112704, "department": "Marketing"},
-          { "name": "Harold Moore", "salary": 125221, "department": "Sales"},
-          { "name": "Clarence Schultz", "salary": 127985, "department": "Sales"},
-          { "name": "Jesse Keller", "salary": 149212, "department": "Engineering"},
-          { "name": "Phillip Holland", "salary": 105888, "department": "Marketing"},
-          { "name": "Mason Sullivan", "salary": 147161, "department": "Engineering" }
-        ]
-      },
-      149212,
-      "Max with Logic Chaining (Complex)"
-    ]
-  ]
+      "result": 149212,
+      "description": "Max with Logic Chaining (Complex)"
+  }
+]

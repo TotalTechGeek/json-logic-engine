@@ -5,7 +5,12 @@ const tests = []
 // get all json files from "suites" directory
 const files = fs.readdirSync('./suites')
 for (const file of files) {
-  if (file.endsWith('.json')) tests.push(...JSON.parse(fs.readFileSync(`./suites/${file}`).toString()).filter(i => typeof i !== 'string'))
+  if (file.endsWith('.json')) {
+    tests.push(...JSON.parse(fs.readFileSync(`./suites/${file}`).toString()).filter(i => typeof i !== 'string').map(i => {
+      if (Array.isArray(i)) return i
+      return [i.rule, i.data || {}, i.result]
+    }))
+  }
 }
 
 // eslint-disable-next-line no-labels
