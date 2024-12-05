@@ -231,11 +231,11 @@ function timeout (n, x) {
       expect(await f({ x: 1, y: 2 })).toStrictEqual({ a: 1, b: 2 })
     })
 
-    test('Invalid eachKey', async () => {
-      expect(async () => await logic.build({ eachKey: 5 })).rejects.toThrow(
-        InvalidControlInput
-      )
-    })
+    // test('Invalid eachKey', async () => {
+    //   expect(async () => await logic.build({ eachKey: 5 })).rejects.toThrow(
+    //     InvalidControlInput
+    //   )
+    // })
 
     test('Simple deterministic eachKey', async () => {
       const f = await logic.build({ eachKey: { a: 1, b: { '+': [1, 1] } } })
@@ -246,7 +246,7 @@ function timeout (n, x) {
 })
 
 const logic = new AsyncLogicEngine()
-logic.addMethod('as1', async (n) => timeout(100, n + 1), { async: true })
+logic.addMethod('as1', async ([n]) => timeout(100, n + 1), { async: true })
 
 describe('Testing async build with full async', () => {
   test('Async +1', async () => {

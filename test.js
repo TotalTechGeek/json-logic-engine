@@ -704,7 +704,7 @@ modes.forEach((logic) => {
         length: ['hello']
       })
 
-      expect(answer).toStrictEqual(1)
+      expect(answer).toStrictEqual(5)
     })
 
     test('length object (2 keys)', () => {
@@ -813,7 +813,7 @@ modes.forEach((logic) => {
 
   describe('addMethod', () => {
     test('adding a method works', () => {
-      logic.addMethod('+1', (item) => item + 1)
+      logic.addMethod('+1', ([item]) => item + 1)
       expect(
         logic.run({
           '+1': 7

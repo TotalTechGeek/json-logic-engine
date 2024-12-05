@@ -1,5 +1,6 @@
 // This is the synchronous version of the optimizer; which the Async one should be based on.
 import { isDeterministic } from './compiler.js'
+import { coerceArray } from './utilities/coerceArray.js'
 
 /**
  * Turns an expression like { '+': [1, 2] } into a function that can be called with data.
@@ -18,7 +19,8 @@ function getMethod (logic, engine, methodName, above) {
     return (data, abv) => called(args, data, abv || above, engine)
   }
 
-  const args = logic[methodName]
+  let args = logic[methodName]
+  if (!args || typeof args !== 'object') args = [args]
 
   if (Array.isArray(args)) {
     const optimizedArgs = args.map(l => optimize(l, engine, above))
@@ -29,7 +31,7 @@ function getMethod (logic, engine, methodName, above) {
   } else {
     const optimizedArgs = optimize(args, engine, above)
     return (data, abv) => {
-      return called(typeof optimizedArgs === 'function' ? optimizedArgs(data, abv) : optimizedArgs, data, abv || above, engine)
+      return called(coerceArray(typeof optimizedArgs === 'function' ? optimizedArgs(data, abv) : optimizedArgs, method.optimizeUnary), data, abv || above, engine)
     }
   }
 }

@@ -8,6 +8,7 @@ import declareSync from './utilities/declareSync.js'
 import omitUndefined from './utilities/omitUndefined.js'
 import { optimize } from './optimizer.js'
 import { applyPatches } from './compatibility.js'
+import { coerceArray } from './utilities/coerceArray.js'
 
 /**
  * An engine capable of running synchronous JSON Logic.
@@ -71,14 +72,14 @@ class LogicEngine {
     if (!this.methods[func]) throw new Error(`Method '${func}' was not found in the Logic Engine.`)
 
     if (typeof this.methods[func] === 'function') {
-      const input = this.run(data, context, { above })
+      const input = (!data || typeof data !== 'object') ? [data] : coerceArray(this.run(data, context, { above }))
       return this.methods[func](input, context, above, this)
     }
 
     if (typeof this.methods[func] === 'object') {
       const { method, traverse } = this.methods[func]
       const shouldTraverse = typeof traverse === 'undefined' ? true : traverse
-      const parsedData = shouldTraverse ? this.run(data, context, { above }) : data
+      const parsedData = shouldTraverse ? ((!data || typeof data !== 'object') ? [data] : coerceArray(this.run(data, context, { above }))) : data
       return method(parsedData, context, above, this)
     }
 
@@ -89,12 +90,12 @@ class LogicEngine {
    *
    * @param {String} name The name of the method being added.
    * @param {((args: any, context: any, above: any[], engine: LogicEngine) => any) |{ traverse?: Boolean, method: (args: any, context: any, above: any[], engine: LogicEngine) => any, deterministic?: Function | Boolean }} method
-   * @param {{ deterministic?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
+   * @param {{ deterministic?: Boolean, optimizeUnary?: Boolean }} annotations This is used by the compiler to help determine if it can optimize the function being generated.
    */
-  addMethod (name, method, { deterministic } = {}) {
+  addMethod (name, method, { deterministic, optimizeUnary } = {}) {
     if (typeof method === 'function') method = { method, traverse: true }
     else method = { ...method }
-    Object.assign(method, omitUndefined({ deterministic }))
+    Object.assign(method, omitUndefined({ deterministic, optimizeUnary }))
     this.methods[name] = declareSync(method)
   }
 

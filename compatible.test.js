@@ -1,6 +1,12 @@
 import fs from 'fs'
 import { LogicEngine, AsyncLogicEngine } from './index.js'
-const tests = JSON.parse(fs.readFileSync('./bench/compatible.json').toString())
+const tests = []
+
+// get all json files from "suites" directory
+const files = fs.readdirSync('./suites')
+for (const file of files) {
+  if (file.endsWith('.json')) tests.push(...JSON.parse(fs.readFileSync(`./suites/${file}`).toString()).filter(i => typeof i !== 'string'))
+}
 
 // eslint-disable-next-line no-labels
 inline: {
