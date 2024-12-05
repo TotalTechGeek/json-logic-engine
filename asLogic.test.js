@@ -1,7 +1,7 @@
 import { asLogicSync, asLogicAsync } from './asLogic.js'
 
 const module = {
-  hello: (name = 'World', last = '') => `Hello, ${name ?? 'World'}${last.length ? ' ' : ''}${last}!`
+  hello: (name = 'World', last = '') => `Hello, ${name || 'World'}${last.length ? ' ' : ''}${last}!`
 }
 
 describe('asLogicSync', () => {
