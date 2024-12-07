@@ -51,5 +51,17 @@
             { "name": "Jesse Keller", "department": "Engineering" },
             { "name": "Mason Sullivan", "department": "Engineering" }
         ]
+    },
+    "The specification below depends upon escaping from another proposal",
+    {
+        "description": "Access an escaped key from above",
+        "rule": { 
+            "map": [
+                { "var": "arr" }, 
+                { "+": [{ "var": "../../\\.\\./" }, { "var": "../../..\\/" }]}
+            ] 
+        },
+        "data": { "arr": [1,2,3], "../": 10, "": { "": { "/": 7 }} },
+        "result": [17,17,17]
     }
 ]
