@@ -310,6 +310,8 @@ const defaultMethods = {
         avoidInlineAsync: true
       }
       mapper = build(mapper, mapState)
+      const aboveArray = mapper.aboveDetected ? '[null, context, above]' : 'null'
+
       buildState.methods.push(mapper)
       if (async) {
         if (!isSync(mapper) || selector.includes('await')) {
@@ -317,21 +319,21 @@ const defaultMethods = {
           if (typeof defaultValue !== 'undefined') {
             return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
               buildState.methods.length - 1
-            }]({ accumulator: a, current: b }, [null, context, above]), ${defaultValue})`
+            }]({ accumulator: a, current: b }, ${aboveArray}), ${defaultValue})`
           }
           return `await asyncIterators.reduce(${selector} || [], (a,b) => methods[${
             buildState.methods.length - 1
-          }]({ accumulator: a, current: b }, [null, context, above]))`
+          }]({ accumulator: a, current: b }, ${aboveArray}))`
         }
       }
       if (typeof defaultValue !== 'undefined') {
         return `(${selector} || []).reduce((a,b) => methods[${
           buildState.methods.length - 1
-        }]({ accumulator: a, current: b }, [null, context, above]), ${defaultValue})`
+        }]({ accumulator: a, current: b }, ${aboveArray}), ${defaultValue})`
       }
       return `(${selector} || []).reduce((a,b) => methods[${
         buildState.methods.length - 1
-      }]({ accumulator: a, current: b }, [null, context, above]))`
+      }]({ accumulator: a, current: b }, ${aboveArray}))`
     },
     method: (input, context, above, engine) => {
       if (!Array.isArray(input)) throw new InvalidControlInput(input)
@@ -536,14 +538,17 @@ function createArrayIterativeMethod (name, useTruthy = false) {
         extraArguments: 'index, above'
       }
 
+      const method = build(mapper, mapState)
+      const aboveArray = method.aboveDetected ? buildState.compile`[{ item: null }, context, above]` : buildState.compile`null`
+
       if (async) {
         if (!isSyncDeep(mapper, buildState.engine, buildState)) {
           buildState.detectAsync = true
-          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, above]))`
+          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${method}(i, x, ${aboveArray}))`
         }
       }
 
-      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${build(mapper, mapState)}(i, x, [{ item: null }, context, above]))`
+      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${method}(i, x, ${aboveArray}))`
     },
     traverse: false
   }

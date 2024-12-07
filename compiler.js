@@ -6,11 +6,11 @@ import {
   Sync,
   Compiled
 } from './constants.js'
-import declareSync from './utilities/declareSync.js'
 
 // asyncIterators is required for the compiler to operate as intended.
 import asyncIterators from './async_iterators.js'
 import { coerceArray } from './utilities/coerceArray.js'
+import { countArguments } from './utilities/countArguments.js'
 
 /**
  * Provides a simple way to compile logic into a function that can be run.
@@ -208,17 +208,22 @@ function buildString (method, buildState = {}) {
     if (!coerce && Array.isArray(lower) && lower.length === 1) lower = lower[0]
     else if (coerce && Array.isArray(lower)) coerce = ''
 
+    const argumentsDict = [', context', ', context, above', ', context, above, engine']
+
     if (typeof engine.methods[func] === 'function') {
       asyncDetected = !isSync(engine.methods[func])
-      return makeAsync(`engine.methods["${func}"](${coerce}(` + buildString(lower, buildState) + '), context, above, engine)')
+      const argumentsNeeded = argumentsDict[countArguments(engine.methods[func]) - 1] || argumentsDict[2]
+      return makeAsync(`engine.methods["${func}"](${coerce}(` + buildString(lower, buildState) + ')' + argumentsNeeded + ')')
     } else {
+      asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
+      const argCount = countArguments(asyncDetected ? engine.methods[func].asyncMethod : engine.methods[func].method)
+      const argumentsNeeded = argumentsDict[argCount - 1] || argumentsDict[2]
+
       if (engine.methods[func] && (typeof engine.methods[func].traverse === 'undefined' ? true : engine.methods[func].traverse)) {
-        asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
-        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(${coerce}(` + buildString(lower, buildState) + '), context, above, engine)')
+        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(${coerce}(` + buildString(lower, buildState) + ')' + argumentsNeeded + ')')
       } else {
-        asyncDetected = Boolean(async && engine.methods[func] && engine.methods[func].asyncMethod)
         notTraversed.push(lower)
-        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + `notTraversed[${notTraversed.length - 1}]` + ', context, above, engine)')
+        return makeAsync(`engine.methods["${func}"]${asyncDetected ? '.asyncMethod' : '.method'}(` + `notTraversed[${notTraversed.length - 1}]` + argumentsNeeded + ')')
       }
     }
   }
@@ -303,11 +308,14 @@ function processBuiltString (method, str, buildState) {
   })
 
   const final = `(values, methods, notTraversed, asyncIterators, engine, above, coerceArray) => ${buildState.asyncDetected ? 'async' : ''} (context ${buildState.extraArguments ? ',' + buildState.extraArguments : ''}) => { const result = ${str}; return result }`
-
   // console.log(str)
   // console.log(final)
   // eslint-disable-next-line no-eval
-  return declareSync((typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above, coerceArray), !buildState.asyncDetected)
+  return Object.assign(
+    (typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above, coerceArray), {
+      [Sync]: !buildState.asyncDetected,
+      aboveDetected: str.includes(', above')
+    })
 }
 
 export { build }
