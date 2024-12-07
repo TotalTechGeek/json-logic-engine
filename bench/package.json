@@ -11,7 +11,7 @@
   "dependencies": {
     "@bestow/jsonlogic-rs": "^0.4.0",
     "json-logic-js": "^2.0.1",
-    "json-rules-engine": "^6.0.1"
+    "json-rules-engine": "^7.2.1"
   },
   "type": "module"
 }

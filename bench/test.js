@@ -1,7 +1,6 @@
 import { LogicEngine, AsyncLogicEngine } from '../index.js'
 import fs from 'fs'
 import { isDeepStrictEqual } from 'util'
-// import traverseCopy from '../utilities/traverseCopy.js'
 import jl from 'json-logic-js'
 import rust from '@bestow/jsonlogic-rs'
 
@@ -33,11 +32,7 @@ console.log(
   incompatible.length,
   compatible.length / (compatible.length + incompatible.length)
 )
-fs.writeFileSync('compatible.json', JSON.stringify(compatible, undefined, 4))
-fs.writeFileSync(
-  'incompatible.json',
-  JSON.stringify(incompatible, undefined, 4)
-)
+// eslint-disable-next-line no-unused-vars
 const defined = [
   [{ '+': [1, 2, 3, 4, 5] }, {}],
   [{ map: [[1, 2, 3, 4, 5], { '+': [{ var: '' }, 1] }] }, {}],
@@ -61,7 +56,7 @@ const defined = [
   [{ '-': [{ var: '' }, 1] }, 7, 6],
   [{ '*': [{ var: 'x' }, { var: 'y' }] }, { x: 1, y: 3 }, 3]
 ]
-const tests = defined || compatible
+const tests = compatible
 const other = tests
 const built = other.map((i) => {
   return x.build(i[0])

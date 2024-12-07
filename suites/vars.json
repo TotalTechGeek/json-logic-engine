@@ -1,0 +1,45 @@
+[
+    "Test Specification for Handling esoteric path traversal",
+    {
+        "description": "Fetches a value from an empty key",
+        "rule": { "var": "." },
+        "data": { "" : 1 },
+        "result": 1
+    },
+    {
+        "description": "Fetches a value from a nested empty key",
+        "rule": { "var": ".." },
+        "data": { "" : { "": 2 } },
+        "result": 2
+    },
+    {
+        "description": "Fetches a value from a doubly nested empty key",
+        "rule": { "var": "..." },
+        "data": { "" : { "": { "": 3 } } },
+        "result": 3
+    },
+    {
+        "description": "Fetches a value from a key with a dot in it",
+        "rule": { "var": "\\.key" },
+        "data": { ".key" : 4 },
+        "result": 4
+    },
+    {
+        "description":"Fetches a value from a key with a dot in it (2)",
+        "rule": { "var": "hello\\.world" },
+        "data": { "hello.world" : 5 },
+        "result": 5
+    },
+    {
+        "description": "Fetches a value from a key inside an empty key with a dot in it",
+        "rule": { "var": ".\\.key" },
+        "data": { "": { ".key" : 6 } },
+        "result": 6
+    },
+    {
+        "description": "Going a few levels deep",
+        "rule": { "var": "..\\.key." },
+        "data": { "": { "": { ".key": { "": 7 }} }},
+        "result": 7
+    }
+]
