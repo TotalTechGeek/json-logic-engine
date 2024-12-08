@@ -35,5 +35,17 @@
         "rule": { "val": "" },
         "data": { "": { "": 22 } },
         "result": { "": 22 }
+    },
+    {
+        "description": "Using val in a map (remember that null gets the current context, not empty string)",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": null }, 1] }] },
+        "data": null,
+        "result": [2,3,4]
+    },
+    {
+        "description": "Using val in a map (and remember [null] and null are the same)",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": [null] }, 1] }] },
+        "data": null,
+        "result": [2,3,4]
     }
 ]
