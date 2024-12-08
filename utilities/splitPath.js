@@ -20,37 +20,32 @@ export function splitPathMemoized (str) {
   return parts
 }
 
+const chars = ['~', '/', '.']
+
 /**
  * Splits a path string into an array of parts.
  *
- * @example splitPath('a.b.c') // ['a', 'b', 'c']
- * @example splitPath('a\\.b.c') // ['a.b', 'c']
- * @example splitPath('a\\\\.b.c') // ['a\\', 'b', 'c']
- * @example splitPath('a\\\\\\.b.c') // ['a\\.b', 'c']
- * @example splitPath('hello') // ['hello']
- * @example splitPath('hello\\') // ['hello\\']
- * @example splitPath('hello\\\\') // ['hello\\']
  *
  * @param {string} str
  * @param {string} separator
  * @returns {string[]}
  */
-export function splitPath (str, separator = '.', escape = '\\', up = '/') {
+export function splitPath (str) {
   const parts = []
   let current = ''
 
   for (let i = 0; i < str.length; i++) {
     const char = str[i]
-    if (char === escape) {
-      if (str[i + 1] === separator || str[i + 1] === up) {
-        current += str[i + 1]
+    if (char === '~') {
+      if (str[i + 1] === '0' || str[i + 1] === '1' || str[i + 1] === '2') {
+        current += chars[+str[i + 1]]
         i++
-      } else if (str[i + 1] === escape) {
-        current += escape
+      } else if (str[i + 1] === '~') {
+        current += '~'
         i++
         // The following else might be something tweaked in a spec.
-      } else current += escape
-    } else if (char === separator) {
+      } else throw new Error('Invalid escape sequence')
+    } else if (char === '.' || char === '/') {
       parts.push(current)
       current = ''
     } else current += char
