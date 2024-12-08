@@ -20,62 +20,80 @@
     },
     {
         "description": "Fetches a value from a key that is purely a dot",
-        "rule": { "var": "\\." },
+        "rule": { "var": "~2" },
         "data": { "." : 20 },
         "result": 20
     },
     {
         "description": "Fetches a value from a key with a dot in it",
-        "rule": { "var": "\\.key" },
+        "rule": { "var": "~2key" },
         "data": { ".key" : 4 },
         "result": 4
     },
     {
         "description":"Fetches a value from a key with a dot in it (2)",
-        "rule": { "var": "hello\\.world" },
+        "rule": { "var": "hello~2world" },
         "data": { "hello.world" : 5 },
         "result": 5
     },
     {
         "description": "Fetches a value from a key inside an empty key with a dot in it",
-        "rule": { "var": ".\\.key" },
+        "rule": { "var": "/~2key" },
         "data": { "": { ".key" : 6 } },
         "result": 6
     },
     {
         "description": "Going a few levels deep",
-        "rule": { "var": "..\\.key." },
+        "rule": { "var": "//~2key." },
         "data": { "": { "": { ".key": { "": 7 }} }},
         "result": 7
     },
     {
         "description": "Escape / as well, which is useful for the scope proposal",
-        "rule": { "var": "\\/" },
+        "rule": { "var": "~1" },
         "data": { "/" : 8 },
         "result": 8
     },
     {
-        "description": "Though / doesn't inherently need to be escaped", 
-        "rule": { "var": "/" },
-        "data": { "/" : 9 },
-        "result": 9
-    },
-    {
         "description": "Dot then empty key",
-        "rule": { "var": "\\.." },
+        "rule": { "var": "~2." },
         "data": { "." : { "" : 10 } },
         "result": 10
     },
     {
         "description": "Empty key then dot",
-        "rule": { "var": ".\\." },
+        "rule": { "var": ".~2" },
         "data": { "" : { "." : 11 } },
         "result": 11
     },
     {
         "description": "Can use backslack in name, too",
-        "rule": { "var": "\\\\.Hello" },
+        "rule": { "var": "\\.Hello" },
         "data": { "\\" : { "Hello" : 12 } },
         "result": 12
+    },
+    {
+        "description": "Can escape tilde",
+        "rule": { "var": "~0" },
+        "data": { "~" : 13 },
+        "result": 13
+    },
+    {
+        "description": "Fetches a value from an empty key, traditional",
+        "rule": { "var": "/" },
+        "data": { "" : 1 },
+        "result": 1
+    },
+    {
+        "description": "Fetches a value from a nested empty key, traditional",
+        "rule": { "var": "//" },
+        "data": { "" : { "": 2 } },
+        "result": 2
+    },
+    {
+        "description": "Fetches a value from a doubly nested empty key, traditional",
+        "rule": { "var": "///" },
+        "data": { "" : { "": { "": 3 } } },
+        "result": 3
     }
 ]

@@ -123,11 +123,11 @@ describe('Various Test Cases', () => {
   })
 
   it('is able to handle simple path escaping', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, 'b\\.c'] }, { selected: { 'b.c': 2 } }, 2)
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, 'b~2c'] }, { selected: { 'b.c': 2 } }, 2)
   })
 
   it('is able to handle simple path escaping in a variable', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { 'b.c': 2 }, key: 'b\\.c' }, 2)
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { get: [{ var: 'selected' }, { var: 'key' }] }, { selected: { 'b.c': 2 }, key: 'b~2c' }, 2)
   })
 
   it('is able to avoid returning functions', async () => {
@@ -154,7 +154,7 @@ describe('Various Test Cases', () => {
   })
 
   it('is able to handle path escaping in a var call', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'hello\\.world' }, { 'hello.world': 2 }, 2)
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: 'hello~2world' }, { 'hello.world': 2 }, 2)
   })
 
   it('is able to access empty keys', async () => {
@@ -162,16 +162,15 @@ describe('Various Test Cases', () => {
   })
 
   it('is able to access dot keys', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\.' }, { '.': 2 }, 2)
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '~2' }, { '.': 2 }, 2)
   })
 
   it('is able to access "/" keys from above', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1], { '+': [{ var: '' }, { var: '../../..\\/' }] }] }, { '': { '': { '/': 3 } } }, [4])
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1], { '+': [{ var: '' }, { var: '../../..~1' }] }] }, { '': { '': { '/': 3 } } }, [4])
   })
 
   it('is able to handle path escaping with multiple escapes', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\foo' }, { '\\foo': 2 }, 2)
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { var: '\\\\foo' }, { '\\foo': 2 }, 2)
   })
 
   it('is able to access the index in the iterators', async () => {
