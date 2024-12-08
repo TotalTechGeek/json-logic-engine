@@ -203,6 +203,20 @@ const defaultMethods = {
       }
     }
   },
+  // Adding this to spec something out, not to merge it.
+  val: {
+    method: (args, context) => {
+      let result = context
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] === null) continue
+        if (result === null || result === undefined) return null
+        result = result[args[i]]
+      }
+      if (typeof result === 'undefined') return null
+      return result
+    },
+    deterministic: false
+  },
   var: (key, context, above, engine) => {
     let b
     if (Array.isArray(key)) {
