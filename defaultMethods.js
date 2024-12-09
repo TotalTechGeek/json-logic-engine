@@ -203,6 +203,35 @@ const defaultMethods = {
       }
     }
   },
+  // Adding this to spec something out, not to merge it quite yet
+  val: {
+    method: (args, context, above) => {
+      let result = context
+      let start = 0
+      if (Array.isArray(args[0]) && args[0].length === 1) {
+        start++
+        const climb = +Math.abs(args[0][0])
+        let pos = 0
+        for (let i = 0; i < climb; i++) {
+          result = above[pos++]
+          if (i === above.length - 1 && Array.isArray(result)) {
+            above = result
+            result = result[0]
+            pos = 1
+          }
+        }
+      }
+
+      for (let i = start; i < args.length; i++) {
+        if (args[i] === null) continue
+        if (result === null || result === undefined) return null
+        result = result[args[i]]
+      }
+      if (typeof result === 'undefined') return null
+      return result
+    },
+    deterministic: false
+  },
   var: (key, context, above, engine) => {
     let b
     if (Array.isArray(key)) {
@@ -539,7 +568,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
       }
 
       const method = build(mapper, mapState)
-      const aboveArray = method.aboveDetected ? buildState.compile`[{ item: null }, context, above]` : buildState.compile`null`
+      const aboveArray = method.aboveDetected ? buildState.compile`[{ item: null, index: x }, context, above]` : buildState.compile`null`
 
       if (async) {
         if (!isSyncDeep(mapper, buildState.engine, buildState)) {
