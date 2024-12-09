@@ -46,7 +46,7 @@ export function splitPath (str) {
         // The following else might be something tweaked in a spec.
       } else throw new Error('Invalid escape sequence')
     } else if (char === '.' || char === '/') {
-      parts.push(current)
+      if (i) parts.push(current)
       current = ''
     } else current += char
   }

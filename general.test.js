@@ -166,7 +166,7 @@ describe('Various Test Cases', () => {
   })
 
   it('is able to access "/" keys from above', async () => {
-    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1], { '+': [{ var: '' }, { var: '../../..~1' }] }] }, { '': { '': { '/': 3 } } }, [4])
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1], { '+': [{ var: '' }, { var: '../..////~1' }] }] }, { '': { '': { '/': 3 } } }, [4])
   })
 
   it('is able to handle path escaping with multiple escapes', async () => {

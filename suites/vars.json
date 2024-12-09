@@ -2,19 +2,19 @@
     "Test Specification for Handling esoteric path traversal",
     {
         "description": "Fetches a value from an empty key",
-        "rule": { "var": "." },
+        "rule": { "var": "/" },
         "data": { "" : 1 },
         "result": 1
     },
     {
         "description": "Fetches a value from a nested empty key",
-        "rule": { "var": ".." },
+        "rule": { "var": "//" },
         "data": { "" : { "": 2 } },
         "result": 2
     },
     {
         "description": "Fetches a value from a doubly nested empty key",
-        "rule": { "var": "..." },
+        "rule": { "var": "///" },
         "data": { "" : { "": { "": 3 } } },
         "result": 3
     },
@@ -38,13 +38,13 @@
     },
     {
         "description": "Fetches a value from a key inside an empty key with a dot in it",
-        "rule": { "var": "/~2key" },
+        "rule": { "var": "//~2key" },
         "data": { "": { ".key" : 6 } },
         "result": 6
     },
     {
         "description": "Going a few levels deep",
-        "rule": { "var": "//~2key." },
+        "rule": { "var": "///~2key/" },
         "data": { "": { "": { ".key": { "": 7 }} }},
         "result": 7
     },
@@ -62,7 +62,7 @@
     },
     {
         "description": "Empty key then dot",
-        "rule": { "var": ".~2" },
+        "rule": { "var": "//~2" },
         "data": { "" : { "." : 11 } },
         "result": 11
     },
@@ -79,20 +79,20 @@
         "result": 13
     },
     {
-        "description": "Fetches a value from an empty key, traditional",
-        "rule": { "var": "/" },
+        "description": "Fetches a value from an empty key, equivalence",
+        "rule": { "var": "." },
         "data": { "" : 1 },
         "result": 1
     },
     {
-        "description": "Fetches a value from a nested empty key, traditional",
-        "rule": { "var": "//" },
+        "description": "Fetches a value from a nested empty key, equivalence",
+        "rule": { "var": ".." },
         "data": { "" : { "": 2 } },
         "result": 2
     },
     {
-        "description": "Fetches a value from a doubly nested empty key, traditional",
-        "rule": { "var": "///" },
+        "description": "Fetches a value from a doubly nested empty key, equivalence",
+        "rule": { "var": "..." },
         "data": { "" : { "": { "": 3 } } },
         "result": 3
     }
