@@ -95,5 +95,17 @@
         "rule": { "var": "..." },
         "data": { "" : { "": { "": 3 } } },
         "result": 3
+    },
+    {
+        "description": "Old format still works",
+        "rule": { "var": "hello.world" },
+        "data": { "hello": { "world": 5 } },
+        "result": 5
+    },
+    {
+        "description": "New format works too",
+        "rule": { "var": "hello/world" },
+        "data": { "hello": { "world": 5 } },
+        "result": 5
     }
 ]
