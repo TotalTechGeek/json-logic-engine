@@ -1,0 +1,72 @@
+[
+    "Test Specification for val",
+    {
+        "description": "Fetches a value from an empty key",
+        "rule": { "val": "" },
+        "data": { "" : 1 },
+        "result": 1
+    },
+    {
+        "description": "Fetches a value from a nested empty key",
+        "rule": { "val": ["", ""] },
+        "data": { "" : { "": 2 } },
+        "result": 2
+    },
+    {
+        "description": "Fetches a value from a doubly nested empty key",
+        "rule": { "val": ["", "", ""] },
+        "data": { "" : { "": { "": 3 } } },
+        "result": 3
+    },
+    {
+        "description": "Fetches a value from a key that is purely a dot",
+        "rule": { "val": "." },
+        "data": { "." : 20 },
+        "result": 20
+    },
+    {
+        "description": "Fetches the entire context",
+        "rule": { "val": null },
+        "data": { "": 21 },
+        "result": { "": 21 }
+    },
+    {
+        "description": "Fetches the entire context for a nested key",
+        "rule": { "val": "" },
+        "data": { "": { "": 22 } },
+        "result": { "": 22 }
+    },
+    {
+        "description": "Using val in a map (remember that null gets the current context, not empty string)",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": null }, 1] }] },
+        "data": null,
+        "result": [2,3,4]
+    },
+    {
+        "description": "Using val in a map (and remember [null] and null are the same)",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": [null] }, 1] }] },
+        "data": null,
+        "result": [2,3,4]
+    },
+    "Testing out scopes",
+    {
+        "description": "Climb up to get adder",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": null }, { "val": [[-2], "adder"] }] }] },
+        "data": { "adder": 10 },
+        "result": [11,12,13]
+    },
+    {
+        "description": "Climb up to get index",
+        "rule": { "map": [[1,2,3], { "+": [{ "val": null }, { "val": [[-1], "index"] }] }] },
+        "data": { "adder": 10 },
+        "result": [1,3,5]
+    },
+    {
+        "description": "Nested get adder",
+        "rule": {
+            "map": [["Test"], { "map": [[1,2,3], { "+": [{"val": null}, {"val": [[-4], "adder"]}] }]} ]
+        },
+        "data": { "adder": 10 },
+        "result": [[11,12,13]]
+    }
+]
