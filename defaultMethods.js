@@ -267,6 +267,72 @@ const defaultMethods = {
       }
     }
   },
+  // Adding this to spec something out, not to merge it quite yet
+  val: {
+    method: (args, context, above) => {
+      if (Array.isArray(args) && args.length === 1) args = args[0]
+      if (!Array.isArray(args)) {
+        if (args === null || args === undefined) return context
+        const result = context[args]
+        if (typeof result === 'undefined') return null
+        return result
+      }
+      let result = context
+      let start = 0
+      if (Array.isArray(args[0]) && args[0].length === 1) {
+        start++
+        const climb = +Math.abs(args[0][0])
+        let pos = 0
+        for (let i = 0; i < climb; i++) {
+          result = above[pos++]
+          if (i === above.length - 1 && Array.isArray(result)) {
+            above = result
+            result = result[0]
+            pos = 1
+          }
+        }
+      }
+      for (let i = start; i < args.length; i++) {
+        if (args[i] === null) continue
+        if (result === null || result === undefined) return null
+        result = result[args[i]]
+      }
+      if (typeof result === 'undefined') return null
+      return result
+    },
+    optimizeUnary: true,
+    deterministic: (data, buildState) => {
+      if (buildState.insideIterator) {
+        if (Array.isArray(data) && Array.isArray(data[0]) && Math.abs(data[0][0]) >= 2) return false
+        return true
+      }
+      return false
+    },
+    compile: (data, buildState) => {
+      function wrapNull (data) {
+        if (!chainingSupported) return buildState.compile`(((a) => a === null || a === undefined ? null : a)(${data}))`
+        return buildState.compile`(${data} ?? null)`
+      }
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        // A very, very specific optimization.
+        if (buildState.iteratorCompile && Math.abs(data[0][0] || 0) === 1 && data[1] === 'index') return buildState.compile`index`
+        return false
+      }
+      if (Array.isArray(data) && data.length === 1) data = data[0]
+      if (data === null) return wrapNull(buildState.compile`context`)
+      if (!Array.isArray(data)) return wrapNull(buildState.compile`context[${data}]`)
+      if (Array.isArray(data)) {
+        let res = buildState.compile`context`
+        for (let i = 0; i < data.length; i++) {
+          if (data[i] === null) continue
+          if (chainingSupported) res = buildState.compile`${res}?.[${data[i]}]`
+          else res = buildState.compile`(${res}|| 0)[${data[i]}]`
+        }
+        return wrapNull(buildState.compile`(${res})`)
+      }
+      return false
+    }
+  },
   var: (key, context, above, engine) => {
     let b
     if (Array.isArray(key)) {
