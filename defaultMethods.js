@@ -637,7 +637,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
 
       return selector[name]((i, index) => {
         const result = engine.run(mapper, i, {
-          above: [{ item: selector, index }, context, above]
+          above: [{ iterator: selector, index }, context, above]
         })
         return useTruthy ? engine.truthy(result) : result
       })
@@ -651,7 +651,7 @@ function createArrayIterativeMethod (name, useTruthy = false) {
         })) || []
       return asyncIterators[name](selector, (i, index) => {
         const result = engine.run(mapper, i, {
-          above: [{ item: selector, index }, context, above]
+          above: [{ iterator: selector, index }, context, above]
         })
         return useTruthy ? engine.truthy(result) : result
       })
@@ -669,16 +669,16 @@ function createArrayIterativeMethod (name, useTruthy = false) {
       }
 
       const method = build(mapper, mapState)
-      const aboveArray = method.aboveDetected ? buildState.compile`[{ item: null, index: x }, context, above]` : buildState.compile`null`
+      const aboveArray = method.aboveDetected ? buildState.compile`[{ iterator: z, index: x }, context, above]` : buildState.compile`null`
 
       if (async) {
         if (!isSyncDeep(mapper, buildState.engine, buildState)) {
           buildState.detectAsync = true
-          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x) => ${method}(i, x, ${aboveArray}))`
+          return buildState.compile`await asyncIterators[${name}](${selector} || [], async (i, x, z) => ${method}(i, x, ${aboveArray}))`
         }
       }
 
-      return buildState.compile`(${selector} || [])[${name}]((i, x) => ${method}(i, x, ${aboveArray}))`
+      return buildState.compile`(${selector} || [])[${name}]((i, x, z) => ${method}(i, x, ${aboveArray}))`
     },
     traverse: false
   }

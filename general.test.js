@@ -259,9 +259,9 @@ describe('Various Test Cases', () => {
   })
 
   // This is not fully supported right now.
-  // it('is able to access the source array in the iterators', async () => {
-  //   for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../item.2' }] }] }, {}, [2, 3, 4, 5])
-  // })
+  it('is able to access the source array in the iterators', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[0, 1, 2, 3], { '+': [{ var: '' }, { var: '../iterator.2' }] }] }, {}, [2, 3, 4, 5])
+  })
 
   it('should be able to handle various instances of "in" with good, bad and invalid data', async () => {
     const rule = {
