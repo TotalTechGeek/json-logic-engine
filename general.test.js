@@ -198,6 +198,56 @@ describe('Various Test Cases', () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) await testEngine(engine, { map: [[1, 2, 3], { map: [[1], { var: '../../../../name' }] }] }, { name: 'Bob' }, [['Bob'], ['Bob'], ['Bob']])
   })
 
+  it('correctly short circuits (or)', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) {
+      let count = 0
+
+      engine.addMethod('increment', {
+        method: () => {
+          count++
+          return true
+        }
+      })
+      await testEngine(engine, { or: [{ increment: true }, { increment: true }, { increment: true }] }, {}, true)
+      // It's called twice because it runs once for interpreted, and once for compiled.
+      assert.strictEqual(count, 2, 'Should have only called increment twice. (Count)')
+    }
+  })
+
+  it('correctly short circuits (and)', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) {
+      let count = 0
+
+      engine.addMethod('increment', {
+        method: () => {
+          count++
+          return false
+        }
+      })
+      await testEngine(engine, { and: [{ increment: true }, { increment: true }, { increment: true }] }, {}, false)
+      // It's called twice because it runs once for interpreted, and once for compiled.
+      assert.strictEqual(count, 2, 'Should have only called increment twice. (Count)')
+    }
+  })
+
+  it('does not execute any logic from and / or array if the argument is executed', async () => {
+    for (const engine of [...normalEngines, ...permissiveEngines]) {
+      let count = 0
+      engine.addMethod('increment', {
+        method: () => {
+          count++
+          return true
+        }
+      })
+
+      await testEngine(engine, { and: { preserve: [{ increment: true }, { increment: true }] } }, {}, { increment: true })
+      assert.strictEqual(count, 0, 'Should not have called increment on and.')
+
+      await testEngine(engine, { or: { preserve: [{ increment: true }, { increment: true }] } }, {}, { increment: true })
+      assert.strictEqual(count, 0, 'Should not have called increment on or.')
+    }
+  })
+
   it('disables interpreted optimization when it realizes it will not be faster', async () => {
     for (const engine of [...normalEngines, ...permissiveEngines]) {
       const disableInterpretedOptimization = engine.disableInterpretedOptimization

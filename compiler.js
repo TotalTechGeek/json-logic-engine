@@ -314,7 +314,7 @@ function processBuiltString (method, str, buildState) {
   return Object.assign(
     (typeof globalThis !== 'undefined' ? globalThis : global).eval(final)(values, methods, notTraversed, asyncIterators, engine, above, coerceArray), {
       [Sync]: !buildState.asyncDetected,
-      aboveDetected: str.includes(', above')
+      aboveDetected: typeof str === 'string' && str.includes(', above')
     })
 }
 
