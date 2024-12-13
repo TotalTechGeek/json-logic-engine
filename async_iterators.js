@@ -6,7 +6,7 @@ export async function filter (arr, iter) {
   const result = []
   let index = 0
   for (const item of arr) {
-    if (await iter(item, index++)) result.push(item)
+    if (await iter(item, index++, arr)) result.push(item)
   }
   return result
 }
@@ -14,7 +14,7 @@ export async function filter (arr, iter) {
 export async function some (arr, iter) {
   let index = 0
   for (const item of arr) {
-    if (await iter(item, index++)) return true
+    if (await iter(item, index++, arr)) return true
   }
   return false
 }
@@ -22,7 +22,7 @@ export async function some (arr, iter) {
 export async function every (arr, iter) {
   let index = 0
   for (const item of arr) {
-    if (!(await iter(item, index++))) return false
+    if (!(await iter(item, index++, arr))) return false
   }
   return true
 }
@@ -31,7 +31,7 @@ export async function map (arr, iter) {
   const result = []
   let index = 0
   for (const item of arr) {
-    result.push(await iter(item, index++))
+    result.push(await iter(item, index++, arr))
   }
   return result
 }
