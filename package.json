@@ -1,6 +1,6 @@
 {
   "name": "json-logic-engine",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Construct complex rules with JSON & process them.",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

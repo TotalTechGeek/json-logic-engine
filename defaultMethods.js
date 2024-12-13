@@ -159,17 +159,81 @@ const defaultMethods = {
   '!=': ([a, b]) => a != b,
   '!==': ([a, b]) => a !== b,
   xor: ([a, b]) => a ^ b,
-  or: (arr, _1, _2, engine) => {
-    for (let i = 0; i < arr.length; i++) {
-      if (engine.truthy(arr[i])) return arr[i]
-    }
-    return arr[arr.length - 1]
+  // Why "executeInLoop"? Because if it needs to execute to get an array, I do not want to execute the arguments,
+  // Both for performance and safety reasons.
+  or: {
+    method: (arr, _1, _2, engine) => {
+      // See "executeInLoop" above
+      const executeInLoop = Array.isArray(arr)
+      if (!executeInLoop) arr = engine.run(arr, _1, { above: _2 })
+
+      let item
+      for (let i = 0; i < arr.length; i++) {
+        item = executeInLoop ? engine.run(arr[i], _1, { above: _2 }) : arr[i]
+        if (engine.truthy(item)) return item
+      }
+
+      return item
+    },
+    asyncMethod: async (arr, _1, _2, engine) => {
+      // See "executeInLoop" above
+      const executeInLoop = Array.isArray(arr)
+      if (!executeInLoop) arr = await engine.run(arr, _1, { above: _2 })
+
+      let item
+      for (let i = 0; i < arr.length; i++) {
+        item = executeInLoop ? await engine.run(arr[i], _1, { above: _2 }) : arr[i]
+        if (engine.truthy(item)) return item
+      }
+
+      return item
+    },
+    deterministic: (data, buildState) => isDeterministic(data, buildState.engine, buildState),
+    compile: (data, buildState) => {
+      if (!buildState.engine.truthy.IDENTITY) return false
+      if (Array.isArray(data)) {
+        return `(${data.map((i) => buildString(i, buildState)).join(' || ')})`
+      } else {
+        return `(${buildString(data, buildState)}).reduce((a,b) => a||b, false)`
+      }
+    },
+    traverse: false
   },
-  and: (arr, _1, _2, engine) => {
-    for (let i = 0; i < arr.length; i++) {
-      if (!engine.truthy(arr[i])) return arr[i]
+  and: {
+    method: (arr, _1, _2, engine) => {
+      // See "executeInLoop" above
+      const executeInLoop = Array.isArray(arr)
+      if (!executeInLoop) arr = engine.run(arr, _1, { above: _2 })
+
+      let item
+      for (let i = 0; i < arr.length; i++) {
+        item = executeInLoop ? engine.run(arr[i], _1, { above: _2 }) : arr[i]
+        if (!engine.truthy(item)) return item
+      }
+      return item
+    },
+    asyncMethod: async (arr, _1, _2, engine) => {
+      // See "executeInLoop" above
+      const executeInLoop = Array.isArray(arr)
+      if (!executeInLoop) arr = await engine.run(arr, _1, { above: _2 })
+
+      let item
+      for (let i = 0; i < arr.length; i++) {
+        item = executeInLoop ? await engine.run(arr[i], _1, { above: _2 }) : arr[i]
+        if (!engine.truthy(item)) return item
+      }
+      return item
+    },
+    traverse: false,
+    deterministic: (data, buildState) => isDeterministic(data, buildState.engine, buildState),
+    compile: (data, buildState) => {
+      if (!buildState.engine.truthy.IDENTITY) return false
+      if (Array.isArray(data)) {
+        return `(${data.map((i) => buildString(i, buildState)).join(' && ')})`
+      } else {
+        return `(${buildString(data, buildState)}).reduce((a,b) => a&&b, true)`
+      }
     }
-    return arr[arr.length - 1]
   },
   substr: ([string, from, end]) => {
     if (end < 0) {
@@ -678,29 +742,9 @@ defaultMethods['%'].compile = function (data, buildState) {
 }
 
 // @ts-ignore Allow custom attribute
-defaultMethods.or.compile = function (data, buildState) {
-  if (!buildState.engine.truthy.IDENTITY) return false
-  if (Array.isArray(data)) {
-    return `(${data.map((i) => buildString(i, buildState)).join(' || ')})`
-  } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a||b, false)`
-  }
-}
-
-// @ts-ignore Allow custom attribute
 defaultMethods.in.compile = function (data, buildState) {
   if (!Array.isArray(data)) return false
   return buildState.compile`(${data[1]} || []).includes(${data[0]})`
-}
-
-// @ts-ignore Allow custom attribute
-defaultMethods.and.compile = function (data, buildState) {
-  if (!buildState.engine.truthy.IDENTITY) return false
-  if (Array.isArray(data)) {
-    return `(${data.map((i) => buildString(i, buildState)).join(' && ')})`
-  } else {
-    return `(${buildString(data, buildState)}).reduce((a,b) => a&&b, true)`
-  }
 }
 
 // @ts-ignore Allow custom attribute
